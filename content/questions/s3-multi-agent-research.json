@@ -1,0 +1,1192 @@
+{
+  "scenario": "S3",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S3-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.2",
+      "secondaryTasks": [
+        "1.6"
+      ],
+      "stem": "Your research system is asked for a report on \"the impact of AI on creative industries\". The coordinator splits the request into three subtasks: AI image generators, AI in digital illustration and AI in photo editing. Each subagent covers its subtask thoroughly and correctly, but the final report says nothing about music, writing or film. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Fix the coordinator's decomposition so its subtasks cover every major area of the topic before it delegates.",
+          "correct": true,
+          "explanation": "Every subagent did its own job well; the gaps come from subtasks that were never assigned. The coordinator owns decomposition, so it must split broad topics widely enough to cover the whole subject.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Give the web search subagent a longer list of search keywords so that it finds more sources on each assigned subtopic.",
+          "correct": false,
+          "explanation": "The subagents already covered their assigned subtopics well. More keywords would deepen the visual-arts research but still never touch music, writing or film, because nobody was asked to.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add a second synthesis subagent that reviews each report and adds missing creative fields.",
+          "correct": false,
+          "explanation": "A reviewer adding sections after the fact would write them without any research behind them. The missing coverage should be researched, which means fixing how the coordinator splits the topic.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Raise the coordinator's iteration limit so that it keeps researching until the report reaches a minimum length.",
+          "correct": false,
+          "explanation": "More iterations on the same three subtasks produce a longer report about the same areas. Report length is not coverage, and the missing fields still never get assigned.",
+          "trap": "ITERATION_CAP"
+        }
+      ],
+      "keyConcept": "Overly narrow task decomposition by the coordinator causes incomplete coverage of broad research topics.",
+      "studyRef": "§3 Task 1.2 (risks of overly narrow decomposition); §6a Q7",
+      "sources": [
+        "exam-guide",
+        "research-6a-q7"
+      ]
+    },
+    {
+      "id": "S3-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.3",
+      "secondaryTasks": [],
+      "stem": "The web search and document analysis subagents have finished and returned their findings to the coordinator. The coordinator then spawns the synthesis subagent with the prompt \"Write the final report using the research findings, with citations.\" The report that comes back is generic, cites no real sources and ignores most of what the other subagents found. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Include the complete findings from both subagents, with their source details, in the synthesis subagent's prompt.",
+          "correct": true,
+          "explanation": "A subagent starts with only the prompt it is given. Passing the full findings and their sources is the only way the synthesis subagent can build on them and cite them accurately.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Tell the synthesis subagent in its prompt to read the research findings from the coordinator's conversation history.",
+          "correct": false,
+          "explanation": "Subagents have isolated context and can't see the coordinator's history. The instruction points to findings the synthesis subagent has no way to reach, so the report stays generic.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "c",
+          "text": "Give the synthesis subagent its own web search tool so it can find the sources it needs to cite in the report.",
+          "correct": false,
+          "explanation": "This repeats research that is already done and puts a tool outside its role in the synthesis subagent's hands. It would cite whatever it finds rather than what the other subagents found.",
+          "trap": "TOOL_OVERLOAD"
+        },
+        {
+          "id": "d",
+          "text": "Have the web search subagent write its findings to a shared database that the synthesis subagent reads directly.",
+          "correct": false,
+          "explanation": "Subagents exchanging data through shared storage bypass the coordinator, which should route all information. It also loses the coordinator's control over what synthesis receives and in what form.",
+          "trap": "BYPASS_COORDINATOR"
+        }
+      ],
+      "keyConcept": "Pass complete prior findings, with source details, explicitly in the subagent's prompt; subagents inherit nothing.",
+      "studyRef": "§3 Task 1.3 (including complete findings in the subagent prompt)",
+      "sources": [
+        "exam-guide",
+        "research-6c-d1"
+      ]
+    },
+    {
+      "id": "S3-003",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "5.3",
+      "secondaryTasks": [
+        "2.2"
+      ],
+      "stem": "During a research run, the web search subagent's connection to the search provider times out after it has collected results for two of its five queries. The coordinator needs to decide whether to retry, try a different approach or carry on with what it has. What should the web search subagent return to the coordinator?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A structured error with the failure type, the queries attempted, the partial results and possible alternatives.",
+          "correct": true,
+          "explanation": "The coordinator can only choose between retrying, changing approach and continuing if it knows what failed, what was tried and what was already found. Structured error context gives it all three.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "A generic \"search unavailable\" status, so the coordinator knows that the web search step did not succeed this time.",
+          "correct": false,
+          "explanation": "A generic status hides the failure type and the two queries that worked. The coordinator can't tell a timeout from a permanent outage, and the partial results are thrown away.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "c",
+          "text": "An empty result list marked as success, so the rest of the research pipeline can continue without being interrupted.",
+          "correct": false,
+          "explanation": "Reporting a failure as an empty success hides it completely. The coordinator would treat the topic as having no sources, and the report would be wrong without anyone knowing.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "An exception that stops the whole research run, so that nobody relies on an incomplete set of results.",
+          "correct": false,
+          "explanation": "A single timeout is recoverable, and two queries already succeeded. Ending the whole run throws away good work over a failure the coordinator could easily have handled.",
+          "trap": "TOTAL_FAILURE"
+        }
+      ],
+      "keyConcept": "Subagent failures should return structured error context: failure type, attempted query, partial results, alternatives.",
+      "studyRef": "§3 Task 5.3 (structured error context); §6a Q8",
+      "sources": [
+        "exam-guide",
+        "research-6a-q8"
+      ]
+    },
+    {
+      "id": "S3-004",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "2.3",
+      "secondaryTasks": [
+        "1.2"
+      ],
+      "stem": "The synthesis subagent often needs to check facts while writing. About 85% of these checks are simple lookups, such as confirming a date or a figure. Today every check goes back through the coordinator to the web search subagent, adding two or three round trips and about 40% to total latency. What is the best way to reduce the latency?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Give synthesis a scoped `verify_fact` tool for simple lookups, and route complex checks via the coordinator.",
+          "correct": true,
+          "explanation": "A narrow cross-role tool removes the round trips for the 85% of simple checks without turning synthesis into a researcher. Complex checks still go through the coordinator, which keeps control of real research.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Give the synthesis subagent the full web search tool, so that it can check any fact itself without involving the coordinator.",
+          "correct": false,
+          "explanation": "A general search tool is outside the synthesis role, and agents with such tools tend to start researching instead of writing. A scoped tool covers the simple lookups without that risk.",
+          "trap": "TOOL_OVERLOAD"
+        },
+        {
+          "id": "c",
+          "text": "Collect the synthesis subagent's fact checks and send them to the coordinator in one batch at the end.",
+          "correct": false,
+          "explanation": "Synthesis needs each answer while it is writing, so waiting until the end delays the very work that depends on it. Batching suits work nothing is waiting on.",
+          "trap": "WRONG_LATENCY_MODE"
+        },
+        {
+          "id": "d",
+          "text": "Have the coordinator predict which facts synthesis will need and pre-fetch them into a cache before synthesis starts.",
+          "correct": false,
+          "explanation": "Predicting every fact a writer will want to check is guesswork, and any miss still costs the full round trip. It adds machinery where a small scoped tool works directly.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Give an agent a scoped cross-role tool for common simple needs; route complex cases through the coordinator.",
+      "studyRef": "§3 Task 2.3 (scoped cross-role tools such as verify_fact); §6a Q9",
+      "sources": [
+        "exam-guide",
+        "research-6a-q9"
+      ]
+    },
+    {
+      "id": "S3-005",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "5.6",
+      "secondaryTasks": [
+        "1.3"
+      ],
+      "stem": "Reviewers find that many claims in the final reports can't be traced to a source. The web search and document analysis subagents return prose summaries with a list of URLs at the end, and the synthesis subagent condenses these further while writing. By the final report, nobody can tell which source supports which claim. Which two changes should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Have each subagent return structured claim-source mappings: each claim with its source URL or document and an excerpt.",
+          "correct": true,
+          "explanation": "A list of URLs at the end of a summary doesn't say which claim came from where. Pairing each claim with its source and excerpt at the point it is found keeps the link from the start.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Require the synthesis subagent to preserve and merge those mappings, so every claim in the report keeps its source.",
+          "correct": true,
+          "explanation": "Attribution is usually lost when findings are condensed. If synthesis must carry the mappings through and merge them, each claim in the report still points to the source that supports it.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Have the synthesis subagent add citations at the end by searching for a source that matches each claim in the report.",
+          "correct": false,
+          "explanation": "A source found afterwards may agree with a claim without being where it came from. This produces citations that look right while the real provenance is still lost.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Add an instruction to the synthesis prompt telling it to be careful to keep track of where each claim came from.",
+          "correct": false,
+          "explanation": "Synthesis receives prose with URLs at the end, so the information it is asked to track isn't there. An instruction can't recover a mapping that the inputs never contained.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "e",
+          "text": "Ask the synthesis subagent to rate its confidence in each claim, and remove any claim it rates below 70% from the report.",
+          "correct": false,
+          "explanation": "Self-rated confidence is poorly calibrated and says nothing about where a claim came from. Well-sourced claims could be dropped while untraceable ones stay in.",
+          "trap": "UNRELIABLE_PROXY"
+        }
+      ],
+      "keyConcept": "Subagents output structured claim-source mappings, and synthesis must preserve and merge them to keep attribution.",
+      "studyRef": "§3 Task 5.6 (structured claim-source mappings preserved through synthesis)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S3-006",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.1",
+      "secondaryTasks": [],
+      "stem": "The coordinator runs an agentic loop: it sends a request, executes any tools Claude asks for and appends the results. The loop ends when Claude's reply contains the phrase \"research complete\". Some runs stop early because Claude writes \"once the research is complete, I will...\", while others keep going after the report is finished. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Continue the loop while `stop_reason` is `\"tool_use\"`, and end it when `stop_reason` is `\"end_turn\"`.",
+          "correct": true,
+          "explanation": "`stop_reason` states directly whether Claude wants to call another tool or has finished its turn. It doesn't depend on wording, so the loop stops at the right point every time.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Change the trigger phrase to a unique marker such as `[[DONE]]` and tell Claude to print it only when it has finished.",
+          "correct": false,
+          "explanation": "This still decides termination by parsing text, just with a rarer string. Claude can still mention or omit the marker by mistake, while `stop_reason` already gives the answer.",
+          "trap": "NL_TERMINATION"
+        },
+        {
+          "id": "c",
+          "text": "Run the loop a fixed 15 times, which covers the longest research run so far, and use whatever report exists then.",
+          "correct": false,
+          "explanation": "Short runs would waste iterations and long ones would be cut off with a half-written report. A cap is a safety net, not the way the loop should normally stop.",
+          "trap": "ITERATION_CAP"
+        },
+        {
+          "id": "d",
+          "text": "Have a separate classifier model read each reply and decide whether the research is done.",
+          "correct": false,
+          "explanation": "An extra model guessing from text adds cost and its own errors. The API already reports whether Claude has finished, so there is nothing to classify.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Control the agentic loop with stop_reason: continue on \"tool_use\", stop on \"end_turn\".",
+      "studyRef": "§3 Task 1.1 (stop_reason control flow; anti-patterns)",
+      "sources": [
+        "exam-guide",
+        "research-6c-d1"
+      ]
+    },
+    {
+      "id": "S3-007",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.2",
+      "secondaryTasks": [],
+      "stem": "Every request goes through the full pipeline: web search, then document analysis, then synthesis. For simple questions such as \"When was the EU AI Act adopted?\", a run takes four minutes and costs as much as a full research report, though a single search would answer it. Complex requests work well. What is the best change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Have the coordinator choose which subagents to invoke based on each request's complexity, instead of using all three.",
+          "correct": true,
+          "explanation": "Deciding which subagents a request needs is part of the coordinator's job. A simple factual question can go to search alone, while complex requests still get the full pipeline.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add a separate routing classifier in front of the coordinator that sends simple questions to a different, lighter pipeline.",
+          "correct": false,
+          "explanation": "This builds a second routing layer and a second pipeline for a decision the coordinator can already make. The extra system has to be built, tuned and kept in step.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "c",
+          "text": "Lower `max_tokens` for all three subagents on every request, so each step finishes faster.",
+          "correct": false,
+          "explanation": "Simple questions would still run all three steps, and complex reports would be cut short. The waste comes from unnecessary steps, not from response length.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Let the web search subagent answer simple questions directly to the user, without passing its result back to the coordinator.",
+          "correct": false,
+          "explanation": "Subagents replying around the coordinator lose its error handling and observability. The coordinator should choose the lighter route and still deliver the answer itself.",
+          "trap": "BYPASS_COORDINATOR"
+        }
+      ],
+      "keyConcept": "Coordinators should dynamically select subagents by query complexity rather than always running the full pipeline.",
+      "studyRef": "§3 Task 1.2 (dynamic subagent selection)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S3-008",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.3",
+      "secondaryTasks": [],
+      "stem": "For a broad research request, the coordinator spawns four web search subagents, one for each subtopic. It spawns the first, waits for it to finish, then spawns the next, so a run takes about four times as long as a single search. The subtopics are independent of each other. How should the coordinator spawn the subagents?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Emit all four `Task` calls in a single coordinator response, so the subagents run in parallel.",
+          "correct": true,
+          "explanation": "Several `Task` calls in one response start the subagents together. Because the subtopics are independent, the run takes about as long as the slowest search instead of all four added up.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Spawn one subagent that searches all four subtopics in turn, so that only one `Task` call is needed for each request.",
+          "correct": false,
+          "explanation": "One subagent doing four searches in turn is still sequential, so the run is no faster. It also loads four subtopics into one context instead of keeping them separate.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add `\"parallel\": true` to each `AgentDefinition` so that the SDK runs them at once.",
+          "correct": false,
+          "explanation": "`AgentDefinition` has no such option. Parallelism comes from how the coordinator spawns subagents: several `Task` calls in the same response.",
+          "trap": "NONEXISTENT_FEATURE"
+        },
+        {
+          "id": "d",
+          "text": "Have each subagent spawn the next one when it finishes, so the coordinator doesn't have to wait between them.",
+          "correct": false,
+          "explanation": "A chain of subagents is just as sequential, and it moves orchestration away from the coordinator. Errors and results would no longer pass through one place.",
+          "trap": "BYPASS_COORDINATOR"
+        }
+      ],
+      "keyConcept": "Spawn parallel subagents by emitting multiple Task calls in a single coordinator response.",
+      "studyRef": "§3 Task 1.3 (parallel spawning)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S3-009",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "2.2",
+      "secondaryTasks": [
+        "5.3"
+      ],
+      "stem": "The `load_document` tool returns `{\"isError\": true, \"message\": \"Operation failed\"}` for every problem: a server timeout, a malformed URL, or a document behind a login the system has no access to. The document analysis subagent retries all of them three times, wasting time on failures that can never succeed. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Return structured error metadata, such as an `errorCategory` and an `isRetryable` flag, with a clear description.",
+          "correct": true,
+          "explanation": "With a category and a retryable flag, the subagent retries only the timeout. It can report the malformed URL and the login wall at once instead of wasting attempts on them.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Have the subagent retry each failed document up to five times, with exponential backoff, before it gives up on it.",
+          "correct": false,
+          "explanation": "More retries waste even more time on the malformed URL and the login wall, which will never succeed. The subagent still can't tell which failures are worth retrying.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Drop the `isError` flag and return an empty document, so that the subagent simply moves on to the next source.",
+          "correct": false,
+          "explanation": "The failure disappears instead of being reported, so the subagent would analyse an empty document or skip a source without anyone knowing. The error information gets worse, not better.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Have the subagent ask the coordinator for a decision after every failed call, whatever kind of failure it was.",
+          "correct": false,
+          "explanation": "Transient timeouts should be retried locally, not escalated. With only \"Operation failed\" to pass on, the coordinator would be no better placed to decide.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "Return structured error metadata (errorCategory, isRetryable) so agents retry only failures that can succeed.",
+      "studyRef": "§3 Task 2.2 (errorCategory, isRetryable; uniform errors prevent recovery)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S3-010",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 3,
+      "primaryTask": "1.3",
+      "secondaryTasks": [
+        "2.3"
+      ],
+      "stem": "You are adding a fact-check subagent to the system. In testing, the coordinator can't spawn any subagent at all; its `Task` calls are rejected. Once that works, you also want the fact-checker chosen for the right requests and limited to the `verify_fact` and `load_document` tools. Which two changes should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add `\"Task\"` to the coordinator's `allowedTools`, since a coordinator can only spawn subagents with that tool.",
+          "correct": true,
+          "explanation": "Spawning a subagent is a `Task` tool call, so a coordinator without `\"Task\"` in `allowedTools` can't spawn anything. This fixes the rejected calls.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Define the fact-checker as an `AgentDefinition` with a clear description, its own system prompt and only its two tools.",
+          "correct": true,
+          "explanation": "The description tells the coordinator when to use the fact-checker, the system prompt sets its behaviour, and the tool restriction keeps it to `verify_fact` and `load_document`.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Give the fact-check subagent `\"Task\"` in its own `allowedTools`, so that it can spawn itself whenever it is needed.",
+          "correct": false,
+          "explanation": "The coordinator's calls are the ones being rejected, so this doesn't fix them. A subagent spawning itself would also take delegation away from the coordinator.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Give the fact-checker every tool the coordinator has, so it can handle any check without needing more configuration later.",
+          "correct": false,
+          "explanation": "This is the opposite of the requirement to limit it to two tools. Extra tools outside its role make its tool choices less reliable and invite misuse.",
+          "trap": "TOOL_OVERLOAD"
+        },
+        {
+          "id": "e",
+          "text": "Describe the fact-checker in the coordinator's system prompt and set `auto_spawn: true` so the SDK starts it when needed.",
+          "correct": false,
+          "explanation": "There is no `auto_spawn` setting. Subagent types are configured with `AgentDefinition`, and the coordinator spawns them with `Task` calls. A description in a prompt alone registers nothing it can spawn.",
+          "trap": "NONEXISTENT_FEATURE"
+        }
+      ],
+      "keyConcept": "Coordinators need \"Task\" in allowedTools; AgentDefinition sets each subagent's description, prompt and tool restrictions.",
+      "studyRef": "§3 Task 1.3 (Task tool, allowedTools, AgentDefinition)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S3-011",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "5.6",
+      "secondaryTasks": [],
+      "stem": "Two credible sources give different figures for the same statistic: a government report says 34% of small firms use AI tools, while an industry survey says 51%. Both were published this year, and the document analysis subagent found both. The report will be read by policy makers. How should the system handle the conflict?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Include both figures, each attributed to its source, and note the conflict and any differences in method.",
+          "correct": true,
+          "explanation": "When credible sources disagree, readers need both figures and where each came from. Noting differences in method, such as who was surveyed, helps them judge the gap themselves.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Use the government figure, since government reports are usually the more authoritative source.",
+          "correct": false,
+          "explanation": "Picking one figure by source type is an arbitrary rule that hides real disagreement. The survey may have measured something different, which readers would never find out.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "c",
+          "text": "Report the average of the two figures, 42.5%, so the report gives readers a single number that sits between them.",
+          "correct": false,
+          "explanation": "The average matches neither source and hides that they disagree. Policy makers would rely on a number that no study actually found.",
+          "trap": "AGGREGATE_METRIC_MASKING"
+        },
+        {
+          "id": "d",
+          "text": "Leave the statistic out of the report entirely, since conflicting figures would only confuse the policy makers who read it.",
+          "correct": false,
+          "explanation": "This throws away relevant evidence from two credible sources. The disagreement itself is useful information for readers making policy decisions.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "Annotate conflicting statistics with source attribution rather than arbitrarily picking, averaging or dropping values.",
+      "studyRef": "§3 Task 5.6 (handling conflicting statistics); §6c Domain 5 Q4",
+      "sources": [
+        "exam-guide",
+        "research-6c-d5"
+      ]
+    },
+    {
+      "id": "S3-012",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.6",
+      "secondaryTasks": [],
+      "stem": "A user asks: \"What are the main obstacles to adopting solid-state batteries in electric vehicles?\" Nobody knows in advance which obstacles matter most. Early searches might reveal, for example, that supply of one material is the dominant issue and deserves deeper investigation, while others turn out minor. How should the coordinator decompose this request?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Start with a broad survey to map the obstacles, then create follow-up subtasks based on what the findings show.",
+          "correct": true,
+          "explanation": "This is open-ended research where early findings decide what deserves depth. Mapping first, then adapting the plan, puts effort on the obstacles that actually matter.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Use a fixed five-step pipeline of the same searches for every battery question, and run it in the same order each time.",
+          "correct": false,
+          "explanation": "A fixed pipeline can't react when a search reveals that one obstacle dominates. It spends the same effort on minor issues as on the one that matters.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Spawn twenty subagents at once, each assigned a different possible obstacle chosen before any research has started.",
+          "correct": false,
+          "explanation": "The obstacles are guessed before anything is known, so many subagents research minor issues and real ones may be missed. It costs far more than mapping first.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Ask the user to list which obstacles they want researched before starting any work.",
+          "correct": false,
+          "explanation": "The user asked precisely because they don't know what the main obstacles are. The system can find out with a broad survey instead of handing the question back.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "Use dynamic, adaptive decomposition for open-ended research, generating subtasks from intermediate findings.",
+      "studyRef": "§3 Task 1.6 (adaptive investigation plans)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S3-013",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "2.3",
+      "secondaryTasks": [],
+      "stem": "To make it more capable, the synthesis subagent was given all 18 tools in the system, including web search and document loading. Since then it often starts new web searches in the middle of writing, which slows reports down and adds sources the coordinator never checked. Its job is only to combine the findings it is given. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Restrict the synthesis subagent to the few tools its role needs, and remove web search and document loading.",
+          "correct": true,
+          "explanation": "Agents with tools outside their role tend to use them. Giving synthesis only what it needs removes the temptation and makes its remaining tool choices more reliable.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add a system-prompt instruction to avoid web search unless it is absolutely necessary.",
+          "correct": false,
+          "explanation": "The tools stay available, so it will still search whenever it judges it necessary. Removing them is the only reliable way to keep synthesis from researching.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Rename the web search tool to `external_search_do_not_use` so that the synthesis subagent is less likely to pick it.",
+          "correct": false,
+          "explanation": "A discouraging name might reduce use, but the tool and 17 others are still there to confuse the subagent. The real problem is giving it tools outside its role.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Add a hook that logs every web search the synthesis subagent makes, so the team can review the searches each week.",
+          "correct": false,
+          "explanation": "Logging records the misuse after it has already slowed reports and added unchecked sources. It adds a review process without preventing anything.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Scope each agent's tools to its role; too many tools, or tools outside its role, lead to misuse.",
+      "studyRef": "§3 Task 2.3 (scoped tool access; 4–5 tools)",
+      "sources": [
+        "exam-guide",
+        "research-6c-d2"
+      ]
+    },
+    {
+      "id": "S3-014",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "5.3",
+      "secondaryTasks": [],
+      "stem": "Document analysis subagents report every failure to the coordinator, including brief network blips that succeed on a second try. The coordinator spends much of its context handling these, and its decisions about real problems, such as a source that is permanently unavailable, are poor because each report says only \"failed: <url>\". What is the best error-handling design?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Retry transient failures in the subagent; pass up only unresolved ones, with what was tried and any partial results.",
+          "correct": true,
+          "explanation": "Local recovery keeps network blips away from the coordinator. The failures it does receive carry enough context, such as attempts made and partial results, for it to decide well.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Have the subagents skip any document that fails and carry on, without telling the coordinator that anything was missed.",
+          "correct": false,
+          "explanation": "Permanently unavailable sources would vanish without a trace. The coordinator would believe its coverage is complete, and the report would never mention the gap.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "c",
+          "text": "Stop the whole research run whenever any subagent hits an error it can't fix, so that the report is never incomplete.",
+          "correct": false,
+          "explanation": "One unavailable source rarely justifies discarding every other finding. The coordinator could continue with the rest and note the gap instead.",
+          "trap": "TOTAL_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Keep forwarding every failure, but give the coordinator a larger `max_tokens` so it has more room to handle them all.",
+          "correct": false,
+          "explanation": "`max_tokens` limits the length of the coordinator's responses, not its context. The noise and the uninformative error reports would both stay the same.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Recover from transient errors locally; propagate only unresolvable errors, with attempts and partial results.",
+      "studyRef": "§3 Task 5.3 (local recovery; propagating only unresolvable errors)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S3-015",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "1.2",
+      "secondaryTasks": [],
+      "stem": "Reports on broad topics have two problems. Several subagents often research the same subtopic, wasting effort, and the final report sometimes has obvious gaps that nobody notices until a reader complains. The coordinator currently splits the request once, collects results, has them synthesised and returns the report. Which two changes should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Have the coordinator give each subagent a distinct, clearly bounded part of the scope, to minimise duplicated work.",
+          "correct": true,
+          "explanation": "Overlap happens when subtasks aren't clearly separated. Partitioning the scope into distinct parts before delegating means each subagent covers ground the others don't.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Have the coordinator check the synthesis for gaps, re-delegate targeted research and re-synthesise until it is sufficient.",
+          "correct": true,
+          "explanation": "An iterative refinement loop lets the coordinator catch gaps before the user does. It sends targeted follow-up work only where coverage is thin.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Let the subagents share a scratch file where each records the subtopics it is covering, so that the others can avoid them.",
+          "correct": false,
+          "explanation": "Subagents coordinating through a shared file bypass the coordinator and depend on timing. Partitioning the scope is the coordinator's job and should happen before delegation.",
+          "trap": "BYPASS_COORDINATOR"
+        },
+        {
+          "id": "d",
+          "text": "Ask the synthesis subagent to review its own report for gaps and fill any it finds from its own general knowledge.",
+          "correct": false,
+          "explanation": "The author of a report tends to miss its own gaps. Any it does find would be filled from memory rather than researched, with no sources behind them.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "e",
+          "text": "Run every request through the pipeline three times and merge the reports, so that a gap in one run is filled by another.",
+          "correct": false,
+          "explanation": "Three runs triple the cost and the duplicated work. With the same decomposition each time, they are likely to share the same gaps.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Partition scope across subagents to avoid duplication, and use a coordinator refinement loop to fill gaps.",
+      "studyRef": "§3 Task 1.2 (partitioning scope; iterative refinement loops)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S3-016",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "5.1",
+      "secondaryTasks": [
+        "5.6"
+      ],
+      "stem": "Each web search subagent returns the full text of every page it reads, often 20,000 tokens per subagent. With six subagents, the synthesis subagent's context is nearly full before it starts writing, and it misattributes figures to the wrong studies. Synthesis needs the key facts, their sources, publication dates and how relevant each one is. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Have the search subagents return structured key facts, with citations, dates and relevance scores, not full text.",
+          "correct": true,
+          "explanation": "When the downstream agent has a limited context budget, upstream agents should send only what it needs, in a structured form. Each fact arrives already tied to its source and date.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Raise the synthesis subagent's `max_tokens` so that it can take in all six subagents' outputs without running short of room.",
+          "correct": false,
+          "explanation": "`max_tokens` caps the length of the response, not the size of the input it can read. The context would be just as full.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Cut each subagent's output to its first 3,000 tokens before passing it on, so that all six outputs fit comfortably.",
+          "correct": false,
+          "explanation": "Key facts later in a page would be dropped without any sign that something was cut. Synthesis would write as if it had the full picture.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Have the coordinator condense all six outputs into one paragraph before passing them to the synthesis subagent.",
+          "correct": false,
+          "explanation": "One paragraph for six subagents' research discards most of the figures and almost certainly the links between claims and sources. Misattribution would get worse.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "Upstream agents should return structured key facts and metadata, not verbose content, for limited downstream budgets.",
+      "studyRef": "§3 Task 5.1 (structured upstream output; metadata in subagent outputs)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S3-017",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "2.2",
+      "secondaryTasks": [
+        "5.3"
+      ],
+      "stem": "The `search_archive` tool returns `{\"results\": []}` both when a query genuinely matches nothing and when the archive's database times out. The coordinator treats every empty result as \"no evidence exists\", and two recent reports wrongly stated that no studies had been published on their topics. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Return `isError: true` with a transient category for timeouts, and keep `results: []` for real no-match cases.",
+          "correct": true,
+          "explanation": "An access failure and a valid empty result mean different things. Marking timeouts as retryable errors lets the coordinator retry them, while true empty results can still be trusted.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Have the coordinator retry every query that returns no results, in case it was a timeout.",
+          "correct": false,
+          "explanation": "Genuine no-match queries get retried for nothing, and the coordinator still can't tell the two cases apart. A timeout that persists still ends up looking like no evidence.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add an instruction telling the coordinator that empty search results may be unreliable and should be treated with care.",
+          "correct": false,
+          "explanation": "The coordinator receives identical responses in both cases, so it has nothing to be careful with. It can't make a distinction the tool never reports.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Make the tool raise an exception on any timeout, so the research run stops instead of reporting that no evidence exists.",
+          "correct": false,
+          "explanation": "A brief database timeout would end the whole run and throw away every other finding. A structured, retryable error lets the run recover instead.",
+          "trap": "TOTAL_FAILURE"
+        }
+      ],
+      "keyConcept": "Distinguish access failures (errors, possibly retryable) from valid empty results (successful queries with no matches).",
+      "studyRef": "§3 Task 2.2 (access failures vs valid empty results)",
+      "sources": [
+        "exam-guide",
+        "research-6c-d2"
+      ]
+    },
+    {
+      "id": "S3-018",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.7",
+      "secondaryTasks": [],
+      "stem": "After a long session, the coordinator has gathered and analysed sources on remote-work productivity. Your team now wants to compare two ways of writing the report: one organised by industry and one organised by research method. Both should start from the same analysis, and neither attempt should influence the other. What is the best approach?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Use `fork_session` to create two branches from the current analysis, one for each report structure.",
+          "correct": true,
+          "explanation": "Forking creates independent branches from a shared baseline. Both versions build on the same analysis, and work in one branch can't affect the other.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Write the industry version first, then ask Claude to rewrite it organised by method.",
+          "correct": false,
+          "explanation": "The second version would be shaped by the first, which breaks the requirement that neither should influence the other. The comparison would no longer be fair.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Start two brand-new sessions, and redo the source gathering and analysis in each before writing either version of the report.",
+          "correct": false,
+          "explanation": "This throws away a long, valid analysis and repeats it twice. The two analyses may also differ, so the versions no longer start from the same base.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "d",
+          "text": "Spawn two subagents and tell each one to build on the analysis already done in the coordinator's session.",
+          "correct": false,
+          "explanation": "Subagents can't see the coordinator's session, so neither would have the analysis to build on. They would have to start over or guess.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        }
+      ],
+      "keyConcept": "Use fork_session to create independent branches from a shared analysis baseline to compare approaches.",
+      "studyRef": "§3 Task 1.7 (fork_session)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S3-019",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "5.6",
+      "secondaryTasks": [
+        "5.1"
+      ],
+      "stem": "The synthesis subagent flagged a \"contradiction\": one source says 12% of hospitals use AI triage, while another says 41%. On checking, the first figure comes from a 2019 survey and the second from 2025. The document analysis subagent's output didn't include dates, so a change over time looked like a conflict. What should change to prevent this?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Require subagents to include each source's publication or data-collection date in their structured output.",
+          "correct": true,
+          "explanation": "With dates attached, synthesis can see that the figures describe different years and report the trend. Without them, it has no way to tell change over time from a real conflict.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Have synthesis always use the higher of two conflicting figures, since newer data tends to show higher adoption rates.",
+          "correct": false,
+          "explanation": "A rule of thumb about adoption trends would be wrong whenever a figure fell, and it still hides which year each number describes. The dates are what synthesis needs.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "c",
+          "text": "Have the synthesis subagent drop any statistic that conflicts with another source, keeping only figures that agree.",
+          "correct": false,
+          "explanation": "Both figures here are accurate for their year, and together they show a meaningful trend. Dropping them throws away valuable evidence.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "d",
+          "text": "Add a line to the synthesis prompt asking it to consider whether conflicting figures might come from different years.",
+          "correct": false,
+          "explanation": "Synthesis can only consider the years if it is told them. Without dates in the subagents' output, the instruction asks it to guess.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Require publication or collection dates in structured outputs so temporal differences aren't read as contradictions.",
+      "studyRef": "§3 Task 5.6 (temporal data and dates in structured outputs)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S3-020",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 3,
+      "primaryTask": "5.3",
+      "secondaryTasks": [
+        "5.6"
+      ],
+      "stem": "For a report on global battery recycling, the subagents covering Europe and North America succeed, but every source for Asia is unavailable because of an outage, even after retries. The user needs the report today. Currently the coordinator either fails the run or returns a report that reads as complete. Which two changes should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Continue with the successful results and deliver the report, rather than failing the whole run over one region.",
+          "correct": true,
+          "explanation": "Most of the research succeeded, and the user needs the report today. One unavailable region is a gap to report, not a reason to discard the rest.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Annotate the report's coverage, marking well-supported findings and noting Asia as a gap from unavailable sources.",
+          "correct": true,
+          "explanation": "Coverage annotations tell readers what the report can and can't support. They show that Asia is missing because of an outage, not because the region doesn't matter.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Fill the Asia section from the model's general knowledge, so the report covers every region at the same level of detail.",
+          "correct": false,
+          "explanation": "Unsourced content would look as solid as the researched sections. The gap would be hidden behind text no source supports.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Fail the run and ask the user to try again tomorrow, since a report with a missing region could mislead its readers.",
+          "correct": false,
+          "explanation": "A clearly annotated gap doesn't mislead anyone, and the user needs the report today. Failing throws away two regions of good research.",
+          "trap": "TOTAL_FAILURE"
+        },
+        {
+          "id": "e",
+          "text": "Keep retrying the Asia sources every minute until they succeed, and send the report only once every region is complete.",
+          "correct": false,
+          "explanation": "The sources already failed after retries, and the outage may last for hours. Retrying with no sign of progress misses today's deadline instead of reporting the gap.",
+          "trap": "FAILURE_TO_ESCALATE"
+        }
+      ],
+      "keyConcept": "Continue with partial results and annotate coverage so readers see which areas have gaps from unavailable sources.",
+      "studyRef": "§3 Task 5.3 (coverage annotations; avoiding total failure)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S3-021",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.3",
+      "secondaryTasks": [
+        "1.6"
+      ],
+      "stem": "The coordinator's system prompt is a 40-step procedure: \"Step 1: search for the topic name. Step 2: open the top three results...\" It works for typical topics but handles unusual requests badly, for example running pointless web searches for a request that only needed analysis of two documents the user supplied. What is the most effective change to the coordinator's prompt?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Replace the procedure with the research goals and quality criteria, and let the coordinator plan the steps itself.",
+          "correct": true,
+          "explanation": "Goals and quality criteria let the coordinator adapt its plan to each request, such as skipping search when documents are supplied. A fixed procedure can only follow its steps.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add more steps to the procedure to cover each unusual request type the team has seen so far, with an example of each.",
+          "correct": false,
+          "explanation": "The procedure grows with every new kind of request and still fails on the next unusual one. The rigid structure that causes the problem stays.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Split the 40 steps across four coordinators of ten steps each, with a router that picks one coordinator for each request.",
+          "correct": false,
+          "explanation": "Four rigid procedures plus a router add layers without making any of them adaptable. Unusual requests would still fall between the scripts.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Lower the coordinator's temperature so that it follows the procedure more carefully and makes fewer mistakes.",
+          "correct": false,
+          "explanation": "The coordinator already follows the procedure; the procedure is wrong for unusual requests. Lower temperature would make it follow the wrong steps even more consistently.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Coordinator prompts should state research goals and quality criteria, not step-by-step procedural instructions.",
+      "studyRef": "§3 Task 1.3 (coordinator prompts: goals and criteria, not procedures)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S3-022",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "2.1",
+      "secondaryTasks": [],
+      "stem": "The document analysis subagent has two tools: `analyze_content`, described as \"Analyses content\", and `analyze_document`, described as \"Analyses a document\". One extracts claims from web pages that have already been fetched; the other parses uploaded PDFs, including their tables. The subagent picks the wrong one about a third of the time. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Rename the tools by purpose, and describe each one's inputs, outputs and when to use it instead of the other.",
+          "correct": true,
+          "explanation": "Tool descriptions are what the model uses to choose. Names like `extract_web_claims` and `parse_pdf` with clear inputs and boundaries remove the overlap that causes misrouting.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Merge both tools into one `analyze` tool that accepts any input and works out for itself which kind of input it received.",
+          "correct": false,
+          "explanation": "The tools do genuinely different jobs with different inputs. Merging them hides that difference inside a generic tool instead of making it clear to the model.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add a routing classifier in front of the subagent that inspects each input and calls the right tool on its behalf.",
+          "correct": false,
+          "explanation": "A classifier adds a component to fix a problem caused by two vague descriptions. Better descriptions come before new layers.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Set `tool_choice: \"any\"` on the subagent's requests so it is required to call one of its tools every time.",
+          "correct": false,
+          "explanation": "`\"any\"` forces some tool call but does nothing to help choose between the two. The subagent already calls a tool; it just calls the wrong one.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Clear, differentiated tool names and descriptions with inputs, outputs and boundaries prevent misrouting.",
+      "studyRef": "§3 Task 2.1 (overlapping descriptions; renaming to remove overlap)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S3-023",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.6",
+      "secondaryTasks": [],
+      "stem": "Every Monday the system produces a brief on the same eight competitors. For each company it must gather news, extract product changes and summarise pricing, and the brief ends with one comparison across all eight. The steps never change, but the open-ended coordinator currently running it sometimes skips steps for some companies. What is the best approach?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Use a fixed prompt chain that runs the same steps for every company, then one comparison pass across all eight.",
+          "correct": true,
+          "explanation": "The work is predictable and identical for each company, which suits prompt chaining. Every step runs every time, and the final pass handles the cross-company comparison.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Keep the open-ended coordinator but raise its iteration limit so it can finish every step.",
+          "correct": false,
+          "explanation": "Steps are skipped because the coordinator decides its own path, not because it runs out of turns. A higher limit leaves that choice in place.",
+          "trap": "ITERATION_CAP"
+        },
+        {
+          "id": "c",
+          "text": "Have the coordinator review its own finished brief and check whether any step was skipped for any of the companies.",
+          "correct": false,
+          "explanation": "The same session tends to confirm its own work, and the check happens only after steps are missed. A fixed chain prevents the skipping in the first place.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "d",
+          "text": "Ask the user to confirm the list of steps for each company every Monday before the coordinator starts on the brief.",
+          "correct": false,
+          "explanation": "The steps never change, so asking every week adds a human step for no reason. The problem is how the work is run, not unclear requirements.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "Use fixed prompt chaining for predictable, repeated multi-step work, with a separate cross-item pass.",
+      "studyRef": "§3 Task 1.6 (prompt chaining vs dynamic decomposition)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S3-024",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 3,
+      "primaryTask": "2.3",
+      "secondaryTasks": [
+        "2.1"
+      ],
+      "stem": "The document analysis subagent has two problems. First, it sometimes answers from memory instead of calling `load_document` before analysing a supplied source. Second, it has a general `fetch_url` tool and has been fetching unrelated pages, including some behind login walls. Which two changes should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Force the first call with `tool_choice: {\"type\": \"tool\", \"name\": \"load_document\"}` before analysis starts.",
+          "correct": true,
+          "explanation": "Forced tool choice guarantees that `load_document` runs first, so the subagent always works from the real source. A prompt can only encourage that.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Replace `fetch_url` with `load_document`, a constrained tool that checks each URL points to an approved document.",
+          "correct": true,
+          "explanation": "A constrained tool that validates its input can't be used to wander the web. It gives the subagent what its role needs and nothing more.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Set `tool_choice: \"auto\"` so that the subagent decides for itself whether loading the document is necessary.",
+          "correct": false,
+          "explanation": "`\"auto\"` already lets the model answer in text without calling a tool, which is how it answers from memory. It doesn't guarantee anything.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Add an instruction to the system prompt telling the subagent to always load the document before it starts any analysis.",
+          "correct": false,
+          "explanation": "A prompt makes loading more likely, but some runs will still skip it. When a step must always happen first, forced tool choice guarantees it.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "e",
+          "text": "Keep `fetch_url` but add a weekly report listing every page it fetched, so the team can spot any unwanted fetches later.",
+          "correct": false,
+          "explanation": "A report shows the bad fetches after they have happened, including ones behind login walls. Replacing the broad tool prevents them.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Use forced tool_choice to run a specific tool first; replace generic tools with constrained ones.",
+      "studyRef": "§3 Task 2.3 (forced tool_choice; replacing fetch_url with load_document)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S3-025",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.2",
+      "secondaryTasks": [
+        "5.3"
+      ],
+      "stem": "The coordinator spawns four document analysis subagents in parallel, each covering one part of a large legal archive. Three finish successfully; the fourth stops with a file-system permission error on its section. A retry would fail in the same way, because the system has no access to that folder. What should happen next?",
+      "options": [
+        {
+          "id": "a",
+          "text": "The coordinator returns the three results, reports the partial failure to the user and asks how to proceed.",
+          "correct": true,
+          "explanation": "A permission error isn't transient, so no amount of retrying will fix it. The coordinator keeps the good results and asks the user, who can grant access or accept the gap.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "The failed subagent grants itself broader file permissions and reruns its section.",
+          "correct": false,
+          "explanation": "An agent shouldn't give itself access it wasn't granted. Access decisions belong to a person, so this is a case to escalate, not to work around.",
+          "trap": "FAILURE_TO_ESCALATE"
+        },
+        {
+          "id": "c",
+          "text": "The coordinator reassigns the failed section to one of the subagents that finished, since that subagent's file access works.",
+          "correct": false,
+          "explanation": "The other subagents run with the same system access, so they will hit the same permission error. Reassigning repeats a failure that can't succeed.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "The failed subagent writes its error into a shared context file so the other subagents can route around that section.",
+          "correct": false,
+          "explanation": "Errors should go to the coordinator, which owns error handling. A shared file bypasses it, and the user never learns that part of the archive was skipped.",
+          "trap": "BYPASS_COORDINATOR"
+        }
+      ],
+      "keyConcept": "Route errors through the coordinator; for non-transient failures, return partial results and escalate.",
+      "studyRef": "§3 Task 1.2 (hub-and-spoke error handling); §6b Q1",
+      "sources": [
+        "exam-guide",
+        "research-6b-q1"
+      ]
+    }
+  ]
+}

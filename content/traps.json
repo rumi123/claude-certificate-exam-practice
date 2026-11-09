@@ -1,0 +1,205 @@
+{
+  "version": 1,
+  "traps": [
+    {
+      "id": "PROMPT_FOR_GUARANTEE",
+      "name": "Prompt for a guarantee",
+      "description": "Uses a system-prompt instruction or few-shot examples when the behavior must be guaranteed (ordering, compliance, money, safety).",
+      "principle": "A prompt is a probabilistic nudge. Use hooks, prerequisite gates, schemas or tool contracts when compliance must be guaranteed.",
+      "examples": [
+        "Adding \"always verify the customer before refunding\" to the system prompt when refunds must never run without a verified ID.",
+        "Telling the model \"never refund more than $500\" instead of blocking larger refunds in a hook."
+      ]
+    },
+    {
+      "id": "OVER_ENGINEERING",
+      "name": "Over-engineering",
+      "description": "Adds a classifier, routing layer, extra agent or merge when a small direct fix works.",
+      "principle": "Fix the root cause with the smallest change that works. Better descriptions come before new layers.",
+      "examples": [
+        "Training a routing classifier because two tools with vague descriptions get mixed up.",
+        "Adding a supervisor agent to check a single tool call that a prerequisite gate could enforce."
+      ]
+    },
+    {
+      "id": "SYMPTOM_PATCH",
+      "name": "Treating the symptom",
+      "description": "Renames, shortens, retries or reassigns without fixing why it fails.",
+      "principle": "Find the cause (overlap, missing info, a permanent error) and fix that.",
+      "examples": [
+        "Retrying an extraction three more times when the field is simply absent from the document.",
+        "Shortening a tool name when the real problem is that its description overlaps with another tool's."
+      ]
+    },
+    {
+      "id": "WRONG_CONFIG_LAYER",
+      "name": "Wrong configuration layer",
+      "description": "Puts shared config in user or `.local` files, personal config in committed files, or enforcement in CLAUDE.md.",
+      "principle": "Team config goes in committed project files, personal config in `~/.claude` or `.local`. CLAUDE.md is guidance, not enforcement.",
+      "examples": [
+        "Putting team coding standards in `~/.claude/CLAUDE.md`, so new teammates never get them.",
+        "Committing a personal experimental MCP server to the project `.mcp.json`."
+      ]
+    },
+    {
+      "id": "DISCARD_STATE",
+      "name": "Throwing away state",
+      "description": "Clears history, restarts or errors out when the state could be kept.",
+      "principle": "Compact into a case-facts or state block and keep going. Resume rather than restart.",
+      "examples": [
+        "Clearing the conversation when context runs low, losing the order numbers the customer already gave.",
+        "Starting a new investigation session from scratch when `--resume` would keep the earlier analysis."
+      ]
+    },
+    {
+      "id": "MISREAD_PARAMETER",
+      "name": "Misreading a parameter",
+      "description": "Treats a parameter as doing something it doesn't (`max_tokens` as the input window, temperature for \"nuance\", strict mode as semantic validation).",
+      "principle": "Know what each parameter controls. Output length is not the context window, and schema validity is not correctness.",
+      "examples": [
+        "Raising `max_tokens` to fit a longer document into the context.",
+        "Assuming strict JSON schema mode will catch line items that don't add up to the stated total."
+      ]
+    },
+    {
+      "id": "BYPASS_COORDINATOR",
+      "name": "Going around the coordinator",
+      "description": "Subagents talk to each other or write to shared context or storage directly.",
+      "principle": "Hub-and-spoke: all communication, routing and error handling go through the coordinator.",
+      "examples": [
+        "Letting the search subagent send its results straight to the synthesis subagent.",
+        "Having subagents write findings to a shared database that others read without the coordinator."
+      ]
+    },
+    {
+      "id": "UNRELIABLE_PROXY",
+      "name": "Unreliable proxy",
+      "description": "Decides on sentiment, all caps, self-reported confidence or response length.",
+      "principle": "Decide on explicit, verifiable criteria. Sentiment is not complexity, and model self-confidence is poorly calibrated.",
+      "examples": [
+        "Escalating whenever sentiment analysis scores the customer as angry.",
+        "Skipping human review for any extraction where the model says it is 95% confident."
+      ]
+    },
+    {
+      "id": "SILENT_FAILURE",
+      "name": "Silent failure",
+      "description": "Returns an empty result as success, swallows the error or gives a generic message.",
+      "principle": "Return a structured error (category, retryable, what was attempted, partial results). A failure is not an empty result.",
+      "examples": [
+        "A search subagent that times out returns an empty result list marked as success.",
+        "A tool that returns \"Operation failed\" for every error type."
+      ]
+    },
+    {
+      "id": "TOTAL_FAILURE",
+      "name": "Total failure",
+      "description": "Ends the whole workflow, or throws, over one recoverable or partial failure.",
+      "principle": "Recover locally from transient errors, continue with partial results, and pass up only what can't be resolved.",
+      "examples": [
+        "Aborting the whole research report because one of five sources timed out.",
+        "Failing the entire batch because three documents out of a thousand were unreadable."
+      ]
+    },
+    {
+      "id": "WRONG_LATENCY_MODE",
+      "name": "Wrong latency mode",
+      "description": "Uses the Batch API for blocking or interactive work, or a synchronous API for big jobs nothing waits on.",
+      "principle": "Batch for jobs nothing waits on (overnight, weekly), synchronous for blocking ones (pre-merge, live chat).",
+      "examples": [
+        "Running the pre-merge review check through the Message Batches API to save cost.",
+        "Sending 50,000 overnight archive extractions as synchronous calls."
+      ]
+    },
+    {
+      "id": "ASSUMED_CONTEXT_INHERITANCE",
+      "name": "Assumed context inheritance",
+      "description": "Assumes a subagent or new session sees the coordinator's history.",
+      "principle": "Subagents have isolated context. Pass everything they need explicitly in the prompt.",
+      "examples": [
+        "Asking the synthesis subagent to \"use the findings above\" without including them in its prompt.",
+        "Expecting a spawned subagent to know the user's constraints from the coordinator's conversation."
+      ]
+    },
+    {
+      "id": "TOOL_OVERLOAD",
+      "name": "Tool overload",
+      "description": "Gives one agent many or overlapping tools, or a broad tool outside its role.",
+      "principle": "Give each agent about 4–5 tools scoped to its role. Use scoped tools for common needs.",
+      "examples": [
+        "Giving the synthesis subagent all 18 tools, including web search, so it searches instead of synthesising.",
+        "Giving a document agent a general `fetch_url` tool instead of a `load_document` tool that validates URLs."
+      ]
+    },
+    {
+      "id": "SELF_REVIEW",
+      "name": "Same-session self-review",
+      "description": "Has the same session or instance review its own output.",
+      "principle": "Use an independent reviewer instance, or a fresh session without the author's reasoning.",
+      "examples": [
+        "Asking the session that generated the code to review it before the PR is opened.",
+        "Adding \"double-check your answer\" to the same extraction call."
+      ]
+    },
+    {
+      "id": "AGGREGATE_METRIC_MASKING",
+      "name": "Aggregate metric masking",
+      "description": "Trusts an overall accuracy number or average.",
+      "principle": "Break results down by document type, field and segment before trusting them.",
+      "examples": [
+        "Removing human review because overall extraction accuracy is 97%, while handwritten invoices sit at 70%.",
+        "Judging a review bot by its average precision while one category produces most of the false positives."
+      ]
+    },
+    {
+      "id": "NL_TERMINATION",
+      "name": "Natural-language termination",
+      "description": "Ends the loop by parsing assistant text (\"done\", \"complete\").",
+      "principle": "Control the loop with `stop_reason`: continue on `\"tool_use\"`, stop on `\"end_turn\"`.",
+      "examples": [
+        "Breaking the agent loop when the assistant's text contains \"task complete\".",
+        "Asking the model to print DONE and checking for that string to stop."
+      ]
+    },
+    {
+      "id": "ITERATION_CAP",
+      "name": "Iteration cap as the stopping rule",
+      "description": "Uses a fixed iteration count as the main way to stop.",
+      "principle": "Stop on the model's `stop_reason`. A cap is only a safety net, never the main stopping rule.",
+      "examples": [
+        "Running the agent loop exactly 10 times and taking whatever answer exists then.",
+        "Raising the iteration limit from 5 to 20 because tasks keep stopping half-done."
+      ]
+    },
+    {
+      "id": "NONEXISTENT_FEATURE",
+      "name": "Nonexistent feature",
+      "description": "Uses a made-up config key, flag, file or API.",
+      "principle": "Use the documented mechanism (research §3). Made-up features are always wrong.",
+      "examples": [
+        "Setting a `subagent_inherit_context: true` option that doesn't exist.",
+        "Running Claude Code in CI with an invented `--non-interactive` flag instead of `-p`."
+      ]
+    },
+    {
+      "id": "PREMATURE_ESCALATION",
+      "name": "Escalating too early",
+      "description": "Hands off to a human or the user when the agent could resolve it (simple issue, transient error, compaction possible).",
+      "principle": "Resolve what can be resolved. Escalate on explicit criteria only.",
+      "examples": [
+        "Escalating a routine return within policy because the customer sounded frustrated.",
+        "Sending a case to a human after a single tool timeout that a retry would fix."
+      ]
+    },
+    {
+      "id": "FAILURE_TO_ESCALATE",
+      "name": "Failing to escalate",
+      "description": "Keeps trying, guesses or decides alone when a human is needed (explicit request, policy gap, no progress, ambiguous identity).",
+      "principle": "Escalate at once on an explicit human request, a policy exception or no progress. Ask for clarification when something is ambiguous.",
+      "examples": [
+        "Continuing to troubleshoot after the customer has asked twice to speak to a person.",
+        "Picking the most recent account when the lookup returns three customers with the same name."
+      ]
+    }
+  ]
+}

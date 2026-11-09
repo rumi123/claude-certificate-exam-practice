@@ -1,0 +1,875 @@
+{
+  "version": 1,
+  "cards": [
+    {
+      "id": "FC-C-001",
+      "deck": "concepts",
+      "task": "1.1",
+      "front": "In an agentic loop, which value tells your code whether to run tools or stop?",
+      "back": "`stop_reason`. Continue while it is `\"tool_use\"`, stop when it is `\"end_turn\"`. It is the API's explicit signal, unlike the response text."
+    },
+    {
+      "id": "FC-C-002",
+      "deck": "concepts",
+      "task": "1.1",
+      "front": "After running the tools Claude requested, what must your loop do before the next request?",
+      "back": "Append the tool results to the conversation history, so the model can reason about them and choose its next action."
+    },
+    {
+      "id": "FC-C-003",
+      "deck": "concepts",
+      "task": "1.1",
+      "front": "A response contains both a text block and a tool call. Is the turn finished?",
+      "back": "No. A response can mix text and tool calls; `stop_reason` of `\"tool_use\"` means Claude is waiting for tool results."
+    },
+    {
+      "id": "FC-C-004",
+      "deck": "concepts",
+      "task": "1.2",
+      "front": "In a coordinator-subagent system, which component handles communication between subagents?",
+      "back": "The coordinator. Hub-and-spoke routes all communication, routing and error handling through it, which keeps the system observable and consistent."
+    },
+    {
+      "id": "FC-C-005",
+      "deck": "concepts",
+      "task": "1.2",
+      "front": "A coordinator always runs every subagent for every query. What should it do instead?",
+      "back": "Select subagents dynamically based on the query's complexity, and invoke only the ones the query needs."
+    },
+    {
+      "id": "FC-C-006",
+      "deck": "concepts",
+      "task": "1.2",
+      "front": "A research report misses whole subtopics of a broad question. Which coordinator mistake is the likely cause?",
+      "back": "Overly narrow task decomposition. Partition the scope so subagents cover the whole topic, then evaluate the synthesis and re-delegate for gaps."
+    },
+    {
+      "id": "FC-C-007",
+      "deck": "concepts",
+      "task": "1.3",
+      "front": "Does a subagent automatically see the coordinator's conversation history?",
+      "back": "No. Subagents have isolated context, so everything they need, including earlier agents' findings, must be passed explicitly in their prompt."
+    },
+    {
+      "id": "FC-C-008",
+      "deck": "concepts",
+      "task": "1.3",
+      "front": "What must a coordinator's `allowedTools` include so it can spawn subagents?",
+      "back": "`\"Task\"`, the tool that spawns subagents (current docs call it `Agent`)."
+    },
+    {
+      "id": "FC-C-009",
+      "deck": "concepts",
+      "task": "1.3",
+      "front": "How does a coordinator run several subagents in parallel?",
+      "back": "By making several `Task` calls in a single response, instead of one per turn."
+    },
+    {
+      "id": "FC-C-010",
+      "deck": "concepts",
+      "task": "1.4",
+      "front": "An identity check must happen before every refund, but the agent skips it 12% of the time. What is the fix?",
+      "back": "A programmatic prerequisite that blocks `process_refund` until `get_customer` returns a verified ID. Prompts have a non-zero failure rate."
+    },
+    {
+      "id": "FC-C-011",
+      "deck": "concepts",
+      "task": "1.4",
+      "front": "When an agent escalates a case to a human, what should the handoff contain?",
+      "back": "A structured summary: customer ID, root-cause analysis, what was tried and recommended actions, so the human doesn't start over."
+    },
+    {
+      "id": "FC-C-012",
+      "deck": "concepts",
+      "task": "1.4",
+      "front": "A customer message raises three separate issues. How should the agent handle it?",
+      "back": "Split it into items, investigate them in parallel, then synthesise one combined resolution."
+    },
+    {
+      "id": "FC-C-013",
+      "deck": "concepts",
+      "task": "1.5",
+      "front": "Which hook type transforms a tool's result before the model sees it?",
+      "back": "`PostToolUse`. Use it to normalise mixed formats, such as Unix timestamps and ISO dates, deterministically."
+    },
+    {
+      "id": "FC-C-014",
+      "deck": "concepts",
+      "task": "1.5",
+      "front": "Refunds above a threshold must never run. Where do you enforce that in the Agent SDK?",
+      "back": "In a hook on the outgoing tool call that blocks the call and redirects to another workflow, such as human escalation."
+    },
+    {
+      "id": "FC-C-015",
+      "deck": "concepts",
+      "task": "1.5",
+      "front": "Why choose a hook over a system-prompt rule for a business requirement?",
+      "back": "Hooks are deterministic code that run every time; prompt instructions are probabilistic and sometimes ignored."
+    },
+    {
+      "id": "FC-C-016",
+      "deck": "concepts",
+      "task": "1.6",
+      "front": "When is fixed prompt chaining the right decomposition strategy?",
+      "back": "When the steps are predictable, such as a multi-aspect review: analyse each file, then run a cross-file integration pass."
+    },
+    {
+      "id": "FC-C-017",
+      "deck": "concepts",
+      "task": "1.6",
+      "front": "When should decomposition be dynamic rather than a fixed pipeline?",
+      "back": "For open-ended investigations, where each step's findings decide the next subtasks."
+    },
+    {
+      "id": "FC-C-018",
+      "deck": "concepts",
+      "task": "1.6",
+      "front": "How should an agent start an open-ended task like \"improve this codebase's tests\"?",
+      "back": "Map the structure, find high-impact areas, then make a prioritised plan that adapts as it learns."
+    },
+    {
+      "id": "FC-C-019",
+      "deck": "concepts",
+      "task": "1.7",
+      "front": "Which CLI option continues a specific earlier Claude Code conversation?",
+      "back": "`--resume <session-name>`, used with named sessions to carry on an investigation."
+    },
+    {
+      "id": "FC-C-020",
+      "deck": "concepts",
+      "task": "1.7",
+      "front": "What does `fork_session` do?",
+      "back": "Creates independent branches from a shared analysis baseline, so you can compare different approaches in parallel."
+    },
+    {
+      "id": "FC-C-021",
+      "deck": "concepts",
+      "task": "1.7",
+      "front": "An earlier session's tool results are now stale. Resume it or start fresh?",
+      "back": "Start fresh with an injected structured summary. Resume only when prior context is mostly valid, and say which files changed."
+    },
+    {
+      "id": "FC-C-022",
+      "deck": "concepts",
+      "task": "2.1",
+      "front": "What is the main signal a model uses to choose between tools?",
+      "back": "The tool descriptions. Minimal or overlapping descriptions make tool selection unreliable."
+    },
+    {
+      "id": "FC-C-023",
+      "deck": "concepts",
+      "task": "2.1",
+      "front": "What should a good tool description include?",
+      "back": "Its purpose, input formats, example queries, edge cases, boundaries, and when to use it instead of similar tools."
+    },
+    {
+      "id": "FC-C-024",
+      "deck": "concepts",
+      "task": "2.1",
+      "front": "Two tools, `analyze_content` and `analyze_document`, keep getting mixed up. What is the fix?",
+      "back": "Remove the overlap: rename them and rewrite their descriptions, or split a generic tool into purpose-specific ones."
+    },
+    {
+      "id": "FC-C-025",
+      "deck": "concepts",
+      "task": "2.2",
+      "front": "Which field tells an agent that an MCP tool call failed?",
+      "back": "The `isError` flag on the tool result."
+    },
+    {
+      "id": "FC-C-026",
+      "deck": "concepts",
+      "task": "2.2",
+      "front": "Name the four error categories an MCP tool should distinguish.",
+      "back": "Transient (timeout), validation (bad input), business (policy violation) and permission. Each needs a different recovery."
+    },
+    {
+      "id": "FC-C-027",
+      "deck": "concepts",
+      "task": "2.2",
+      "front": "What should a structured MCP error response contain?",
+      "back": "An `errorCategory`, an `isRetryable` flag and a readable description, so the agent can decide whether to retry, change approach or escalate."
+    },
+    {
+      "id": "FC-C-028",
+      "deck": "concepts",
+      "task": "2.3",
+      "front": "An agent has 18 tools and often picks the wrong one. What is the recommended range?",
+      "back": "About 4–5 tools, scoped to the agent's role. More tools make selection less reliable."
+    },
+    {
+      "id": "FC-C-029",
+      "deck": "concepts",
+      "task": "2.3",
+      "front": "Which `tool_choice` setting guarantees a tool call but lets the model choose which tool?",
+      "back": "`\"any\"`. `\"auto\"` may return text instead, and a forced tool removes the choice."
+    },
+    {
+      "id": "FC-C-030",
+      "deck": "concepts",
+      "task": "2.3",
+      "front": "How do you make a specific tool run first in a pipeline?",
+      "back": "Force it with `tool_choice: {\"type\":\"tool\",\"name\":\"<tool>\"}` on that request."
+    },
+    {
+      "id": "FC-C-031",
+      "deck": "concepts",
+      "task": "2.4",
+      "front": "Where do you configure an MCP server that the whole team should share?",
+      "back": "In the project's `.mcp.json`, committed to the repo, using `${ENV_VAR}` expansion so secrets stay out of git."
+    },
+    {
+      "id": "FC-C-032",
+      "deck": "concepts",
+      "task": "2.4",
+      "front": "Where does a personal or experimental MCP server go?",
+      "back": "In the user-level `~/.claude.json`, which isn't shared through the repo."
+    },
+    {
+      "id": "FC-C-033",
+      "deck": "concepts",
+      "task": "2.4",
+      "front": "What do MCP resources provide that tools don't?",
+      "back": "Content catalogs, such as issues, docs or schemas, that the agent can read directly, cutting down exploratory tool calls."
+    },
+    {
+      "id": "FC-C-034",
+      "deck": "concepts",
+      "task": "2.5",
+      "front": "Which built-in tool finds files by name or extension?",
+      "back": "Glob, which matches file path patterns such as `**/*.test.tsx`."
+    },
+    {
+      "id": "FC-C-035",
+      "deck": "concepts",
+      "task": "2.5",
+      "front": "Which built-in tool searches inside files for a function name or error message?",
+      "back": "Grep, which searches file contents."
+    },
+    {
+      "id": "FC-C-036",
+      "deck": "concepts",
+      "task": "2.5",
+      "front": "Edit fails because its anchor text appears several times in the file. What do you do?",
+      "back": "Fall back to Read plus Write for that file, or choose a longer anchor that is unique."
+    },
+    {
+      "id": "FC-C-037",
+      "deck": "concepts",
+      "task": "3.1",
+      "front": "A team rule is in `~/.claude/CLAUDE.md` and new teammates don't get it. Why?",
+      "back": "User-level CLAUDE.md applies only to that user and isn't shared through git. Team rules go in the project CLAUDE.md."
+    },
+    {
+      "id": "FC-C-038",
+      "deck": "concepts",
+      "task": "3.1",
+      "front": "How do you keep a large CLAUDE.md modular?",
+      "back": "Use `@import` to pull in other files, or split topics into files under `.claude/rules/`."
+    },
+    {
+      "id": "FC-C-039",
+      "deck": "concepts",
+      "task": "3.1",
+      "front": "Which command shows which CLAUDE.md and memory files are loaded?",
+      "back": "`/memory`."
+    },
+    {
+      "id": "FC-C-040",
+      "deck": "concepts",
+      "task": "3.2",
+      "front": "Where do you put a slash command every developer who clones the repo should have?",
+      "back": "`.claude/commands/` in the project, committed to git. `~/.claude/commands/` is personal."
+    },
+    {
+      "id": "FC-C-041",
+      "deck": "concepts",
+      "task": "3.2",
+      "front": "Which skill frontmatter runs it in an isolated sub-agent so its output doesn't flood the conversation?",
+      "back": "`context: fork`."
+    },
+    {
+      "id": "FC-C-042",
+      "deck": "concepts",
+      "task": "3.2",
+      "front": "Skill or CLAUDE.md: which loads on demand and which is always loaded?",
+      "back": "Skills load on demand when invoked or relevant; CLAUDE.md is always loaded into context."
+    },
+    {
+      "id": "FC-C-043",
+      "deck": "concepts",
+      "task": "3.3",
+      "front": "How do you make a rule file load only when Terraform files are edited?",
+      "back": "Put it in `.claude/rules/` with YAML frontmatter `paths: [\"terraform/**/*\"]`."
+    },
+    {
+      "id": "FC-C-044",
+      "deck": "concepts",
+      "task": "3.3",
+      "front": "Test-file conventions apply to `*.test.tsx` files spread across many folders. Subdirectory CLAUDE.md or path rule?",
+      "back": "A path-scoped rule with a glob such as `**/*.test.tsx`. Subdirectory CLAUDE.md files don't follow file types across directories."
+    },
+    {
+      "id": "FC-C-045",
+      "deck": "concepts",
+      "task": "3.3",
+      "front": "What is the context benefit of path-scoped rules?",
+      "back": "They load only when matching files are being edited, so unrelated conventions don't use up context."
+    },
+    {
+      "id": "FC-C-046",
+      "deck": "concepts",
+      "task": "3.4",
+      "front": "When should you use plan mode rather than direct execution?",
+      "back": "For large, multi-file or architectural changes with several valid approaches, such as a 45-file migration."
+    },
+    {
+      "id": "FC-C-047",
+      "deck": "concepts",
+      "task": "3.4",
+      "front": "A clear single-file bug fix: plan mode or direct execution?",
+      "back": "Direct execution. Plan mode adds overhead for simple, well-scoped changes."
+    },
+    {
+      "id": "FC-C-048",
+      "deck": "concepts",
+      "task": "3.4",
+      "front": "How do you keep verbose codebase discovery from filling the main context?",
+      "back": "Use the Explore subagent, which does the discovery in isolation and returns a summary."
+    },
+    {
+      "id": "FC-C-049",
+      "deck": "concepts",
+      "task": "3.5",
+      "front": "Claude keeps misreading your prose description of a transformation. What works better?",
+      "back": "Two or three concrete input/output examples."
+    },
+    {
+      "id": "FC-C-050",
+      "deck": "concepts",
+      "task": "3.5",
+      "front": "What is the test-driven iteration pattern with Claude Code?",
+      "back": "Write tests for behaviour, edge cases and performance first, then iterate by sharing the failing test output."
+    },
+    {
+      "id": "FC-C-051",
+      "deck": "concepts",
+      "task": "3.5",
+      "front": "You need help in an unfamiliar domain. Which pattern surfaces considerations you missed?",
+      "back": "The interview pattern: ask Claude to question you about requirements before it implements."
+    },
+    {
+      "id": "FC-C-052",
+      "deck": "concepts",
+      "task": "3.6",
+      "front": "Which flag makes Claude Code run non-interactively in CI?",
+      "back": "`-p` (`--print`), so the job never hangs waiting for input."
+    },
+    {
+      "id": "FC-C-053",
+      "deck": "concepts",
+      "task": "3.6",
+      "front": "How do you get machine-parseable review findings from Claude Code in CI?",
+      "back": "`--output-format json` together with `--json-schema` describing the findings."
+    },
+    {
+      "id": "FC-C-054",
+      "deck": "concepts",
+      "task": "3.6",
+      "front": "Why shouldn't the session that wrote the code also review it in CI?",
+      "back": "It keeps its own reasoning and rarely questions it. An independent review session catches more."
+    },
+    {
+      "id": "FC-C-055",
+      "deck": "concepts",
+      "task": "4.1",
+      "front": "Why does \"only report high-confidence findings\" fail to cut false positives?",
+      "back": "It is still vague. Specific categorical criteria, saying what to report and what to skip, work far better."
+    },
+    {
+      "id": "FC-C-056",
+      "deck": "concepts",
+      "task": "4.1",
+      "front": "One review category produces mostly false positives. What is the short-term fix?",
+      "back": "Temporarily disable that category, since its noise undermines trust in the accurate categories."
+    },
+    {
+      "id": "FC-C-057",
+      "deck": "concepts",
+      "task": "4.1",
+      "front": "How do you make severity ratings consistent across runs?",
+      "back": "Define each severity level explicitly, with concrete code examples."
+    },
+    {
+      "id": "FC-C-058",
+      "deck": "concepts",
+      "task": "4.2",
+      "front": "What is the most effective way to get consistently formatted, actionable output?",
+      "back": "Few-shot examples showing the exact output format."
+    },
+    {
+      "id": "FC-C-059",
+      "deck": "concepts",
+      "task": "4.2",
+      "front": "How many few-shot examples are recommended, and what should they show?",
+      "back": "Two to four targeted examples, especially of ambiguous cases, showing the reasoning as well as the answer."
+    },
+    {
+      "id": "FC-C-060",
+      "deck": "concepts",
+      "task": "4.2",
+      "front": "An extractor returns null for values that are present but in unusual places. What helps most?",
+      "back": "Few-shot examples of correct extraction across varied layouts, including one where null is correct."
+    },
+    {
+      "id": "FC-C-061",
+      "deck": "concepts",
+      "task": "4.3",
+      "front": "What is the most reliable way to get schema-compliant JSON from Claude?",
+      "back": "`tool_use` with a JSON schema as the tool's input, then read the `tool_use` block."
+    },
+    {
+      "id": "FC-C-062",
+      "deck": "concepts",
+      "task": "4.3",
+      "front": "Strict mode is on and outputs always match the schema. Which errors can still occur?",
+      "back": "Semantic ones: totals that don't add up or values placed in the wrong field. The schema guarantees structure, not correctness."
+    },
+    {
+      "id": "FC-C-063",
+      "deck": "concepts",
+      "task": "4.3",
+      "front": "A field is required but often absent from documents, and the model invents values. What schema change fixes it?",
+      "back": "Make the field optional and nullable, so the model can return null instead of fabricating."
+    },
+    {
+      "id": "FC-C-064",
+      "deck": "concepts",
+      "task": "4.4",
+      "front": "A validation check fails. What should the retry request contain?",
+      "back": "The original document, the failed extraction and the specific validation errors."
+    },
+    {
+      "id": "FC-C-065",
+      "deck": "concepts",
+      "task": "4.4",
+      "front": "When will retrying an extraction never help?",
+      "back": "When the information is absent from the source document. Retries fix format mismatches, not missing data."
+    },
+    {
+      "id": "FC-C-066",
+      "deck": "concepts",
+      "task": "4.4",
+      "front": "How can the extraction itself catch line items that don't match the stated total?",
+      "back": "Extract `calculated_total` alongside `stated_total` and a `conflict_detected` boolean, then check them in code."
+    },
+    {
+      "id": "FC-C-067",
+      "deck": "concepts",
+      "task": "4.5",
+      "front": "What are the Message Batches API's cost and timing?",
+      "back": "About 50% cheaper, results within up to 24 hours, and no latency SLA."
+    },
+    {
+      "id": "FC-C-068",
+      "deck": "concepts",
+      "task": "4.5",
+      "front": "Can a single batch request run multi-turn tool calling?",
+      "back": "No. Supply any data the model needs in the request, or use synchronous calls."
+    },
+    {
+      "id": "FC-C-069",
+      "deck": "concepts",
+      "task": "4.5",
+      "front": "How do you match batch results to inputs and resubmit only failures?",
+      "back": "Give each request a `custom_id`; results don't come back in order."
+    },
+    {
+      "id": "FC-C-070",
+      "deck": "concepts",
+      "task": "4.6",
+      "front": "Why is same-session self-review weak?",
+      "back": "The model keeps its generation reasoning and rarely questions it. An independent instance without that context catches more."
+    },
+    {
+      "id": "FC-C-071",
+      "deck": "concepts",
+      "task": "4.6",
+      "front": "A large PR review misses issues. How should the review be structured?",
+      "back": "Per-file passes plus a cross-file integration pass, so attention isn't diluted across everything at once."
+    },
+    {
+      "id": "FC-C-072",
+      "deck": "concepts",
+      "task": "4.6",
+      "front": "What can a verification pass add to each finding to help triage?",
+      "back": "A confidence rating per finding, so reviewers can prioritise."
+    },
+    {
+      "id": "FC-C-073",
+      "deck": "concepts",
+      "task": "5.1",
+      "front": "Summarising a long support chat loses amounts and dates. What should you keep instead?",
+      "back": "A persistent case-facts block (amounts, dates, order numbers, statuses) outside the summarised history."
+    },
+    {
+      "id": "FC-C-074",
+      "deck": "concepts",
+      "task": "5.1",
+      "front": "Which parts of a long input does the model process least reliably?",
+      "back": "The middle (\"lost in the middle\"). Put key findings at the start, with clear section headers."
+    },
+    {
+      "id": "FC-C-075",
+      "deck": "concepts",
+      "task": "5.1",
+      "front": "A tool returns 40 fields but only 5 matter. What should you do?",
+      "back": "Trim tool outputs to the relevant fields before they enter the context."
+    },
+    {
+      "id": "FC-C-076",
+      "deck": "concepts",
+      "task": "5.2",
+      "front": "A customer explicitly asks for a human. What should the agent do?",
+      "back": "Escalate immediately, without first trying to resolve the issue."
+    },
+    {
+      "id": "FC-C-077",
+      "deck": "concepts",
+      "task": "5.2",
+      "front": "A lookup returns three customers with the same name. What should the agent do?",
+      "back": "Ask for another identifier, such as an email or order number, rather than picking one by heuristic."
+    },
+    {
+      "id": "FC-C-078",
+      "deck": "concepts",
+      "task": "5.2",
+      "front": "A customer asks for a competitor price match and the policy doesn't cover it. What should the agent do?",
+      "back": "Escalate. A policy gap or exception is an explicit escalation trigger."
+    },
+    {
+      "id": "FC-C-079",
+      "deck": "concepts",
+      "task": "5.3",
+      "front": "What should a subagent's error report to the coordinator include?",
+      "back": "Failure type, the attempted query, partial results and possible alternatives, so the coordinator can recover."
+    },
+    {
+      "id": "FC-C-080",
+      "deck": "concepts",
+      "task": "5.3",
+      "front": "Which errors should a subagent handle itself, and which should it pass up?",
+      "back": "Recover locally from transient failures; pass up only the errors it can't resolve."
+    },
+    {
+      "id": "FC-C-081",
+      "deck": "concepts",
+      "task": "5.3",
+      "front": "Some sources were unavailable during research. How should the final report reflect that?",
+      "back": "Annotate coverage: separate well-supported findings from gaps caused by unavailable sources."
+    },
+    {
+      "id": "FC-C-082",
+      "deck": "concepts",
+      "task": "5.4",
+      "front": "Late in a long session, answers mention \"typical patterns\" instead of the classes found earlier. What helps?",
+      "back": "Keep key findings in scratchpad files and consult them, or use `/compact`; delegate verbose exploration to subagents."
+    },
+    {
+      "id": "FC-C-083",
+      "deck": "concepts",
+      "task": "5.4",
+      "front": "How should a multi-agent job recover after a crash?",
+      "back": "Each agent exports its state to a known location, and the coordinator loads a manifest and resumes only unfinished work."
+    },
+    {
+      "id": "FC-C-084",
+      "deck": "concepts",
+      "task": "5.4",
+      "front": "How do you keep the main agent's overview while exploring a huge codebase?",
+      "back": "Spawn subagents for specific questions, such as \"trace the refund flow\", and keep only their summaries."
+    },
+    {
+      "id": "FC-C-085",
+      "deck": "concepts",
+      "task": "5.5",
+      "front": "Overall extraction accuracy is 97%. Why isn't that enough to remove human review?",
+      "back": "An aggregate can hide poor accuracy on one document type or field. Check accuracy by type and field first."
+    },
+    {
+      "id": "FC-C-086",
+      "deck": "concepts",
+      "task": "5.5",
+      "front": "How do you keep measuring error rates in auto-approved, high-confidence extractions?",
+      "back": "Stratified random sampling, by document type and layout, so rare and new segments are checked too."
+    },
+    {
+      "id": "FC-C-087",
+      "deck": "concepts",
+      "task": "5.5",
+      "front": "How should field-level confidence thresholds for review routing be set?",
+      "back": "Calibrated against a labelled validation set, per field, not chosen as a fixed guess."
+    },
+    {
+      "id": "FC-C-088",
+      "deck": "concepts",
+      "task": "5.6",
+      "front": "How do you keep attribution through multi-agent synthesis?",
+      "back": "Have subagents output claim-source mappings (URL or document, excerpt) and merge those mappings, not just prose."
+    },
+    {
+      "id": "FC-C-089",
+      "deck": "concepts",
+      "task": "5.6",
+      "front": "Two credible sources give different figures for the same statistic. What should the report do?",
+      "back": "Include both with their sources and annotate the conflict, rather than picking one arbitrarily."
+    },
+    {
+      "id": "FC-C-090",
+      "deck": "concepts",
+      "task": "5.6",
+      "front": "Why require a publication or collection date with each extracted claim?",
+      "back": "So values from different times aren't mistaken for contradictions."
+    },
+    {
+      "id": "FC-A-001",
+      "deck": "anti-patterns",
+      "task": "1.1",
+      "front": "Your loop stops when Claude's reply contains \"Done\" or \"Task complete\". What goes wrong, and what should it check?",
+      "back": "Claude may say that mid-task or never, so the loop stops at the wrong time. Check `stop_reason`: continue on `\"tool_use\"`, stop on `\"end_turn\"`.",
+      "trap": "NL_TERMINATION"
+    },
+    {
+      "id": "FC-A-002",
+      "deck": "anti-patterns",
+      "task": "1.1",
+      "front": "An agent sometimes stops early, so you raise its fixed limit from 5 to 20 iterations. Why is this wrong?",
+      "back": "A cap guesses how many turns a task needs, and either wastes calls or cuts work off. Stop on `stop_reason`; keep a cap only as a safety net.",
+      "trap": "ITERATION_CAP"
+    },
+    {
+      "id": "FC-A-003",
+      "deck": "anti-patterns",
+      "task": "1.4",
+      "front": "Refunds must never run without a verified customer ID, so you add \"always verify first\" to the system prompt. Why is this insufficient?",
+      "back": "A prompt is a probabilistic nudge and will sometimes be ignored. Use a prerequisite gate or hook that blocks the refund tool until verification succeeds.",
+      "trap": "PROMPT_FOR_GUARANTEE"
+    },
+    {
+      "id": "FC-A-004",
+      "deck": "anti-patterns",
+      "task": "5.2",
+      "front": "You route cases to humans when the model reports confidence below 70%. Why is this risky?",
+      "back": "Self-reported confidence is poorly calibrated, and the model is often confidently wrong. Escalate on explicit criteria, such as a policy gap or a request for a human.",
+      "trap": "UNRELIABLE_PROXY"
+    },
+    {
+      "id": "FC-A-005",
+      "deck": "anti-patterns",
+      "task": "5.2",
+      "front": "An angry customer with a simple address change is escalated because of negative sentiment. What's wrong?",
+      "back": "Sentiment isn't complexity. Acknowledge the frustration and offer to resolve it; escalate only if they ask for a human.",
+      "trap": "UNRELIABLE_PROXY"
+    },
+    {
+      "id": "FC-A-006",
+      "deck": "anti-patterns",
+      "task": "2.2",
+      "front": "A search tool times out and returns an empty list marked as success. What goes wrong?",
+      "back": "The agent concludes nothing exists. Return a structured error with `isError`, category and retryability, so an access failure isn't mistaken for a valid empty result.",
+      "trap": "SILENT_FAILURE"
+    },
+    {
+      "id": "FC-A-007",
+      "deck": "anti-patterns",
+      "task": "2.2",
+      "front": "Every tool failure returns \"Operation failed\", so you make the message longer and friendlier. Why doesn't that help?",
+      "back": "The agent still can't tell a timeout from a permanent error. Add `errorCategory` and `isRetryable` so it can choose the right recovery.",
+      "trap": "SYMPTOM_PATCH"
+    },
+    {
+      "id": "FC-A-008",
+      "deck": "anti-patterns",
+      "task": "2.3",
+      "front": "Your agent has 18 tools for convenience, and tool selection has become unreliable. What should you do?",
+      "back": "Cut it to about 4–5 tools scoped to its role. Extra tools dilute selection and invite misuse.",
+      "trap": "TOOL_OVERLOAD"
+    },
+    {
+      "id": "FC-A-009",
+      "deck": "anti-patterns",
+      "task": "4.6",
+      "front": "The conversation that wrote the code is asked to review it, and it approves nearly everything. Why?",
+      "back": "It keeps the reasoning behind its own choices and rarely questions them. Use an independent instance without the generation context.",
+      "trap": "SELF_REVIEW"
+    },
+    {
+      "id": "FC-A-010",
+      "deck": "anti-patterns",
+      "task": "5.5",
+      "front": "Extraction is 97% accurate overall, so management wants to stop all human review. Why wait?",
+      "back": "The overall figure can hide one weak document type or field. Measure accuracy by type and field before reducing review.",
+      "trap": "AGGREGATE_METRIC_MASKING"
+    },
+    {
+      "id": "FC-A-011",
+      "deck": "anti-patterns",
+      "task": "2.1",
+      "front": "Two tools with vague descriptions get mixed up, so you train a routing classifier. Why is this the wrong first move?",
+      "back": "It adds cost and complexity without fixing the cause. Rewrite the descriptions to remove the overlap first.",
+      "trap": "OVER_ENGINEERING"
+    },
+    {
+      "id": "FC-A-012",
+      "deck": "anti-patterns",
+      "task": "3.1",
+      "front": "A command the whole team needs is saved in `~/.claude/commands/`. Why can't teammates use it?",
+      "back": "User-level files aren't shared through git. Put team commands in the project's `.claude/commands/` and commit them.",
+      "trap": "WRONG_CONFIG_LAYER"
+    },
+    {
+      "id": "FC-A-013",
+      "deck": "anti-patterns",
+      "task": "3.1",
+      "front": "You write \"never run `rm -rf`\" in CLAUDE.md to stop the command. Why doesn't that enforce it?",
+      "back": "CLAUDE.md is guidance, not enforcement. Block the command with permission settings or a hook.",
+      "trap": "WRONG_CONFIG_LAYER"
+    },
+    {
+      "id": "FC-A-014",
+      "deck": "anti-patterns",
+      "task": "5.1",
+      "front": "A long support chat nears the context limit, so the agent clears the history and starts again. What's lost, and what's better?",
+      "back": "The customer's details and progress are lost. Compact into a case-facts block and keep going instead of restarting.",
+      "trap": "DISCARD_STATE"
+    },
+    {
+      "id": "FC-A-015",
+      "deck": "anti-patterns",
+      "task": "4.3",
+      "front": "You turn on strict mode to stop line items and totals disagreeing. Why doesn't it help?",
+      "back": "Strict mode guarantees the schema structure, not that values are correct. Add `calculated_total` and `conflict_detected` checks in code.",
+      "trap": "MISREAD_PARAMETER"
+    },
+    {
+      "id": "FC-A-016",
+      "deck": "anti-patterns",
+      "task": "5.1",
+      "front": "Long inputs are getting truncated, so you raise `max_tokens`. Why doesn't that fix it?",
+      "back": "`max_tokens` limits the output length, not the input context window. Trim or summarise the input instead.",
+      "trap": "MISREAD_PARAMETER"
+    },
+    {
+      "id": "FC-A-017",
+      "deck": "anti-patterns",
+      "task": "1.2",
+      "front": "Subagents write findings straight to a shared database for each other to read. What problem does this cause?",
+      "back": "It bypasses the coordinator, losing observability and consistent error handling. Subagents should report back through the hub.",
+      "trap": "BYPASS_COORDINATOR"
+    },
+    {
+      "id": "FC-A-018",
+      "deck": "anti-patterns",
+      "task": "5.3",
+      "front": "One of five research subagents fails, so the coordinator aborts the whole report. What should it do instead?",
+      "back": "Continue with partial results, note the gap in coverage, and retry or pass up only what can't be resolved.",
+      "trap": "TOTAL_FAILURE"
+    },
+    {
+      "id": "FC-A-019",
+      "deck": "anti-patterns",
+      "task": "4.5",
+      "front": "To cut costs, you move pre-merge code checks to the Message Batches API. What goes wrong?",
+      "back": "Batches can take up to 24 hours with no SLA, so merges are blocked. Use batch only for work nothing waits on.",
+      "trap": "WRONG_LATENCY_MODE"
+    },
+    {
+      "id": "FC-A-020",
+      "deck": "anti-patterns",
+      "task": "4.5",
+      "front": "A weekly audit job uses synchronous calls even though nobody waits on it. What are you missing?",
+      "back": "The Batch API would cut its cost by about 50%. Latency-tolerant work belongs in batches.",
+      "trap": "WRONG_LATENCY_MODE"
+    },
+    {
+      "id": "FC-A-021",
+      "deck": "anti-patterns",
+      "task": "1.3",
+      "front": "A subagent ignores the requirements the coordinator discussed earlier with the user. What's the cause?",
+      "back": "Subagents don't inherit the coordinator's history. Pass the requirements and earlier findings explicitly in the subagent's prompt.",
+      "trap": "ASSUMED_CONTEXT_INHERITANCE"
+    },
+    {
+      "id": "FC-A-022",
+      "deck": "anti-patterns",
+      "task": "4.5",
+      "front": "An option says to enable a batch setting that allows multi-turn tool calls per request. How do you judge it?",
+      "back": "No such setting exists; batch requests can't run multi-turn tool calls. Options built on invented features are always wrong.",
+      "trap": "NONEXISTENT_FEATURE"
+    },
+    {
+      "id": "FC-A-023",
+      "deck": "anti-patterns",
+      "task": "5.2",
+      "front": "An agent hands every refund question to a human \"to be safe\". What's the cost?",
+      "back": "Reviewers are swamped with cases the agent could resolve, and resolution rates fall. Escalate only on explicit criteria.",
+      "trap": "PREMATURE_ESCALATION"
+    },
+    {
+      "id": "FC-A-024",
+      "deck": "anti-patterns",
+      "task": "5.2",
+      "front": "A customer says \"let me speak to a person\", and the agent keeps troubleshooting. What should it do?",
+      "back": "Escalate immediately. An explicit request for a human is an escalation trigger, not something to work around.",
+      "trap": "FAILURE_TO_ESCALATE"
+    },
+    {
+      "id": "FC-A-025",
+      "deck": "anti-patterns",
+      "task": "5.2",
+      "front": "The lookup returns two accounts with the same name, and the agent picks the more recent one. What's wrong?",
+      "back": "It guesses on an ambiguity and may act on the wrong account. Ask the customer for another identifier first.",
+      "trap": "FAILURE_TO_ESCALATE"
+    },
+    {
+      "id": "FC-A-026",
+      "deck": "anti-patterns",
+      "task": "4.3",
+      "front": "The model sometimes replies in prose, so you add \"always call a tool\" to the prompt. What enforces it instead?",
+      "back": "An instruction only makes it likely. Set `tool_choice` to `\"any\"` or force the tool so a call is guaranteed.",
+      "trap": "PROMPT_FOR_GUARANTEE"
+    },
+    {
+      "id": "FC-A-027",
+      "deck": "anti-patterns",
+      "task": "4.4",
+      "front": "A required field is missing from many documents, so you raise the retry limit. Why won't it work?",
+      "back": "Retries can't find information that isn't in the source. Make the field nullable and route genuine gaps to review.",
+      "trap": "SYMPTOM_PATCH"
+    },
+    {
+      "id": "FC-A-028",
+      "deck": "anti-patterns",
+      "task": "1.7",
+      "front": "A crashed overnight job is restarted from the beginning, redoing finished work. What's better?",
+      "back": "Persist compact per-agent results to a known location and resume only the unfinished work from a manifest.",
+      "trap": "DISCARD_STATE"
+    },
+    {
+      "id": "FC-A-029",
+      "deck": "anti-patterns",
+      "task": "1.4",
+      "front": "You add a supervisor agent to check that one tool always runs before another. What's simpler and guaranteed?",
+      "back": "A programmatic prerequisite gate in code. It enforces the order every time without another model.",
+      "trap": "OVER_ENGINEERING"
+    },
+    {
+      "id": "FC-A-030",
+      "deck": "anti-patterns",
+      "task": "2.3",
+      "front": "A synthesis agent is given full web search to check facts, and starts doing its own research. What's better?",
+      "back": "Give it a narrow scoped tool such as `verify_fact`, and route complex lookups through the coordinator.",
+      "trap": "TOOL_OVERLOAD"
+    }
+  ]
+}

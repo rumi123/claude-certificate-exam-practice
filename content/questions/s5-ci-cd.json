@@ -1,0 +1,1189 @@
+{
+  "scenario": "S5",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S5-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "3.6",
+      "secondaryTasks": [],
+      "stem": "Your pipeline adds a review step that runs `claude \"Review the changes in this pull request and list any bugs\"`. Locally the command works, but in CI the job sits idle until it hits the 60-minute timeout, and no review is ever produced. Nobody is at the keyboard on the CI runner. What should you change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Run the command with the `-p` flag, so Claude Code runs non-interactively and prints its result.",
+          "correct": true,
+          "explanation": "Without `-p`, Claude Code starts an interactive session and waits for input that never comes on a CI runner. The `-p` (`--print`) flag runs the prompt once, prints the result and exits.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Raise the job's timeout to three hours, so that the review has enough time to finish on large PRs.",
+          "correct": false,
+          "explanation": "The job isn't slow, it is waiting for input that will never arrive. A longer timeout just makes the pipeline wait longer before failing in the same way.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add the `--batch-mode` flag, which tells Claude Code to skip every prompt that would wait for a person.",
+          "correct": false,
+          "explanation": "There is no such flag. The documented way to run Claude Code without an interactive session is `-p` (or `--print`), which is what CI pipelines use.",
+          "trap": "NONEXISTENT_FEATURE"
+        },
+        {
+          "id": "d",
+          "text": "Add \"never ask the user any questions\" to the project's `CLAUDE.md` file used by the CI job.",
+          "correct": false,
+          "explanation": "The hang comes from the interactive session itself, not from Claude choosing to ask questions. An instruction in `CLAUDE.md` can't change how the command runs.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        }
+      ],
+      "keyConcept": "Use the -p (--print) flag to run Claude Code non-interactively in CI so it doesn't hang waiting for input.",
+      "studyRef": "§3 Task 3.6 (-p flag for non-interactive CI runs)",
+      "sources": [
+        "exam-guide",
+        "research-6a-q10",
+        "research-6c-d3"
+      ]
+    },
+    {
+      "id": "S5-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "4.1",
+      "secondaryTasks": [],
+      "stem": "Your CI reviewer's prompt includes the criterion \"Check that code comments are accurate.\" Developers complain that most of its comment findings are about wording, outdated phrasing or comments they consider too short, while the comments that really matter, ones describing behaviour the code no longer has, are often missed. How should you change the criterion?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Flag a comment only when the behaviour it describes contradicts what the code actually does.",
+          "correct": true,
+          "explanation": "A vague criterion lets the model decide what \"accurate\" means, so it reports style. A specific criterion names the one issue that matters, a comment that contradicts the code, and leaves wording alone.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add \"be careful and only flag real problems with comments\" after the existing criterion in the prompt.",
+          "correct": false,
+          "explanation": "General instructions like \"be careful\" don't tell the model what a real problem is. It keeps guessing, so the mix of findings barely changes.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Have the reviewer rate its confidence in each comment finding and post only the ones it rates at 90% or above.",
+          "correct": false,
+          "explanation": "Self-reported confidence is poorly calibrated, and the model can be very confident about a wording nitpick. The criterion itself still points it at the wrong issues.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "d",
+          "text": "Send every comment finding to a second classifier model that decides whether each one is worth posting to the pull request.",
+          "correct": false,
+          "explanation": "A second model adds cost and its own errors to work around a one-sentence criterion. Fixing the criterion stops the wrong findings being produced at all.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Replace vague review criteria with explicit ones, such as flagging comments only when they contradict code behaviour.",
+      "studyRef": "§3 Task 4.1 (explicit criteria over vague instructions)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-003",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "4.5",
+      "secondaryTasks": [],
+      "stem": "Every night your pipeline submits a Message Batches API job with 2,000 requests, one per source file, to generate unit tests. Each request has a `custom_id` set to the file's path. Last night 70 requests failed, most because their files were too large for a single request. The other 1,930 succeeded. What should the pipeline do?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Use the `custom_id` values to find the 70 failed files, split the large ones, and resubmit only those.",
+          "correct": true,
+          "explanation": "The `custom_id` links each result to its request, so the failures are easy to identify. Fixing the cause and resubmitting only those 70 keeps the 1,930 good results and costs far less.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Resubmit the whole batch of 2,000 requests tomorrow night, unchanged, so that every file is processed again.",
+          "correct": false,
+          "explanation": "This repeats 1,930 requests that already worked and doesn't fix the oversized files, so most of the same 70 will fail again.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Move all test generation to synchronous API calls, so that failures are noticed and handled right away.",
+          "correct": false,
+          "explanation": "Nothing waits on this overnight job, so the Batch API's lower cost is the right fit. The failures come from file size, which synchronous calls wouldn't fix either.",
+          "trap": "WRONG_LATENCY_MODE"
+        },
+        {
+          "id": "d",
+          "text": "Mark the run as successful, since 96.5% of the files got their generated tests, and leave the 70 failed files for the next scheduled run.",
+          "correct": false,
+          "explanation": "The same 70 files will fail every night and never get tests, while the run keeps reporting success. A good overall rate hides the files that are always left out.",
+          "trap": "SILENT_FAILURE"
+        }
+      ],
+      "keyConcept": "Handle batch failures by using custom_id to resubmit only the failed requests, with the cause fixed.",
+      "studyRef": "§3 Task 4.5 (custom_id; resubmitting only failed requests)",
+      "sources": [
+        "exam-guide",
+        "research-6c-d4"
+      ]
+    },
+    {
+      "id": "S5-004",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "4.2",
+      "secondaryTasks": [],
+      "stem": "The prompt for your CI reviewer lists the fields every PR comment must have: file and line, the issue, its severity and a suggested fix. In practice the comments vary a lot. Some have no line number, some describe the issue but give no fix, and the structure changes from run to run. The review criteria themselves work well. What is the most effective improvement?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add two or three complete example comments to the prompt, each showing location, issue, severity and fix.",
+          "correct": true,
+          "explanation": "Few-shot examples are the most reliable way to get a consistent output format. Seeing complete comments shows the model exactly what each field looks like, which a list of field names doesn't.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Rewrite the format instructions to be longer and more detailed, with a paragraph explaining each field.",
+          "correct": false,
+          "explanation": "The fields are already listed, and more description gives no concrete model to copy. Without worked examples the format will keep drifting between runs.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Have a script discard every comment that is missing one of the four fields, and post only the complete ones to the PR.",
+          "correct": false,
+          "explanation": "Real findings would be thrown away just because they were badly formatted, and developers would never know. The format problem is still there on every run.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Pass each comment to a second model that rewrites it into the required format before it is posted.",
+          "correct": false,
+          "explanation": "A second model adds cost and can't invent a line number or fix the first one left out. Examples in the original prompt fix the format at the source.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Few-shot examples showing the full output format are the most effective way to get consistent, actionable comments.",
+      "studyRef": "§3 Task 4.2 (few-shot examples for output format); §6b Q3",
+      "sources": [
+        "exam-guide",
+        "research-6b-q3"
+      ]
+    },
+    {
+      "id": "S5-005",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "3.6",
+      "secondaryTasks": [
+        "4.3"
+      ],
+      "stem": "Your CI step runs `claude -p` to review each PR, and a script uses regular expressions to pull findings out of the prose reply. The script breaks whenever the wording changes. The pipeline needs a list of findings, each with file, line and severity, so it can post comments and decide whether to block the merge. Which two changes should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add `--output-format json` to the command, so the result comes back as JSON instead of prose.",
+          "correct": true,
+          "explanation": "JSON output gives the pipeline a structure it can parse reliably instead of scraping free text. It removes the dependence on how a sentence happens to be worded.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add `--json-schema` with a schema for the findings list, so each finding has file, line and severity.",
+          "correct": true,
+          "explanation": "A schema defines exactly which fields the findings must have. Together with JSON output it gives the pipeline machine-readable findings it can act on without guessing.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Add \"respond only with valid JSON, nothing else\" to the end of the review prompt.",
+          "correct": false,
+          "explanation": "An instruction makes JSON more likely but doesn't guarantee it, and it says nothing about which fields to include. The CLI flags enforce both the format and the structure.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Extend the regular expressions in the script to cover more of the ways the reply can be worded.",
+          "correct": false,
+          "explanation": "Each new phrasing needs another pattern, so the script keeps breaking. Asking for structured output removes the need to parse prose at all.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "e",
+          "text": "Add the `--verbose` flag, so the output includes the detailed, structured information the script parses.",
+          "correct": false,
+          "explanation": "Verbose output adds detail about what Claude Code is doing; it doesn't make the review machine-readable. The script would still be parsing free text.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Use --output-format json with --json-schema to get machine-parseable structured findings from Claude Code in CI.",
+      "studyRef": "§3 Task 3.6 (--output-format json and --json-schema)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-006",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.1",
+      "secondaryTasks": [],
+      "stem": "Your nightly test-generation agent runs its own loop on the Claude API. The loop stops when Claude's reply contains the phrase \"All tests written\". Sometimes Claude writes \"All tests written for the parser, moving on to the lexer\" and the loop ends early. Other nights it never uses the phrase and runs until the 50-iteration cap. How should the loop decide when to stop?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep looping while `stop_reason` is `\"tool_use\"`, and stop when it is `\"end_turn\"`.",
+          "correct": true,
+          "explanation": "The `stop_reason` field is the signal the API provides for this. `\"tool_use\"` means Claude wants another tool call, and `\"end_turn\"` means it has finished, whatever the reply happens to say.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add more completion phrases to check for, such as \"finished\" and \"done\", and stop only when the phrase ends the reply.",
+          "correct": false,
+          "explanation": "Any phrase can appear mid-task or be left out at the end, so this keeps both failures. Reading the reply text is the wrong signal for stopping a loop.",
+          "trap": "NL_TERMINATION"
+        },
+        {
+          "id": "c",
+          "text": "Raise the iteration cap from 50 to 200 so that long nights have more room to finish their work.",
+          "correct": false,
+          "explanation": "This doesn't stop the early exits, and it makes runaway nights longer. A cap is a safety net, not the main way a loop should end.",
+          "trap": "ITERATION_CAP"
+        },
+        {
+          "id": "d",
+          "text": "Tell Claude in the system prompt to write exactly `DONE` on its own line when every test has been written.",
+          "correct": false,
+          "explanation": "A prompt makes the marker more likely but can't guarantee it will appear only at the end. The API already reports when Claude has finished.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        }
+      ],
+      "keyConcept": "Control the agentic loop with stop_reason: continue on \"tool_use\", stop on \"end_turn\", not by parsing text.",
+      "studyRef": "§3 Task 1.1 (stop_reason-driven loop control)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-007",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "4.6",
+      "secondaryTasks": [
+        "1.6"
+      ],
+      "stem": "Your CI reviewer reads all 30 files of a large pull request in a single pass. Its comments on the first few files are detailed and accurate, but it says little about the later files, and real bugs in them go unreported. Running the review again gives different results each time. What is the best way to restructure the review?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Review each file in its own pass, then run a separate pass that checks how the changed files interact.",
+          "correct": true,
+          "explanation": "One pass over 30 files spreads attention thinly, so later files get less of it. Per-file passes give each file a focused review, and the integration pass catches problems between files.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Use a model with a larger context window so all 30 files fit more comfortably in the single review pass.",
+          "correct": false,
+          "explanation": "The files already fit; the problem is uneven attention across a long input. More room in the context doesn't make the later files get the same focus.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Review only the ten files with the most changed lines, and skip the rest of the PR.",
+          "correct": false,
+          "explanation": "The number of changed lines is a poor guide to risk; a one-line change can introduce a serious bug. Twenty files would get no review at all.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "d",
+          "text": "Run the same single-pass review three times and post every finding that appears in at least one of the three runs.",
+          "correct": false,
+          "explanation": "Each run has the same attention problem, so later files stay under-reviewed, and merging the runs adds the noise of all three. The structure is what needs to change.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Split large multi-file reviews into per-file passes plus a cross-file integration pass to avoid attention dilution.",
+      "studyRef": "§3 Task 4.6 (multi-pass review); §6a Q12",
+      "sources": [
+        "exam-guide",
+        "research-6a-q12"
+      ]
+    },
+    {
+      "id": "S5-008",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.6",
+      "secondaryTasks": [
+        "3.1"
+      ],
+      "stem": "When developers ask Claude Code to review their own branches locally, the reviews follow the team's review criteria and testing standards. The same review run by `claude -p` in CI ignores them. The criteria live in the tech lead's `~/.claude/CLAUDE.md`, and each developer copied that file to their own machine. The CI runner only checks out the repository. What should you do?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Move the review criteria and testing standards into the project's `CLAUDE.md` and commit it to the repo.",
+          "correct": true,
+          "explanation": "The CI runner only has what is in the repository. A committed project `CLAUDE.md` gives the same context to CI and to every developer, with one copy to maintain.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Paste the criteria into the prompt string of the CI job's YAML file, so the pipeline sends them with every review.",
+          "correct": false,
+          "explanation": "This works for CI but leaves a second copy that will drift from the one developers use. The project `CLAUDE.md` serves both from a single place.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Have the CI setup script copy the tech lead's `~/.claude/CLAUDE.md` into the runner's home directory before each job.",
+          "correct": false,
+          "explanation": "Team standards would still live in one person's personal file, copied around by hand. Shared review criteria belong in configuration that is committed with the code.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "Add the criteria to the project's `.claude/settings.json` under a `reviewCriteria` key.",
+          "correct": false,
+          "explanation": "There is no such key; `settings.json` holds configuration such as permissions and hooks. Project context like review criteria and testing standards goes in `CLAUDE.md`.",
+          "trap": "NONEXISTENT_FEATURE"
+        }
+      ],
+      "keyConcept": "CLAUDE.md committed in the project gives CI-invoked Claude Code the same review criteria and testing standards.",
+      "studyRef": "§3 Task 3.6 (CLAUDE.md provides project context to CI)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-009",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "4.1",
+      "secondaryTasks": [],
+      "stem": "Your CI reviewer's prompt says: \"Only report high-confidence findings and be conservative.\" Developers still find most comments noisy: naming suggestions, style preferences, and warnings about patterns the team uses on purpose throughout the codebase. Real bugs and security issues it finds are useful. What is the most effective change to the prompt?",
+      "options": [
+        {
+          "id": "a",
+          "text": "List what to report, such as bugs and security issues, and what to skip, such as style and local patterns.",
+          "correct": true,
+          "explanation": "General instructions like \"be conservative\" leave the model to decide what matters, so noise remains. Specific categories to report and to skip remove the guesswork.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Change the instruction to \"only report findings you are at least 95% sure of\", so that the threshold is stricter.",
+          "correct": false,
+          "explanation": "The model can be very sure about a naming nitpick, and its confidence ratings aren't well calibrated. The problem is which kinds of issue it reports, not how sure it is.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "c",
+          "text": "Limit the reviewer to at most five comments per pull request, however many it finds.",
+          "correct": false,
+          "explanation": "A limit cuts the number of comments, but nothing makes the five that remain the important ones. A real bug can still be crowded out by style remarks.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Set the temperature to 0 so the reviewer's output is more focused and makes fewer of the unimportant style suggestions.",
+          "correct": false,
+          "explanation": "Temperature affects how varied the output is, not what the model considers worth reporting. It would make the same noisy comments more consistently.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Specific categorical criteria for what to report and skip work better than \"be conservative\" or confidence instructions.",
+      "studyRef": "§3 Task 4.1 (specific criteria vs general instructions)",
+      "sources": [
+        "exam-guide",
+        "research-6c-d4"
+      ]
+    },
+    {
+      "id": "S5-010",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 1,
+      "primaryTask": "4.5",
+      "secondaryTasks": [],
+      "stem": "Your manager wants to cut API costs by moving two workloads to the Message Batches API. One is the pre-merge review, which developers wait on before they can merge. The other is a nightly technical-debt report that people read the next morning. Which two decisions are correct? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep the pre-merge review on synchronous API calls, because developers are waiting for its result.",
+          "correct": true,
+          "explanation": "Batches can take up to 24 hours and have no latency guarantee. A blocking check that developers wait on needs the synchronous API, even though it costs more.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Move the nightly technical-debt report to the Batch API, since nothing is waiting on its result overnight.",
+          "correct": true,
+          "explanation": "An overnight report is exactly the latency-tolerant work the Batch API is for. It saves about 50% and still finishes well before anyone reads it.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Move both workloads to the Batch API, since a 50% saving is worth a short wait for developers.",
+          "correct": false,
+          "explanation": "The wait isn't short or predictable: a batch can take up to 24 hours. Developers could be blocked from merging for most of a day.",
+          "trap": "WRONG_LATENCY_MODE"
+        },
+        {
+          "id": "d",
+          "text": "Keep both workloads on synchronous API calls, so that every job in the pipeline uses the same approach.",
+          "correct": false,
+          "explanation": "Consistency isn't a reason to pay full price for the nightly report. Nothing waits on it, so it is a natural fit for the cheaper Batch API.",
+          "trap": "WRONG_LATENCY_MODE"
+        },
+        {
+          "id": "e",
+          "text": "Move the pre-merge review to batches and poll for results every minute, so they are picked up as soon as each batch finishes.",
+          "correct": false,
+          "explanation": "Polling more often only notices a finished batch sooner; it doesn't make the batch finish sooner. Processing can still take hours.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Use synchronous calls for blocking pre-merge checks and the Batch API for latency-tolerant overnight jobs.",
+      "studyRef": "§3 Task 4.5 (matching API approach to latency); §6a Q11",
+      "sources": [
+        "exam-guide",
+        "research-6a-q11"
+      ]
+    },
+    {
+      "id": "S5-011",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "4.3",
+      "secondaryTasks": [],
+      "stem": "A CI service calls the Messages API directly to review diffs. It defines a `report_findings` tool whose JSON schema describes the findings array, and sets `tool_choice` to `\"auto\"`. Most runs return a tool call, but some return prose such as \"The code looks good overall\", and the parser fails. What should you change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Force the tool with `tool_choice: {\"type\": \"tool\", \"name\": \"report_findings\"}`, allowing an empty findings list.",
+          "correct": true,
+          "explanation": "With `\"auto\"` the model may answer in text. Forcing the tool guarantees a schema-shaped call every time, and allowing an empty array lets a clean diff be reported in the same structure.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add \"always respond by calling report_findings\" to the system prompt of the CI service.",
+          "correct": false,
+          "explanation": "An instruction makes the tool call more likely but can't guarantee it, so some prose replies would remain. `tool_choice` enforces it.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Retry the request up to three times whenever the parser fails, until a reply arrives that contains a tool call.",
+          "correct": false,
+          "explanation": "Retries cost extra calls and still leave a chance of prose on every attempt. The setting that allows text replies is the thing to change.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Treat any prose reply as a review with no findings and mark the pull request as passed, so the pipeline can continue.",
+          "correct": false,
+          "explanation": "A prose reply might still describe real problems. Treating it as a clean result passes changes that were never reported on properly.",
+          "trap": "SILENT_FAILURE"
+        }
+      ],
+      "keyConcept": "Force a specific tool with tool_choice to guarantee schema-compliant structured output instead of text.",
+      "studyRef": "§3 Task 4.3 (tool_choice options; forced tool selection)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-012",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.6",
+      "secondaryTasks": [],
+      "stem": "After a developer pushes fixes to a pull request, CI runs the review again. The new review posts the same twelve comments as before, including issues that have already been fixed and points the team already discussed and agreed to keep. Developers have started muting the bot. What is the most effective change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Give the re-run the earlier review's findings, and have it report only new or still-unresolved issues.",
+          "correct": true,
+          "explanation": "Each run starts fresh, so without the earlier findings it can't know what was already raised. With them, it can skip fixed and settled points and comment only on what is new.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Delete all of the earlier bot comments before each re-run, then post the full new review in their place.",
+          "correct": false,
+          "explanation": "This removes the discussion history developers need and still reposts settled points. The review needs to know what was raised, not a clean slate.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Skip the review on re-runs, because the first review already covered the PR.",
+          "correct": false,
+          "explanation": "The new commits are exactly the part of the PR that hasn't been reviewed yet. Skipping the re-run lets any new bugs through without a single comment.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Have a script drop any new comment whose text exactly matches one already posted on the same pull request.",
+          "correct": false,
+          "explanation": "The model rarely words a finding the same way twice, so most duplicates get through. Fixed issues would still be reported again.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Include prior review findings when re-running reviews after new commits so only new or unresolved issues are reported.",
+      "studyRef": "§3 Task 3.6 (including prior findings on re-runs)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-013",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.5",
+      "secondaryTasks": [
+        "1.4"
+      ],
+      "stem": "Your nightly test-generation job must only create or change files inside `tests/`. Its prompt says so clearly. Even so, about once a week it edits a source file so that a failing test passes, and the change gets merged unnoticed. The rule must hold every time. What is the most reliable way to enforce it?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a `PreToolUse` hook that blocks any Write or Edit call to a path outside `tests/` and says why.",
+          "correct": true,
+          "explanation": "A hook runs before every tool call and blocks it deterministically. The rule then holds every time instead of most of the time, and the message lets the job correct course.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Repeat the rule in capital letters at the end of the prompt, so it is the last thing the model reads.",
+          "correct": false,
+          "explanation": "Prompt instructions are probabilistic, and the job already breaks a clearly stated rule. Louder wording lowers the rate but can't make it zero.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Have a second Claude instance inspect each night's changes and revert any edits it finds outside `tests/`.",
+          "correct": false,
+          "explanation": "This adds a model to catch what a simple path check can stop outright, and the second instance can miss edits too. The rule is mechanical, so enforce it mechanically.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Remove the Write and Edit tools from the job, so it can no longer change source files.",
+          "correct": false,
+          "explanation": "Without these tools the job can't write any tests either. The goal is to block the wrong paths, not every change.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Hooks that intercept tool calls give deterministic enforcement where prompt instructions are only probabilistic.",
+      "studyRef": "§3 Task 1.5 (interception hooks for guaranteed compliance)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-014",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.6",
+      "secondaryTasks": [],
+      "stem": "Your CI review already analyses each changed file in its own pass. A pull request renamed the field `user_id` to `account_id` in the API's response serializer, but the mobile client file in the same PR still reads `user_id`. Neither per-file pass reported anything, and the bug reached production. What should you add?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A separate integration pass that checks data flow between the changed files, such as fields they share.",
+          "correct": true,
+          "explanation": "Each file is correct on its own, so per-file passes can't see the mismatch. A cross-file pass that follows data between files is what catches a rename one side didn't follow.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Replace the per-file passes with one pass over the whole diff, so the reviewer sees both files together.",
+          "correct": false,
+          "explanation": "A single pass brings back uneven attention across large PRs, so other bugs would be missed. Keep the focused per-file passes and add a pass for cross-file issues.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add \"also check that this file stays consistent with the other changed files\" to each per-file prompt.",
+          "correct": false,
+          "explanation": "Each per-file pass is given only its own file. It can't check consistency with code it has never been given, however the prompt is worded.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "d",
+          "text": "Run the per-file passes on a model with a larger context window so that each one can notice problems across the other files.",
+          "correct": false,
+          "explanation": "A bigger window doesn't help if the other files aren't in it. The per-file passes would still analyse one file each.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Per-file passes miss cross-file problems; add an integration pass that checks data flow between changed files.",
+      "studyRef": "§3 Task 4.6 (cross-file integration passes)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-015",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "4.1",
+      "secondaryTasks": [
+        "4.2"
+      ],
+      "stem": "Your CI reviewer labels each finding as critical, major or minor, and any critical finding blocks the merge. The labels are inconsistent: the same unchecked null value is called critical in one PR and minor in another, and a misspelt variable name once blocked a release. The prompt only lists the three level names. Which two changes should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Define each severity level with explicit criteria, such as \"critical: data loss, security hole or crash\".",
+          "correct": true,
+          "explanation": "With only level names, the model decides what \"critical\" means on each run. Explicit criteria for each level make the labels consistent and keep trivial issues from blocking merges.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add a short concrete code example for each severity level, showing a typical issue at that level.",
+          "correct": true,
+          "explanation": "Examples show where the boundaries between levels are in real code. Criteria and examples together are the most reliable way to calibrate severity.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Have the reviewer rate its confidence in each finding and use that rating as the finding's severity.",
+          "correct": false,
+          "explanation": "Confidence and severity are different things: the model can be certain about a typo. Using one for the other would still let trivial issues block merges.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "d",
+          "text": "Set the temperature to 0 so the reviewer always gives the same issue the same severity label in every PR.",
+          "correct": false,
+          "explanation": "Lower temperature reduces random variation but doesn't tell the model what each level means. It would just repeat its own unclear judgement more consistently.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "e",
+          "text": "Block the merge on findings of any severity, so that the labels no longer matter for the pipeline.",
+          "correct": false,
+          "explanation": "Every typo would block a merge, and developers would soon stop trusting the bot. The labels need fixing, not removing from the decision.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Define explicit severity criteria with concrete code examples for each level to get consistent severity labels.",
+      "studyRef": "§3 Task 4.1 (explicit severity criteria with code examples)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-016",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "3.2",
+      "secondaryTasks": [
+        "3.6"
+      ],
+      "stem": "Your team wrote a twelve-step PR review procedure for Claude Code: check migrations, check feature flags, check test coverage and so on. It is used by CI review jobs and occasionally by developers. It is currently in the root `CLAUDE.md`, so it loads for every task, including the nightly test-generation job and routine coding sessions. Where should it go?",
+      "options": [
+        {
+          "id": "a",
+          "text": "In a committed project skill under `.claude/skills/`, used by review jobs; standards stay in `CLAUDE.md`.",
+          "correct": true,
+          "explanation": "A skill holds an on-demand procedure and loads only when it is used. Committing it means CI and every developer get the same version, while always-relevant standards stay in `CLAUDE.md`.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Leave it in the root `CLAUDE.md`, under a heading that says \"Only for pull request reviews\".",
+          "correct": false,
+          "explanation": "The file still loads for every task, so the procedure keeps taking up context in jobs that never review anything. A heading doesn't change what gets loaded.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "c",
+          "text": "In a personal skill in the tech lead's `~/.claude/skills/` directory, so that it is kept out of the repository.",
+          "correct": false,
+          "explanation": "The CI runner and the other developers don't have the tech lead's home directory. A procedure the team and CI share has to be committed with the project.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "Copy the twelve steps into the prompt string of each CI review job in the pipeline.",
+          "correct": false,
+          "explanation": "Each job gets its own copy, which will drift from the others and from what developers use. One committed skill keeps a single version.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Put on-demand procedures in committed project skills; keep always-relevant standards in CLAUDE.md.",
+      "studyRef": "§3 Task 3.2 (skills vs CLAUDE.md; project skills are shared)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-017",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.2",
+      "secondaryTasks": [
+        "4.1"
+      ],
+      "stem": "Your CI reviewer flags empty `except` blocks. In your codebase some are intentional: shutdown handlers ignore errors on purpose, with a comment explaining why. Others, in request handlers, really do hide errors. Adding the written rule \"don't flag intentional cases\" hasn't helped: the reviewer still flags shutdown handlers and sometimes misses real cases. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a few examples contrasting an acceptable case with a genuine one, each showing the reasoning for the call.",
+          "correct": true,
+          "explanation": "The model can't tell the cases apart from a rule alone. Examples that show the deciding detail and the reasoning teach it the distinction, and it can then apply it to cases the examples don't cover.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add the rule \"never flag empty `except` blocks\" to the reviewer's criteria in the prompt.",
+          "correct": false,
+          "explanation": "This removes the false positives by also removing the real findings. Errors silently swallowed in request handlers would never be reported again.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "c",
+          "text": "List every file where an empty `except` block is allowed, and update the list when new handlers are added.",
+          "correct": false,
+          "explanation": "A list of files has to be maintained by hand and teaches nothing about why a case is acceptable. Any new shutdown handler would be flagged until someone updates the list.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Have the reviewer rate its confidence for each empty `except` finding, and drop findings it rates as low.",
+          "correct": false,
+          "explanation": "Self-reported confidence is poorly calibrated and doesn't track whether a case is intentional. Real findings could be dropped and false ones kept.",
+          "trap": "UNRELIABLE_PROXY"
+        }
+      ],
+      "keyConcept": "Few-shot examples with reasoning teach the model to distinguish acceptable code patterns from genuine issues.",
+      "studyRef": "§3 Task 4.2 (few-shot examples for acceptable vs genuine issues)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-018",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.4",
+      "secondaryTasks": [],
+      "stem": "When the main branch build fails, a CI agent investigates and tries to fix it. If it can't, it pages the on-call engineer with \"I was unable to fix the build, please take a look.\" Engineers say they then spend 30 minutes working out which test failed, what the agent found and what it already tried. What should the agent's escalation include?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A structured handoff: failing job and test, likely root cause, fixes already tried, and a recommended next step.",
+          "correct": true,
+          "explanation": "A structured handoff passes on what the agent learned, so the engineer starts from the agent's findings instead of repeating its investigation.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Nothing new: the agent should keep trying fixes until the build passes, however long it takes.",
+          "correct": false,
+          "explanation": "If the agent can't make progress, more attempts only delay the person who can help, while the main branch stays broken. Escalating with good context is the right call.",
+          "trap": "FAILURE_TO_ESCALATE"
+        },
+        {
+          "id": "c",
+          "text": "The full session transcript with every command and output, attached so the engineer can read through all of it.",
+          "correct": false,
+          "explanation": "Everything is there, but the engineer still has to dig the key facts out of a long log. A short structured summary gives them what they need at once.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "The same message as now, but sent as soon as the build fails, so that the engineer can start on it straight away without waiting.",
+          "correct": false,
+          "explanation": "Skipping the investigation throws away the agent's ability to fix simple failures itself. The problem is the message's content, not its timing.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "Escalations need structured handoff summaries: what failed, root cause analysis, what was tried and recommended actions.",
+      "studyRef": "§3 Task 1.4 (structured handoff protocols)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-019",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.6",
+      "secondaryTasks": [
+        "4.6"
+      ],
+      "stem": "A CI job uses one `claude -p` invocation to implement small requested changes and then, in the same prompt, review its own change before opening the pull request. The review approves nearly every change, but human reviewers later find bugs in about a fifth of them. What is the most effective change to the job?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Run the review as a separate `claude -p` invocation that is given the diff but not the generating session.",
+          "correct": true,
+          "explanation": "The session that wrote the change keeps its own reasoning and tends to agree with it. A separate session sees only the code, so it is far more likely to question it.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Tell the job to be much more critical when it reviews the change it has just implemented.",
+          "correct": false,
+          "explanation": "The problem is that the session reviews with its own reasoning in mind, not a lack of effort. Asking it to be critical doesn't remove that bias.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Use `--resume` to reopen the session that generated the change and run the review there, so it has the full context of the work.",
+          "correct": false,
+          "explanation": "Resuming the generating session is still self-review. The full context is exactly what makes it less likely to question its own decisions.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "d",
+          "text": "Have the job rate its confidence in each change and request human review only when it is below 7 out of 10.",
+          "correct": false,
+          "explanation": "The job already approves changes that turn out to have bugs, so its confidence in them is high. Its own rating can't flag the ones it misjudged.",
+          "trap": "UNRELIABLE_PROXY"
+        }
+      ],
+      "keyConcept": "The session that generated code is less effective at reviewing it; review in a separate, isolated session.",
+      "studyRef": "§3 Task 3.6 (session context isolation for review)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-020",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 3,
+      "primaryTask": "4.6",
+      "secondaryTasks": [
+        "4.1"
+      ],
+      "stem": "Your pipeline uses one Claude instance to write a fix for each bug ticket and a second instance to review the fix. To \"give it context\", the reviewer receives the diff together with the generator's full reasoning transcript explaining each decision. The reviewer approves fixes that human reviewers often reject. Which two changes should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Stop passing the generator's reasoning to the reviewer, so it judges the code without that explanation.",
+          "correct": true,
+          "explanation": "The transcript walks the reviewer through the generator's thinking, so it inherits the same blind spots. Without it, the reviewer judges the code independently.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Give the reviewer the original bug ticket and the team's review criteria to check the fix against.",
+          "correct": true,
+          "explanation": "The reviewer needs to know what the fix should achieve and what counts as a problem. The ticket and explicit criteria give it that without the generator's reasoning.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Let the generator instance review its own fix instead, since it understands the intent behind each change best.",
+          "correct": false,
+          "explanation": "Self-review is the weakest option: the generator keeps its reasoning and rarely questions its own decisions. That is exactly the bias the second instance is there to avoid.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "d",
+          "text": "Raise the reviewer's temperature, so that it explores more possible problems with each fix and approves fewer of them.",
+          "correct": false,
+          "explanation": "Temperature changes how varied the output is, not how well the reviewer judges the code. It would add randomness, not independence.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "e",
+          "text": "Have the generator rate its confidence in each fix, and let the reviewer skip fixes rated highly.",
+          "correct": false,
+          "explanation": "The generator is confident about the fixes humans reject, so its rating can't pick them out. Skipping review for them removes the check where it is needed.",
+          "trap": "UNRELIABLE_PROXY"
+        }
+      ],
+      "keyConcept": "Independent reviewers without the generator's reasoning context catch more issues; give them requirements and criteria instead.",
+      "studyRef": "§3 Task 4.6 (independent review instances)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-021",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.5",
+      "secondaryTasks": [],
+      "stem": "Generated tests for each merged PR must be committed within 30 hours of the merge. You send the generation requests to the Message Batches API, which can take up to 24 hours. Once a batch finishes, running and committing its tests takes about 2 hours. PRs are merged throughout the day. How often should the pipeline submit batches?",
+      "options": [
+        {
+          "id": "a",
+          "text": "At least every 4 hours, so no PR waits over 4 hours to be sent, plus 24 to process and 2 to commit.",
+          "correct": true,
+          "explanation": "Work back from the deadline: 30 hours minus up to 24 for the batch and 2 for running and committing leaves 4 hours. A PR merged just after a submission must still make the next one.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Every 6 hours, since a batch takes at most 24 hours and that leaves 6 hours of the 30-hour deadline.",
+          "correct": false,
+          "explanation": "This forgets the 2 hours of work after the batch finishes. A PR merged just after a submission could take 6 + 24 + 2 = 32 hours.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Once a day, since batches usually finish in about an hour and that leaves plenty of time to spare.",
+          "correct": false,
+          "explanation": "The typical time isn't guaranteed; the Batch API only promises up to 24 hours. Planning on the average means a slow day misses the deadline.",
+          "trap": "AGGREGATE_METRIC_MASKING"
+        },
+        {
+          "id": "d",
+          "text": "Switch to synchronous API calls for each merged PR, since only real-time calls can meet a fixed deadline like this one.",
+          "correct": false,
+          "explanation": "Nothing waits on this work in real time, and a 30-hour deadline is easy to meet with batches submitted often enough. Synchronous calls would double the cost for no benefit.",
+          "trap": "WRONG_LATENCY_MODE"
+        }
+      ],
+      "keyConcept": "Choose batch submission frequency from the SLA: deadline minus maximum batch time and follow-up work.",
+      "studyRef": "§3 Task 4.5 (calculating batch submission frequency from SLA)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-022",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.1",
+      "secondaryTasks": [],
+      "stem": "Your CI reviewer reports four categories: security, bugs, performance and style. Security and bug findings are accurate, but about 60% of style findings are wrong. Developers now dismiss all of the bot's comments without reading them, and last week two real security findings were ignored. You need to restore trust quickly while you improve the style criteria. What should you do?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Temporarily turn off the style category, keeping the others on, until its criteria are fixed and tested.",
+          "correct": true,
+          "explanation": "One noisy category drags down trust in the accurate ones. Turning it off removes the noise straight away, so security and bug findings get read again while style is improved.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Share the reviewer's overall precision of 82% with developers, to show them that most of its comments are right.",
+          "correct": false,
+          "explanation": "The overall figure hides that one category is mostly wrong, and developers see that every day. A number won't win back trust that the noisy comments keep losing.",
+          "trap": "AGGREGATE_METRIC_MASKING"
+        },
+        {
+          "id": "c",
+          "text": "Turn off the CI reviewer completely until all four categories meet the team's accuracy target.",
+          "correct": false,
+          "explanation": "This throws away the accurate security and bug findings over a problem in one category. Only the noisy category needs to stop.",
+          "trap": "TOTAL_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Add \"be more conservative with style comments\" to the reviewer's prompt for now.",
+          "correct": false,
+          "explanation": "General instructions like this rarely fix false positives, and trust is being lost now. The category should stop until it has specific criteria.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        }
+      ],
+      "keyConcept": "Temporarily disable high false-positive categories so they stop undermining trust in accurate ones.",
+      "studyRef": "§3 Task 4.1 (false positives undermine trust; disabling noisy categories)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-023",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.7",
+      "secondaryTasks": [],
+      "stem": "An overnight job spent two hours analysing a legacy payments module before generating any tests. The team now wants to compare two testing strategies, property-based tests and example-based tests, both built from that same analysis, and keep them from influencing each other. How should the job set this up?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Use `fork_session` to create two branches from the analysis session, one for each testing strategy.",
+          "correct": true,
+          "explanation": "Forking gives each strategy its own copy of the shared analysis. The branches then develop independently, so neither strategy is shaped by the other and the two hours of analysis aren't repeated.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Start two new sessions, and have each one repeat the full two-hour analysis before it writes its tests.",
+          "correct": false,
+          "explanation": "This keeps the strategies apart but throws away the existing analysis and doubles the work. Forking keeps the shared starting point.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Generate both test suites in the analysis session, one after the other, and then have that same session compare them.",
+          "correct": false,
+          "explanation": "The second suite is shaped by the first, and the session judging them wrote both. The comparison wouldn't be independent.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "d",
+          "text": "Start two new sessions and tell each one to \"use the payments analysis from last night\" as its starting point.",
+          "correct": false,
+          "explanation": "A new session starts empty and can't see another session's history. Neither would have the analysis it is told to use, so each would work from nothing.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        }
+      ],
+      "keyConcept": "Use fork_session to create independent branches from a shared analysis baseline to compare approaches.",
+      "studyRef": "§3 Task 1.7 (fork_session for parallel exploration branches)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-024",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "3.6",
+      "secondaryTasks": [
+        "3.1"
+      ],
+      "stem": "Your nightly `claude -p` test-generation job often proposes tests that already exist in the repository. It also builds its own mock objects instead of using the team's shared fixtures in `tests/fixtures/`, which developers then have to rewrite. Which two changes would most improve the generated tests? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Include the module's existing test files in the job's context, so it can see what is already covered.",
+          "correct": true,
+          "explanation": "The job can only avoid duplicates it can see. With the existing tests in context, it can focus on the scenarios that aren't covered yet.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Document the testing standards and the available fixtures in the project's `CLAUDE.md`.",
+          "correct": true,
+          "explanation": "The project `CLAUDE.md` is loaded for CI runs too. Listing the shared fixtures and standards there tells every run what to reuse, instead of each one inventing its own mocks.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Have a script delete any generated test whose name matches an existing one, before the tests are committed.",
+          "correct": false,
+          "explanation": "Duplicate tests rarely have the same name, so most would get through, and the fixtures problem remains. The job needs better context, not a filter afterwards.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Add \"don't write tests that already exist and use our fixtures\" to the prompt, without changing what context the job receives.",
+          "correct": false,
+          "explanation": "The job still can't see which tests exist or which fixtures are available. An instruction can't make up for information it was never given.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "e",
+          "text": "Raise `max_tokens` so the job has room to consider the whole test suite before it writes anything.",
+          "correct": false,
+          "explanation": "`max_tokens` limits the length of the output, not what the job can see. The existing tests still wouldn't be in its context.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Provide existing tests in context and document fixtures and standards in CLAUDE.md to improve CI test generation.",
+      "studyRef": "§3 Task 3.6 (existing tests in context; fixtures documented in CLAUDE.md)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S5-025",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.6",
+      "secondaryTasks": [
+        "4.1"
+      ],
+      "stem": "Your CI reviewer's criteria are now specific, but about a quarter of its posted findings still turn out to be wrong when developers check them, usually because the reviewer misread how a function is called elsewhere. Developers want fewer wrong comments without losing real bugs. Which change to the review architecture helps most?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a verification pass that re-checks each finding against the code, records confidence, and holds weak ones back.",
+          "correct": true,
+          "explanation": "A separate verification pass looks at each finding again with the relevant code in front of it. Recording confidence with each result lets the pipeline post well-supported findings and hold back the doubtful ones.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Tell the first pass to report only the findings it is sure about, and to skip the rest.",
+          "correct": false,
+          "explanation": "General instructions about confidence don't improve accuracy, and the reviewer is already sure about its misreadings. A second look at the code is what catches them.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Post only findings whose explanation is longer than 50 words, because detailed findings are more likely to be correct.",
+          "correct": false,
+          "explanation": "Length has little to do with correctness; a wrong finding can be explained at length. This would drop short real bugs and keep long wrong ones.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "d",
+          "text": "Post every finding as before, and let developers dismiss the wrong ones, since dismissing a comment only takes a second.",
+          "correct": false,
+          "explanation": "Each wrong comment costs trust as well as time. Developers who keep dismissing comments start ignoring the real ones too.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Verification passes that re-check findings and record confidence reduce false positives before comments are posted.",
+      "studyRef": "§3 Task 4.6 (verification passes with confidence per finding)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    }
+  ]
+}

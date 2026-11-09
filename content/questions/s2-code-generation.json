@@ -1,0 +1,1091 @@
+{
+  "scenario": "S2",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S2-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "3.1",
+      "secondaryTasks": [],
+      "stem": "Your team's coding conventions, covering error handling, log format and naming, live in a senior developer's `~/.claude/CLAUDE.md`. Claude Code follows them perfectly for that developer, but two engineers who joined this month get code that ignores every convention. The conventions should apply to everyone working in the repository. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Move the conventions into the project `CLAUDE.md` at the repository root and commit it, so every clone loads them.",
+          "correct": true,
+          "explanation": "User-level instructions apply only to the person whose machine they are on. The project `CLAUDE.md` is committed, so everyone who clones the repository, including future hires, gets the same conventions automatically.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Ask each new engineer to copy the senior developer's `~/.claude/CLAUDE.md` onto their own machine during onboarding.",
+          "correct": false,
+          "explanation": "User-level files aren't shared through version control, so every copy is made by hand and they drift apart as the conventions change. The next hire hits the same problem.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "c",
+          "text": "Create a `/conventions` slash command that new engineers run at the start of every session to load the team's rules.",
+          "correct": false,
+          "explanation": "Conventions that apply to all code shouldn't depend on someone remembering a command. Every session where nobody runs it still produces code that ignores them.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Add a CI job that rejects any pull request whose code breaks the conventions in the senior developer's file.",
+          "correct": false,
+          "explanation": "A CI check catches violations after the code is written and adds a new system to maintain. Claude still never sees the conventions when it writes code for the new engineers.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Team-wide instructions belong in the committed project CLAUDE.md; user-level CLAUDE.md applies to one person only.",
+      "studyRef": "§3 Task 3.1 (hierarchy; diagnosing user-level vs project-level config)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.1",
+      "secondaryTasks": [],
+      "stem": "Two developers in the same repository get different behaviour from Claude Code. For one, it writes tests with Vitest as the project `CLAUDE.md` says; for the other, it keeps using Jest. Neither has changed the project file, and the second developer says they \"may have some old personal settings\". What should you do first to find the cause?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Run `/memory` in both developers' sessions and compare which memory files are loaded and what each one says.",
+          "correct": true,
+          "explanation": "`/memory` shows exactly which CLAUDE.md files a session has loaded. Comparing the two sessions will reveal, for example, an old user-level file telling Claude to use Jest, which is the likely cause here.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Repeat the Vitest instruction in capital letters near the top of the project `CLAUDE.md` so that it stands out more.",
+          "correct": false,
+          "explanation": "This might outweigh the conflicting instruction some of the time, but you still don't know where the Jest rule comes from. That other file stays loaded and keeps conflicting.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Ask Claude in the second developer's session which instructions it is following and why it keeps choosing Jest.",
+          "correct": false,
+          "explanation": "The model's own account of its instructions isn't a reliable diagnostic and may not name the file at all. `/memory` lists the loaded files directly.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "d",
+          "text": "Set `\"temperature\": 0` in the project `.claude/settings.json` so both developers get the same output from Claude.",
+          "correct": false,
+          "explanation": "Claude Code settings have no temperature key, and randomness isn't the cause anyway. The two sessions differ because they load different instructions.",
+          "trap": "NONEXISTENT_FEATURE"
+        }
+      ],
+      "keyConcept": "Use /memory to see which CLAUDE.md files are loaded when behaviour differs between users or sessions.",
+      "studyRef": "§3 Task 3.1 (/memory to diagnose inconsistent behaviour)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-003",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "3.1",
+      "secondaryTasks": [],
+      "stem": "Your monorepo has twelve packages. Shared standards live in `docs/standards/` as separate files: `testing.md`, `api.md`, `react.md` and `security.md`. Each package needs a different subset; for example, backend packages need `api.md` and `security.md` but not `react.md`. The standards change monthly, and each package's instructions must stay in sync with them. What is the best approach?",
+      "options": [
+        {
+          "id": "a",
+          "text": "In each package's `CLAUDE.md`, reference only the standards it needs with `@` imports, such as `@../../docs/standards/api.md`.",
+          "correct": true,
+          "explanation": "Imports pull in the current text of each standards file, so a monthly change is made once and every package picks it up. Each package loads only the standards that apply to it.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Write a script that rebuilds every package's `CLAUDE.md` from the standards files, and run it as a pre-commit hook.",
+          "correct": false,
+          "explanation": "This works, but it adds tooling to maintain for something `@` imports already do. Generated files can also be edited by hand and then silently overwritten.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "c",
+          "text": "Merge all four standards into the root `CLAUDE.md`, under headings that say which packages each section applies to.",
+          "correct": false,
+          "explanation": "Every session would load all four standards, including React rules during backend work, and Claude has to infer which headings apply. That wastes context and makes the rules less reliable.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Put each team's standards into its developers' own `~/.claude/CLAUDE.md`, based on the packages they usually work on.",
+          "correct": false,
+          "explanation": "User-level files aren't shared or tied to a package. A developer who works in an unfamiliar package gets the wrong standards, and every file needs updating by hand each month.",
+          "trap": "WRONG_CONFIG_LAYER"
+        }
+      ],
+      "keyConcept": "Use @ imports so each package's CLAUDE.md includes just the shared standards files it needs.",
+      "studyRef": "§3 Task 3.1 (@import for modular CLAUDE.md)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-004",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "3.2",
+      "secondaryTasks": [],
+      "stem": "Your team wrote a `/review` slash command that checks a change against the team's review checklist. It currently lives in one developer's `~/.claude/commands/` folder, so nobody else can use it. You want it available to every developer as soon as they clone or pull the repository. Where should the command be defined?",
+      "options": [
+        {
+          "id": "a",
+          "text": "As a Markdown file in the project's `.claude/commands/` directory, committed to the repository.",
+          "correct": true,
+          "explanation": "Project commands in `.claude/commands/` are shared through version control, so anyone who clones or pulls the repository gets `/review` with no extra setup.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "In each developer's own `~/.claude/commands/` folder, copied there from a shared drive during onboarding.",
+          "correct": false,
+          "explanation": "User-level commands are personal. Every developer would need a manual copy, and the copies would drift apart whenever the checklist changes.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "c",
+          "text": "As a section of the project `CLAUDE.md` that describes the checklist and tells Claude to run it on request.",
+          "correct": false,
+          "explanation": "CLAUDE.md holds instructions, not command definitions, so no `/review` command is created. The checklist would also be loaded into every session, even when nobody is reviewing.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "In a `commands` array inside a project `.claude/config.json` file listing each command's name and prompt.",
+          "correct": false,
+          "explanation": "Claude Code has no `.claude/config.json` commands array. Custom commands are defined as Markdown files in a `commands` directory, so this file would be ignored and no `/review` command would appear.",
+          "trap": "NONEXISTENT_FEATURE"
+        }
+      ],
+      "keyConcept": "Project-scoped slash commands in .claude/commands/ are shared with everyone through version control.",
+      "studyRef": "§3 Task 3.2; §6a Q4",
+      "sources": ["exam-guide", "research-6a-q4"]
+    },
+    {
+      "id": "S2-005",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "3.1",
+      "secondaryTasks": ["3.3"],
+      "stem": "Your root `CLAUDE.md` has grown to 900 lines covering testing, API conventions, database migrations, deployment and code style. Developers say Claude often misses rules buried deep in the file, and edits to it keep colliding in review. Several sections apply only to certain kinds of files. Which two changes should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Split the topic sections into focused files in `.claude/rules/`, such as `testing.md`, `api-conventions.md` and `migrations.md`.",
+          "correct": true,
+          "explanation": "Focused files are easier to read, own and review than one 900-line document, so edits stop colliding. Each topic stays complete instead of being buried among unrelated rules.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add `paths` frontmatter with glob patterns, such as `**/*.test.ts`, to rule files that apply only to some files.",
+          "correct": true,
+          "explanation": "Path-scoped rules load only when Claude works on matching files, so migration rules don't fill context during frontend work. With less irrelevant text loaded, the rules that do load are followed more reliably.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Move the sections each developer cares about into their own `~/.claude/CLAUDE.md`, keeping only shared basics in the root file.",
+          "correct": false,
+          "explanation": "Team rules would stop being shared through the repository. Each developer would see a different subset, and nobody would get rules for areas they rarely touch.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "Condense the 900 lines into a 100-line overview, removing the detailed examples and edge cases to save space.",
+          "correct": false,
+          "explanation": "Cutting the content throws away the detail that makes the rules usable. Claude might follow the vaguer rules more consistently, but the specific conventions would be gone.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "e",
+          "text": "Repeat the most often missed rules at both the top and the bottom of the file, written in capital letters.",
+          "correct": false,
+          "explanation": "This makes the file even longer and only helps the rules you repeat. The structure that buries rules and causes review collisions stays the same.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Split a monolithic CLAUDE.md into focused .claude/rules/ files, path-scoping those that apply only to some files.",
+      "studyRef": "§3 Task 3.1 (.claude/rules/ instead of a monolithic CLAUDE.md); §3 Task 3.3",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-006",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.2",
+      "secondaryTasks": ["5.4"],
+      "stem": "Your `/audit-deps` skill scans every package manifest, lists all transitive dependencies and checks each against a vulnerability list. One run prints about 4,000 lines into the conversation. Developers then struggle to continue their actual work because the context is full of audit output, though they only need the final list of vulnerable packages. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add `context: fork` to the skill's `SKILL.md` frontmatter so it runs in an isolated subagent and returns only its result.",
+          "correct": true,
+          "explanation": "A forked skill does its verbose work in a separate context. The main conversation receives only the final list of vulnerable packages, so developers keep their working context.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Tell developers to run `/clear` after every audit so that the audit output stops taking up space in their conversation.",
+          "correct": false,
+          "explanation": "Clearing removes the audit output, but also everything else the developer was working on. They lose their whole context just to get rid of the noise.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Add a line to the skill's instructions asking it to keep its output short and print only the most important findings.",
+          "correct": false,
+          "explanation": "The skill still reads and processes every dependency inside the main conversation, so most of that work lands there anyway. Asking for brevity doesn't isolate it.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Move the audit instructions from the skill into the project `CLAUDE.md` so Claude can run an audit whenever one is needed.",
+          "correct": false,
+          "explanation": "This loads the audit instructions into every session and still runs the audit in the main conversation. It makes the context problem worse, not better.",
+          "trap": "WRONG_CONFIG_LAYER"
+        }
+      ],
+      "keyConcept": "Use context: fork in SKILL.md to run verbose skills in an isolated subagent and keep the main conversation clean.",
+      "studyRef": "§3 Task 3.2 (context: fork)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-007",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.2",
+      "secondaryTasks": ["3.1"],
+      "stem": "Your root `CLAUDE.md` contains a 300-line release checklist covering version bumps, changelog format, tagging and deployment. Releases happen about twice a month, but the checklist loads into every session, including routine bug fixes. You want it available whenever someone prepares a release, without paying for it in every other session. What is the best approach?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Move the checklist into a project skill, `.claude/skills/release/SKILL.md`, that developers invoke when preparing a release.",
+          "correct": true,
+          "explanation": "Skills load on demand, while CLAUDE.md loads in every session. A project skill keeps the full checklist shared with the team but only uses context when a release is actually being prepared.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Shorten the checklist in `CLAUDE.md` to the 30 most important lines so that it costs much less in every session.",
+          "correct": false,
+          "explanation": "Cutting 270 lines throws away release steps the team relies on. The shorter checklist would still load into every session where it isn't needed.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Move the checklist into the `~/.claude/CLAUDE.md` of each release manager, since they are the people who run releases.",
+          "correct": false,
+          "explanation": "User-level files load in every session too, so release managers keep paying the cost. Anyone else who prepares a release wouldn't have the checklist at all.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "Move the checklist into a `.claude/rules/release.md` file with no `paths` field, separating it from the main file.",
+          "correct": false,
+          "explanation": "A rule file without a `paths` field loads in every session, just like the root file. The checklist would be tidier but cost exactly the same.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Use skills for on-demand procedures and CLAUDE.md for universal standards that should always be loaded.",
+      "studyRef": "§3 Task 3.2 (skills vs CLAUDE.md)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-008",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "3.3",
+      "secondaryTasks": [],
+      "stem": "Test files in your repository sit next to the code they test, across dozens of directories, for example `src/cart/Cart.test.tsx` and `src/auth/Login.test.tsx`. All of them follow the same conventions for mocking and test names. You want Claude Code to apply those conventions whenever it edits a test file, and not otherwise. What is the best approach?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Create a `.claude/rules/testing.md` file with `paths` frontmatter set to `**/*.test.tsx`, and put the conventions in it.",
+          "correct": true,
+          "explanation": "A glob-scoped rule loads whenever Claude edits a matching file, wherever it lives. It covers every test file and keeps the conventions out of context for other work.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add the testing conventions to the root `CLAUDE.md`, with a note saying that they apply only to test files.",
+          "correct": false,
+          "explanation": "The conventions would load in every session, and Claude has to decide for itself when they apply. A path-scoped rule makes that decision exactly.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add a `CLAUDE.md` file containing the same conventions to every directory that has test files in it.",
+          "correct": false,
+          "explanation": "Dozens of copies must be kept in sync, and every new directory needs another one. A single rule with a glob pattern covers all of them.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Create a `/test-conventions` skill that developers invoke before asking Claude to write or edit any tests.",
+          "correct": false,
+          "explanation": "Skills run only when someone invokes them, so any test edited without the command ignores the conventions. Conventions that should always apply to a file type belong in a path-scoped rule.",
+          "trap": "WRONG_CONFIG_LAYER"
+        }
+      ],
+      "keyConcept": "Use .claude/rules/ files with glob paths to apply conventions to file types spread across the codebase.",
+      "studyRef": "§3 Task 3.3; §6a Q6",
+      "sources": ["exam-guide", "research-6a-q6", "research-6c-d3"]
+    },
+    {
+      "id": "S2-009",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.3",
+      "secondaryTasks": [],
+      "stem": "Terraform conventions take up 150 lines of your root `CLAUDE.md`. Terraform files live in `infra/` and in several `modules/*/terraform/` folders. Frontend developers, who never touch Terraform, complain that every session starts with those lines in context. You want the conventions to load only when Claude works on Terraform, wherever the files are. What is the best approach?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Move the section into `.claude/rules/terraform.md` with `paths: [\"**/*.tf\"]` and delete it from the root `CLAUDE.md`.",
+          "correct": true,
+          "explanation": "The rule loads only when Claude works on a `.tf` file, in any folder. Deleting the section from the root file is what stops it loading during frontend work.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Move the section into a new `infra/CLAUDE.md` so it loads only when Claude is working inside the `infra/` directory.",
+          "correct": false,
+          "explanation": "A directory file covers only `infra/`, so Terraform work in the `modules/*/terraform/` folders would lose the conventions. A glob pattern covers every location.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Move the section into the `~/.claude/CLAUDE.md` of each developer who regularly works on the infrastructure code.",
+          "correct": false,
+          "explanation": "Personal files aren't shared, so anyone outside that group who edits Terraform gets no conventions. For those who have it, it still loads in every session.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "Keep the section in the root file and have frontend developers run `/compact` at the start of each of their own sessions.",
+          "correct": false,
+          "explanation": "`/compact` condenses conversation history; it doesn't stop project instructions from loading. The Terraform lines would still be in every frontend session.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Glob-scoped rules beat directory CLAUDE.md files when conventions span several directories.",
+      "studyRef": "§3 Task 3.3 (path-specific rules vs subdirectory CLAUDE.md)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-010",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 3,
+      "primaryTask": "3.2",
+      "secondaryTasks": [],
+      "stem": "Your `/release-notes` skill should only read files and run `git log` to draft notes for a given version. Last week it ran a formatter that rewrote twelve source files. Developers also often invoke it without a version number, and it then guesses which version they mean, usually wrongly. Which two changes to the skill should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add `allowed-tools` to the `SKILL.md` frontmatter, listing only read tools and `Bash(git log:*)`.",
+          "correct": true,
+          "explanation": "`allowed-tools` restricts what the skill can use while it runs. Without editing tools or general Bash access, it can't run a formatter or rewrite source files.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add an `argument-hint` such as `<version>` to the frontmatter, so developers are prompted for the version.",
+          "correct": true,
+          "explanation": "The hint shows the required parameter when the skill is invoked, so developers supply a version instead of leaving the skill to guess. It fixes the missing input at its source.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Add a line to the skill's instructions saying that it must never modify files and may only use `git log`.",
+          "correct": false,
+          "explanation": "An instruction makes edits less likely but leaves the tools that made them available. The skill could still run a formatter, which is exactly what must be ruled out.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Have the skill use the most recent git tag whenever no version is given, and carry on without asking the developer.",
+          "correct": false,
+          "explanation": "This swaps one guess for another. When a developer means an older release, the skill drafts the wrong notes instead of asking for the input it needs.",
+          "trap": "FAILURE_TO_ESCALATE"
+        },
+        {
+          "id": "e",
+          "text": "Copy the skill into each developer's `~/.claude/skills/` folder under the same name so each person can tune its behaviour.",
+          "correct": false,
+          "explanation": "Personal copies mean every developer runs a different version, and fixes made to the team's skill stop reaching anyone with a copy. Neither the edits nor the guessing are fixed.",
+          "trap": "WRONG_CONFIG_LAYER"
+        }
+      ],
+      "keyConcept": "In SKILL.md frontmatter, allowed-tools restricts tool access and argument-hint prompts for required parameters.",
+      "studyRef": "§3 Task 3.2 (allowed-tools, argument-hint)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-011",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "3.3",
+      "secondaryTasks": ["3.1"],
+      "stem": "You created `.claude/rules/components.md` with `paths: [\"src/components/*.tsx\"]`. Claude follows the rules when editing `src/components/Button.tsx` but ignores them for `src/components/forms/Input.tsx` and every other file in a subfolder. Running `/memory` while editing `Input.tsx` shows that the rule file is not loaded. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Change the pattern to `src/components/**/*.tsx` so it matches `.tsx` files in subfolders at any depth.",
+          "correct": true,
+          "explanation": "A single `*` matches within one directory level, so files under `forms/` never matched. `**` matches any depth, so every component file now loads the rule.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Move the component rules into the root `CLAUDE.md` so that they load for every file in the repository.",
+          "correct": false,
+          "explanation": "The rules would load everywhere, including backend work, just to fix a pattern that is one character short. Path scoping is worth keeping.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add a `CLAUDE.md` containing the same component rules to every subfolder of `src/components/`.",
+          "correct": false,
+          "explanation": "This duplicates the rules in every subfolder and needs another copy whenever a folder is added. Correcting the glob covers them all with one file.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Add `recursive: true` to the rule file's frontmatter so that the pattern also applies to nested folders.",
+          "correct": false,
+          "explanation": "Rule frontmatter has no `recursive` option, so nothing would change. Depth is controlled by the glob pattern itself, using `**`.",
+          "trap": "NONEXISTENT_FEATURE"
+        }
+      ],
+      "keyConcept": "Path-scoped rules load only for files matching the glob; use ** to match nested directories.",
+      "studyRef": "§3 Task 3.3 (glob patterns in paths frontmatter)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-012",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "3.4",
+      "secondaryTasks": [],
+      "stem": "Your team needs to break a payments monolith into separate services. The work touches dozens of files, and there are several valid ways to draw the service boundaries, each with different data-ownership trade-offs. Nobody has agreed on an approach yet. How should a developer start this work in Claude Code?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Use plan mode so Claude explores the codebase and proposes service boundaries before any file is changed.",
+          "correct": true,
+          "explanation": "Large multi-file changes with several valid approaches are what plan mode is for. Exploring and agreeing on boundaries first avoids expensive rework once code starts moving.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Use direct execution and ask Claude to move the code carefully, one service at a time, adjusting as it goes.",
+          "correct": false,
+          "explanation": "Editing before the boundaries are chosen bakes early decisions into many files. Finding a better split later means costly rework across everything already moved.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Use direct execution, then have the same session review all of its own changes once the split is complete.",
+          "correct": false,
+          "explanation": "A review at the end comes after the expensive decisions are made, and the same session tends to confirm its own reasoning. Neither step helps choose the boundaries.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "d",
+          "text": "Spawn one subagent per proposed service and let each start moving its own code in parallel straight away.",
+          "correct": false,
+          "explanation": "Parallel agents editing before anyone agrees on boundaries multiply the rework. They would also make conflicting assumptions about shared data.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Use plan mode for large, architectural, multi-file changes with several valid approaches.",
+      "studyRef": "§3 Task 3.4; §6a Q5; §5 Key decision frameworks",
+      "sources": ["exam-guide", "research-6a-q5"]
+    },
+    {
+      "id": "S2-013",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "3.5",
+      "secondaryTasks": [],
+      "stem": "You asked Claude to convert legacy date strings in a data-import module to ISO 8601. Your prose description covered formats such as \"3/4/21\", \"March 4th\" and \"04-03-2021\", but across three attempts Claude kept guessing differently about day-month order and missing years. What is the most effective next step?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Give two or three concrete input and expected-output pairs, including the ambiguous day-month cases.",
+          "correct": true,
+          "explanation": "When prose is read inconsistently, concrete examples show the exact transformation you want. Including the ambiguous cases settles day-month order without more description.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Rewrite the description at greater length, explaining each date format and the reasoning behind the expected output.",
+          "correct": false,
+          "explanation": "More prose is more of what already failed three times. The ambiguity lies in how the words are interpreted, which examples remove and extra words don't.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Ask Claude to rate its confidence in each conversion and flag any result below 80% for a manual review.",
+          "correct": false,
+          "explanation": "Self-reported confidence is poorly calibrated, and Claude was confident in its wrong guesses. You still haven't shown it the rule you want.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "d",
+          "text": "Start a fresh session and paste in the same description, so the earlier failed attempts can't influence the result.",
+          "correct": false,
+          "explanation": "The same prose produces the same kind of guesses. Starting over also throws away the failed attempts, which show exactly where the instructions are unclear.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "When prose is interpreted inconsistently, 2–3 concrete input/output examples communicate a transformation best.",
+      "studyRef": "§3 Task 3.5 (concrete I/O examples)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-014",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.5",
+      "secondaryTasks": [],
+      "stem": "A developer must add audit logging for patient-record access to a healthcare app. They have never worked under healthcare compliance rules and don't know what such logs usually need, such as retention periods, tamper resistance or which fields are sensitive. They want Claude to help design and build it without missing important requirements. What is the best way to start?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Ask Claude to interview them first, raising questions about requirements and constraints before proposing a design.",
+          "correct": true,
+          "explanation": "The interview pattern lets Claude raise considerations the developer didn't know to mention, such as retention or tamper resistance. The design then rests on answered questions rather than assumptions.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Ask Claude to implement the logging right away, using its own judgment about what healthcare audit logs typically need.",
+          "correct": false,
+          "explanation": "Claude would fill every gap with silent assumptions. In a compliance domain, unstated guesses are exactly where requirements get missed.",
+          "trap": "FAILURE_TO_ESCALATE"
+        },
+        {
+          "id": "c",
+          "text": "Have Claude write the design, then ask the same session to review it for any missing compliance requirements.",
+          "correct": false,
+          "explanation": "The session that wrote the design shares its blind spots and tends to confirm it. Requirements nobody raised are unlikely to show up in its review.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "d",
+          "text": "Hand the whole task to the compliance team so they can write a full specification before anyone starts.",
+          "correct": false,
+          "explanation": "Compliance may need to sign off later, but handing the task away stalls it. The interview surfaces the specific questions first, so the compliance team has concrete ones to answer.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "Use the interview pattern so Claude surfaces design considerations in an unfamiliar domain before building.",
+      "studyRef": "§3 Task 3.5 (interview pattern)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-015",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "3.4",
+      "secondaryTasks": ["5.4"],
+      "stem": "You need to replace a deprecated HTTP client used in about 60 files with several different calling patterns. In an earlier attempt, Claude filled the context with search output while finding call sites, then began editing before anyone agreed how retries and timeouts should map to the new client. Which two changes should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Start in plan mode so Claude investigates the call sites and proposes a migration approach before editing.",
+          "correct": true,
+          "explanation": "A 60-file change with open questions about retries and timeouts needs an agreed approach first. Plan mode lets Claude explore and propose without touching any files.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Have the Explore subagent find and classify the call sites, so only a summary returns to the main conversation.",
+          "correct": true,
+          "explanation": "The Explore subagent does the verbose searching in its own context. The main conversation gets a compact list of patterns, so the earlier context exhaustion doesn't repeat.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Raise `max_tokens` so the complete search output fits in the conversation before the migration starts.",
+          "correct": false,
+          "explanation": "`max_tokens` caps the length of a response; it doesn't enlarge the context window. The search output would fill the context just as before.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Paste the full list of call sites into the project `CLAUDE.md` so that it is available in every session.",
+          "correct": false,
+          "explanation": "This loads a long, temporary list into every session for every developer. It moves the context problem rather than solving it, and nobody has agreed the approach yet.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "e",
+          "text": "Use direct execution from the start, and run `/clear` whenever the context fills up with search output.",
+          "correct": false,
+          "explanation": "Clearing throws away the findings along with the noise, and direct execution still edits before the approach is agreed. Both earlier failures would happen again.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "Combine plan mode for multi-file changes with the Explore subagent to keep verbose discovery out of context.",
+      "studyRef": "§3 Task 3.4 (plan mode, Explore subagent)",
+      "sources": ["exam-guide", "research-6c-d3"]
+    },
+    {
+      "id": "S2-016",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.3",
+      "secondaryTasks": [],
+      "stem": "In a long Claude Code session, you and Claude agreed that new tests use Vitest, shared fixtures in `test/fixtures/`, and names like `should <behaviour> when <condition>`. Claude then spawned a subagent with the prompt \"Write tests for the cart module.\" It returned Jest tests with inline fixtures and different names. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Spawn the subagent with a prompt that states the framework, fixture location and naming pattern explicitly.",
+          "correct": true,
+          "explanation": "A subagent starts with only the prompt it is given. Writing the agreed conventions into that prompt is the only way they reach it.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add the line \"use the conventions we agreed earlier in this conversation\" to the subagent's prompt.",
+          "correct": false,
+          "explanation": "The subagent can't see the conversation, so it doesn't know what was agreed. The line points to context it never received.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "c",
+          "text": "Give the subagent access to every tool in the main session, so it can work out the conventions for itself.",
+          "correct": false,
+          "explanation": "More tools don't tell it which choices were agreed. It might search the repository and still pick Jest if older tests use it.",
+          "trap": "TOOL_OVERLOAD"
+        },
+        {
+          "id": "d",
+          "text": "Let the subagent finish, then have the main session rewrite its tests to match the agreed conventions.",
+          "correct": false,
+          "explanation": "This redoes the subagent's work every time and wastes the delegation. The prompt that left out the conventions stays the same.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Subagents don't inherit the parent conversation; pass everything they need explicitly in the prompt.",
+      "studyRef": "§3 Task 1.3 (explicit context passing)",
+      "sources": ["exam-guide", "research-6c-d1"]
+    },
+    {
+      "id": "S2-017",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.6",
+      "secondaryTasks": [],
+      "stem": "You are asked to add tests to a 400-file legacy service with no documentation and almost no tests. Nobody knows which modules carry the most risk, and findings made early, such as hidden coupling, will change what is worth testing next. The goal is to protect the riskiest behaviour first. How should Claude decompose this work?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Map the structure first, find the high-impact areas, then follow a prioritised plan updated as findings come in.",
+          "correct": true,
+          "explanation": "This is open-ended work where each discovery changes the next step, so the plan has to adapt. Mapping first puts effort on the riskiest modules instead of the easiest.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Set an 80% overall line-coverage target and generate tests file by file until the coverage report reaches it.",
+          "correct": false,
+          "explanation": "An overall coverage number can be reached by testing easy files while the risky modules stay uncovered. It measures the wrong thing for this goal.",
+          "trap": "AGGREGATE_METRIC_MASKING"
+        },
+        {
+          "id": "c",
+          "text": "Use a fixed pipeline that writes one test file per source file in alphabetical order, repeated across all 400 files.",
+          "correct": false,
+          "explanation": "A fixed order ignores risk and can't react to what is discovered. The riskiest modules may be reached last, after the effort is spent on trivial files.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Ask the team's most senior engineer to write a complete test plan before Claude starts work on any file.",
+          "correct": false,
+          "explanation": "Nobody knows where the risk is yet, so a plan written up front would be guesswork. Claude can map the service and find the high-impact areas itself.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "For open-ended work, map structure first, find high-impact areas, then follow an adaptive prioritised plan.",
+      "studyRef": "§3 Task 1.6 (dynamic decomposition for open-ended tasks)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-018",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.6",
+      "secondaryTasks": [],
+      "stem": "You are generating reference docs for 30 API endpoints. Every endpoint needs the same steps: extract the signature, describe the behaviour and write an example request, and all pages must use consistent terminology. With one open-ended prompt, \"document this API\", the results vary widely in structure and some steps are skipped. What is the best approach?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Use a fixed prompt chain that runs the same steps for each endpoint, then a separate consistency pass across all pages.",
+          "correct": true,
+          "explanation": "The work is predictable and identical for every endpoint, which suits prompt chaining. The final cross-page pass catches terminology drift that per-endpoint steps can't see.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Have Claude grade each finished page from 1 to 10, and redo any page that it scores below 7.",
+          "correct": false,
+          "explanation": "The same model grading its own pages tends to rate them well, and a score doesn't say which step was skipped. The open-ended prompt that causes the variation stays.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "c",
+          "text": "Spawn one subagent per endpoint, and have them all read and write a shared notes file to keep terminology consistent.",
+          "correct": false,
+          "explanation": "Agents coordinating through a shared file bypass the main session, and conflicting edits to the notes are likely. Consistency is better handled by one integration pass.",
+          "trap": "BYPASS_COORDINATOR"
+        },
+        {
+          "id": "d",
+          "text": "Raise `max_tokens` so that Claude can document all 30 endpoints in one long response.",
+          "correct": false,
+          "explanation": "A longer response doesn't make the steps happen consistently; it only allows more output. Skipped steps and uneven structure would continue.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Use prompt chaining for predictable multi-step work, with a separate cross-item integration pass.",
+      "studyRef": "§3 Task 1.6 (prompt chaining vs dynamic decomposition)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-019",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.7",
+      "secondaryTasks": [],
+      "stem": "Yesterday you analysed the authentication module in a named session, `auth-refactor`, and Claude built a detailed picture of how it works. Overnight a teammate merged changes to three files in that module: `session.ts`, `tokens.ts` and `middleware.ts`. The rest of the analysis is still valid. How should you continue today?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Resume with `--resume auth-refactor` and tell Claude which three files changed so it re-analyses them.",
+          "correct": true,
+          "explanation": "Most of the earlier context is still valid, so resuming keeps it. Naming the changed files lets Claude re-read just those instead of relying on yesterday's view of them.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Start a brand-new session and redo the whole analysis of the authentication module from scratch.",
+          "correct": false,
+          "explanation": "This throws away an analysis that is mostly still correct. Only three files changed, so redoing everything wastes time and context.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Resume with `--resume auth-refactor` and carry on as before, since Claude will notice the changed files itself.",
+          "correct": false,
+          "explanation": "The resumed session holds yesterday's file contents, and nothing tells it they changed. It would keep reasoning from the old versions of all three files.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "d",
+          "text": "Resume the session and ask Claude to re-read every file in the repository before continuing with the work.",
+          "correct": false,
+          "explanation": "Re-reading the whole repository fills the context to catch three known changes. Telling Claude which files changed does the same job far more cheaply.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "When resuming with mostly valid context, tell the agent exactly which files changed for targeted re-analysis.",
+      "studyRef": "§3 Task 1.7 (--resume; informing resumed sessions about changes)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-020",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 3,
+      "primaryTask": "3.5",
+      "secondaryTasks": [],
+      "stem": "Claude is implementing a rate limiter. Over four rounds of separate messages, fixing burst handling broke the window reset, and fixing the reset broke burst handling again. There is also an unrelated lint warning in another file. You want to stop the back-and-forth and reach correct behaviour. Which two changes should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Write tests for bursts, resets and edge cases first, then iterate by sharing the failing test output with Claude.",
+          "correct": true,
+          "explanation": "Tests pin down both behaviours at once, so a fix that breaks one shows up immediately. Sharing the failures gives Claude precise feedback instead of a description.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Describe the burst and reset problems together in one message, and deal with the lint warning on its own.",
+          "correct": true,
+          "explanation": "The two problems interact, so fixing them separately keeps undoing one with the other. Raising them together lets Claude find a solution for both, while the independent lint warning can be handled alone.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Keep reporting one problem per message, starting each round with whichever problem looks worst at that point.",
+          "correct": false,
+          "explanation": "This is the pattern that caused the back-and-forth. Each fix is made without the other constraint in view, so the two problems keep trading places.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Ask Claude in the same session to review its implementation and confirm that both behaviours now work.",
+          "correct": false,
+          "explanation": "The session that wrote the code tends to confirm its own reasoning. It already believed each earlier fix was correct.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "e",
+          "text": "Allow three more rounds of fixes, then accept whichever version is current when that limit is reached.",
+          "correct": false,
+          "explanation": "A round limit doesn't change how the fixes are made, so the version you accept could still have either bug. It stops the work rather than finishing it.",
+          "trap": "ITERATION_CAP"
+        }
+      ],
+      "keyConcept": "Iterate test-first and raise interacting problems together; handle independent problems one at a time.",
+      "studyRef": "§3 Task 3.5 (test-driven iteration; batching interacting issues)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-021",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "5.4",
+      "secondaryTasks": [],
+      "stem": "Two hours into exploring an unfamiliar codebase, Claude's answers start drifting. Earlier it identified `LedgerWriter` and `ReconcileJob` as the core of the billing flow; now it describes \"typical billing patterns\" and contradicts what it found. You still have several questions to work through in this session. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Have Claude record key findings in a scratchpad file, and refer back to that file for later questions.",
+          "correct": true,
+          "explanation": "A scratchpad file keeps findings exact as the session grows, so Claude can re-read them instead of relying on degrading memory. Later answers stay anchored to the classes it actually found.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Run `/clear` and start the exploration again from the beginning, in the same session.",
+          "correct": false,
+          "explanation": "Clearing throws away two hours of findings to escape the drift. The same degradation would return once the new exploration grows long.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Increase `max_tokens` so Claude can keep more of the earlier exploration in its context.",
+          "correct": false,
+          "explanation": "`max_tokens` limits the length of each response, not how much context is kept. The earlier findings would still fade, and the drift would continue as before.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Add an instruction asking Claude to be specific and name actual classes instead of describing general patterns.",
+          "correct": false,
+          "explanation": "Claude drifts because the specific findings are fading from its context, not because it doesn't want to be specific. An instruction can't bring them back.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Counter context degradation in long sessions by persisting key findings to a scratchpad file.",
+      "studyRef": "§3 Task 5.4 (context degradation; scratchpad files)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-022",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "5.4",
+      "secondaryTasks": [],
+      "stem": "Midway through a long debugging session, the context is filling up with verbose output from earlier file searches and test runs. Most of that output is no longer needed, but the decisions and findings reached so far are. You want to keep working in the same session. What should you do?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Run `/compact` to condense the conversation so far while keeping the important findings.",
+          "correct": true,
+          "explanation": "`/compact` replaces the verbose history with a condensed version, freeing context while keeping the decisions and findings. You carry on in the same session.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Run `/clear`, then re-explain the problem and everything found so far from your own memory.",
+          "correct": false,
+          "explanation": "Clearing throws away all the findings, and rebuilding them from memory takes time and loses detail. `/compact` keeps the findings while dropping the noise.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Spawn a subagent and ask it to continue the debugging from where the main session currently stands.",
+          "correct": false,
+          "explanation": "The subagent starts with none of the session's findings unless they are written into its prompt. It would begin the debugging almost from scratch.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "d",
+          "text": "Stop running searches and tests for the rest of the session so that the context stops growing.",
+          "correct": false,
+          "explanation": "Debugging needs searches and test runs, so this blocks the work itself. The verbose output already in context also stays there.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Use /compact to reduce context used by verbose output during extended sessions.",
+      "studyRef": "§3 Task 5.4 (/compact)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-023",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "5.1",
+      "secondaryTasks": ["5.4"],
+      "stem": "Your main session delegates codebase searches to a subagent. Each search returns the full contents of every matching file, often 3,000 lines, although the main session only needs file paths, relevant function names and line numbers. After four searches the main context is nearly full. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Have the subagent return a structured list of paths, function names and line numbers instead of file contents.",
+          "correct": true,
+          "explanation": "The main session needs only the key facts, so the subagent should return just those. Structured output keeps each result small and leaves room for the work itself.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Have the main session summarise each subagent result after receiving it, before asking its next question.",
+          "correct": false,
+          "explanation": "The 3,000 lines have already entered the main context by the time it summarises. Summarising afterwards doesn't remove the cost.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Cut off each subagent result after its first 200 lines, so that no single search can fill the main context.",
+          "correct": false,
+          "explanation": "Matches after line 200 would vanish with no sign that anything was cut. The main session would reason as if it had seen every result.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Add a second subagent that summarises each search subagent's output before it is passed back to the main session.",
+          "correct": false,
+          "explanation": "An extra agent adds latency and cost to clean up output that should never have been verbose. Changing what the first subagent returns is simpler.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Have upstream agents return structured key facts, not verbose content, when downstream context is limited.",
+      "studyRef": "§3 Task 5.1 (structured data from upstream agents)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-024",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 3,
+      "primaryTask": "5.4",
+      "secondaryTasks": ["1.3"],
+      "stem": "You are exploring a large payments codebase in two phases. Phase 1 mapped the main modules and their owners. Phase 2 must answer specific questions, such as tracing every dependency of the refund flow and finding all tests that touch it. Last time, phase 2's search output exhausted the main context. Which two practices should you use? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Spawn subagents for specific phase 2 questions, such as tracing refund dependencies, while the main session coordinates.",
+          "correct": true,
+          "explanation": "Each subagent does its verbose searching in its own context and returns a result. The main session keeps the high-level picture without filling up.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Summarise the phase 1 findings and include that summary in each phase 2 subagent's initial prompt.",
+          "correct": true,
+          "explanation": "Subagents start with only their prompt. A summary of the module map lets them build on phase 1 instead of rediscovering the codebase.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Tell the phase 2 subagents to rely on the module map that was built earlier in the main conversation.",
+          "correct": false,
+          "explanation": "Subagents can't see the main conversation, so the module map never reaches them. They would rediscover it or work from guesses.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "d",
+          "text": "Give each phase 2 subagent every available tool so that it can answer any question that comes up along the way.",
+          "correct": false,
+          "explanation": "A large toolset makes each subagent's tool choices less reliable. Focused questions need only the few search and read tools they use.",
+          "trap": "TOOL_OVERLOAD"
+        },
+        {
+          "id": "e",
+          "text": "Have the phase 2 subagents start without the phase 1 findings so that earlier conclusions can't bias their analysis.",
+          "correct": false,
+          "explanation": "This throws away the phase 1 work, and each subagent would spend its context remapping the codebase. The findings are a base to build on, not a source of bias.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "Delegate specific questions to subagents and inject summaries of earlier phases into their initial prompts.",
+      "studyRef": "§3 Task 5.4 (subagent delegation; summarising between phases)",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-025",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "5.1",
+      "secondaryTasks": ["1.2"],
+      "stem": "To plan a framework upgrade, eight subagents each analyse one area of the codebase, and the main session combines their reports into one plan. The plan reliably reflects the first two and last two reports but keeps missing blockers from the middle ones, such as a deprecated API in area 5. All eight reports are complete and well within the context limit. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Put a short summary of each report's key blockers at the start of the input, with clear headers for the details.",
+          "correct": true,
+          "explanation": "Models attend least to the middle of long inputs. Putting every report's key blockers at the start, with headed sections below, keeps the middle findings where they are reliably read.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Lower the temperature when combining the reports so the main session is more careful to include every finding.",
+          "correct": false,
+          "explanation": "Temperature affects randomness in wording, not how well the model attends to the middle of its input. The middle blockers would still be missed.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Drop the detailed sections of the middle reports and keep only their conclusions, so the combined input is shorter.",
+          "correct": false,
+          "explanation": "This throws away detail the plan may need, and the reports already fit. The problem is where the blockers sit in the input, not its length.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "d",
+          "text": "After the plan is written, ask the main session to check it against the reports and add any missing blockers.",
+          "correct": false,
+          "explanation": "The same session reads the same long input with the same blind spot in the middle. It tends to confirm its plan rather than find what it missed.",
+          "trap": "SELF_REVIEW"
+        }
+      ],
+      "keyConcept": "Mitigate lost-in-the-middle by placing key findings first and organising details under explicit section headers.",
+      "studyRef": "§3 Task 5.1 (lost in the middle; key findings first)",
+      "sources": ["exam-guide", "research"]
+    }
+  ]
+}

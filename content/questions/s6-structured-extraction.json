@@ -1,0 +1,1178 @@
+{
+  "scenario": "S6",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S6-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "4.3",
+      "secondaryTasks": [],
+      "stem": "Your invoice extraction tool has a JSON schema in which `due_date`, `po_number` and `tax_id` are all required strings. Many invoices simply don't contain a PO number or a due date. Reviewers notice that the extracted records still always have values for these fields, and some of the values appear nowhere in the source invoice. What should you change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Make fields that a document may lack optional and nullable, so the model can return null when they're absent.",
+          "correct": true,
+          "explanation": "A required string field forces the model to produce something, so it invents a plausible value when the invoice has none. A nullable field gives it an honest way to say the value isn't there.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add \"never invent values that are not in the document\" to the extraction prompt, and keep the fields required.",
+          "correct": false,
+          "explanation": "The schema still demands a string for every field, so the instruction and the schema pull in opposite directions. The schema has to allow a missing value before the model can give one.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Turn on strict mode for the tool, so that the output is checked against the schema before it is returned.",
+          "correct": false,
+          "explanation": "Strict mode guarantees the output matches the schema, and the invented values already match it. It checks structure, not whether a value really came from the document.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Keep the fields required and have the pipeline drop any record where a field value can't be found in the text.",
+          "correct": false,
+          "explanation": "Whole invoices would be thrown away just because one optional field was missing, and the model would keep inventing values on every run. The schema is causing the problem.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "Make fields that documents may lack optional and nullable in the schema, so the model returns null instead of fabricating.",
+      "studyRef": "§3 Task 4.3 (nullable schema fields to prevent fabrication)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "2.1",
+      "secondaryTasks": [],
+      "stem": "Your extraction agent has two tools. `extract_document` is described as \"Extracts data from a document.\" `parse_document` is described as \"Parses a document and returns data.\" The first should be used for invoices and the second for contracts. The agent often calls the wrong tool, and contracts come back with invoice fields. What is the best fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Rename them to `extract_invoice` and `extract_contract`, and describe the inputs, outputs and when to use each.",
+          "correct": true,
+          "explanation": "Tool descriptions are the main thing the model uses to choose a tool. Two near-identical descriptions give it nothing to go on; clear names and descriptions that say when to use each one fix the routing.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add a classifier model that detects the document type first and then calls the correct tool on the agent's behalf.",
+          "correct": false,
+          "explanation": "A separate classifier adds cost and a new place for errors to work around two vague descriptions. Clear tool names and descriptions let the agent choose correctly on its own.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "c",
+          "text": "Retry the extraction with the other tool whenever the output is missing the fields the document type needs.",
+          "correct": false,
+          "explanation": "Every misrouted document costs a second call, and the agent keeps picking the wrong tool first. The overlapping descriptions are still the cause.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Add the line \"use extract_document for invoices\" to the system prompt, and leave both tool descriptions as they are.",
+          "correct": false,
+          "explanation": "This might help invoices, but the tool descriptions still say the same thing, and contracts get no guidance at all. Fix the descriptions where the model looks when choosing tools.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        }
+      ],
+      "keyConcept": "Clear, differentiated tool names and descriptions are the main way to stop an agent choosing the wrong tool.",
+      "studyRef": "§3 Task 2.1 (differentiating overlapping tool descriptions)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-003",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "4.4",
+      "secondaryTasks": [
+        "4.3"
+      ],
+      "stem": "When validation fails, your pipeline retries the extraction with the specific error added to the prompt. For badly formatted dates this works well. But for contracts whose `renewal_term` is missing, the pipeline retries three times, gets null each time, and then marks the document as failed. Investigation shows these contracts really don't state a renewal term. What should you change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Accept null for this field when the source doesn't state it, and retry only on format or structural errors.",
+          "correct": true,
+          "explanation": "A retry helps when the model got the format wrong, not when the information isn't in the document. Treating an honest null as valid stops wasted retries and false failures.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Raise the retry limit to ten attempts, so that the model has more chances to find the renewal term in the contract.",
+          "correct": false,
+          "explanation": "No number of attempts can find a value that isn't there. More retries only cost more, and could push the model into inventing a term to satisfy the check.",
+          "trap": "ITERATION_CAP"
+        },
+        {
+          "id": "c",
+          "text": "Make the retry prompt say \"the renewal term is definitely in this contract, look again carefully\".",
+          "correct": false,
+          "explanation": "The statement is false for these contracts, so it pressures the model to make a value up. That swaps an honest null for a fabricated term.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Fill in a default renewal term of 12 months whenever the field is null, so the record passes validation.",
+          "correct": false,
+          "explanation": "Downstream systems would treat an invented term as fact, and nobody would know it wasn't in the contract. A missing value should stay visibly missing.",
+          "trap": "SILENT_FAILURE"
+        }
+      ],
+      "keyConcept": "Retries fix format errors, not missing information; accept null when the source document doesn't contain the value.",
+      "studyRef": "§3 Task 4.4 (when retries are ineffective)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-004",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "4.2",
+      "secondaryTasks": [],
+      "stem": "Your pipeline extracts the list of cited works from research papers. It works well on papers with a bibliography section at the end. On papers that cite sources inline, such as \"(Chen et al., 2021)\" in the text, or in footnotes, it often returns an empty list. The prompt describes the output fields clearly. What is the most effective improvement?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add short examples of correct extraction from papers with a bibliography, with inline citations and with footnotes.",
+          "correct": true,
+          "explanation": "Few-shot examples show the model that citations come in several forms and what to extract from each. They work better than describing every form in words, and they help with formats the examples don't cover exactly.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Make the `citations` array required with at least one item, so that the model can't return an empty list.",
+          "correct": false,
+          "explanation": "Some papers really have no citations, and the model would have to invent one. The schema can't teach it where to look for citations.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Process only papers that have a bibliography section, and send all the others to manual data entry.",
+          "correct": false,
+          "explanation": "Many papers would leave the automated pipeline for a problem that examples can fix. It also gives up on the accurate extractions it could produce for them.",
+          "trap": "PREMATURE_ESCALATION"
+        },
+        {
+          "id": "d",
+          "text": "Add the instruction \"citations may appear anywhere in the paper\" to the prompt, and keep the rest of it exactly as it is.",
+          "correct": false,
+          "explanation": "The model is told citations might be elsewhere but isn't shown what they look like there. Examples of each form are far more effective.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Use few-shot examples covering varied document structures, such as inline citations versus bibliographies.",
+      "studyRef": "§3 Task 4.2 (few-shot examples for varied document structures)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-005",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "4.3",
+      "secondaryTasks": [],
+      "stem": "Your contract schema has a `contract_type` enum: lease, employment, NDA and supply. New document kinds keep arriving, such as licensing and consulting agreements, and the model forces them into the closest listed value. Some contracts are also so vague that even reviewers can't tell their type. How should you change the schema? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add an `\"other\"` value to the enum, together with a `contract_type_detail` string that describes the actual type.",
+          "correct": true,
+          "explanation": "With an `\"other\"` value the model no longer has to force new kinds into the wrong category, and the detail string records what they really are, so new types are easy to spot.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add an `\"unclear\"` enum value for contracts whose type can't be determined from the document text.",
+          "correct": true,
+          "explanation": "An honest \"can't tell\" value stops the model guessing on vague contracts. Those records can then be sent to review instead of being filed under the wrong type.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Replace the enum with a free-text field, so that the model can write any contract type it finds in the document.",
+          "correct": false,
+          "explanation": "Downstream systems need consistent values, and free text gives \"NDA\", \"non-disclosure\" and \"confidentiality agreement\" for the same thing. Keeping the enum and adding \"other\" keeps the values consistent.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Add every contract type the business might ever handle to the enum now, so that no new kind ever falls outside it.",
+          "correct": false,
+          "explanation": "The list can never be complete, and a long list of rarely used types makes the choice harder. A new kind would still be forced into the nearest value.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "e",
+          "text": "Set `\"strict\": true` on the tool, so the model must pick the enum value that best fits the contract's real type.",
+          "correct": false,
+          "explanation": "Strict mode makes sure the value is one of the listed options; it doesn't help the model choose correctly. A contract with no matching option would still get a wrong one.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Add \"other\" with a detail field and \"unclear\" to enums so new or ambiguous cases aren't forced into wrong categories.",
+      "studyRef": "§3 Task 4.3 (\"other\" and \"unclear\" enum values)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-006",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.1",
+      "secondaryTasks": [],
+      "stem": "Your extraction agent can call a `lookup_vendor` tool to check vendor names against the supplier database. Your loop ends as soon as Claude's response contains a text block. Often Claude writes \"Let me check this vendor\" alongside a `lookup_vendor` call, and the loop exits before the tool runs, so the extraction is never finished. How should the loop decide when to stop?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Run the requested tools and continue while `stop_reason` is `\"tool_use\"`, stopping when it is `\"end_turn\"`.",
+          "correct": true,
+          "explanation": "A response can contain text and a tool call at the same time. The `stop_reason` field is the API's signal for whether Claude wants a tool run or has finished.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "End the loop only when the text block contains a phrase such as \"Extraction complete\" or \"Here is the data\".",
+          "correct": false,
+          "explanation": "Claude may say this mid-task or not at all, so the loop would still stop at the wrong time. Text is the wrong signal for loop control.",
+          "trap": "NL_TERMINATION"
+        },
+        {
+          "id": "c",
+          "text": "Run the loop a fixed five times for every document, whatever Claude's responses contain.",
+          "correct": false,
+          "explanation": "Some documents need fewer turns and some need more. A fixed count either wastes calls or cuts extraction off before it finishes.",
+          "trap": "ITERATION_CAP"
+        },
+        {
+          "id": "d",
+          "text": "Tell Claude in the system prompt never to write any text when it calls a tool, so that the loop's current check keeps working.",
+          "correct": false,
+          "explanation": "An instruction can't guarantee Claude won't add text, and the check would still be reading the wrong thing. The API already reports why Claude stopped.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        }
+      ],
+      "keyConcept": "Control the loop with stop_reason, not with whether a response contains text; responses can mix text and tool calls.",
+      "studyRef": "§3 Task 1.1 (stop_reason-driven loop control)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-007",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "4.3",
+      "secondaryTasks": [
+        "2.3"
+      ],
+      "stem": "Your pipeline gives the model three extraction tools, `extract_invoice`, `extract_contract` and `extract_paper`, each with its own schema, and lets it choose the right one for each document. You set `tool_choice` to `\"auto\"`. Most documents produce a tool call, but some get a prose summary instead, which downstream systems can't use. What should you change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Set `tool_choice` to `\"any\"`, so the model must call one of the tools but can still choose which one.",
+          "correct": true,
+          "explanation": "With `\"auto\"` the model may answer in text. `\"any\"` guarantees a tool call while still letting the model pick the schema that fits the document.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Force `extract_invoice` with `tool_choice`, since invoices are the most common document type.",
+          "correct": false,
+          "explanation": "Every contract and paper would then be extracted with the invoice schema. Forcing one tool only fits when the same tool should always run.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add \"always use one of the extraction tools, never reply in text\" to the system prompt.",
+          "correct": false,
+          "explanation": "An instruction makes a tool call more likely but can't guarantee it, so some prose replies would remain. The `tool_choice` setting enforces it.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Merge the three tools into one large tool whose schema contains every field from all three document types.",
+          "correct": false,
+          "explanation": "One huge schema with mostly irrelevant fields makes extraction less accurate, and `\"auto\"` would still allow prose replies. The setting is the problem.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Use tool_choice \"any\" to guarantee a tool call when the model must choose among several extraction schemas.",
+      "studyRef": "§3 Task 4.3 (tool_choice \"any\" with multiple schemas)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-008",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "5.6",
+      "secondaryTasks": [],
+      "stem": "Your pipeline combines extractions from a customer's original contract and two later amendments into one record. The original says the termination date is 31 March 2026, the first amendment says 30 June 2026, and the second doesn't mention it. The current code keeps whichever value was extracted last. Which approach should the pipeline use?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep each value with its source document and date, and mark the field as a conflict when the values disagree.",
+          "correct": true,
+          "explanation": "The dates tell you which value is newer, and the sources tell you where each came from. Recording both lets the pipeline or a reviewer resolve the conflict correctly instead of by processing order.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Keep the value from the original contract, because it is the main legal document for the customer.",
+          "correct": false,
+          "explanation": "The amendment exists to change the original, so the original's date may be out of date. Picking one source by rule throws away the information needed to decide.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Average the two dates, so that the record holds one value that sits between the two documents.",
+          "correct": false,
+          "explanation": "An average gives a date that neither document states. It hides the real conflict and creates a termination date nobody ever agreed to.",
+          "trap": "AGGREGATE_METRIC_MASKING"
+        },
+        {
+          "id": "d",
+          "text": "Keep the value from whichever extraction reports the higher confidence score for the termination date.",
+          "correct": false,
+          "explanation": "Both dates may be extracted correctly with high confidence; the documents just say different things. Confidence measures the extraction, not which document is current.",
+          "trap": "UNRELIABLE_PROXY"
+        }
+      ],
+      "keyConcept": "Keep conflicting values with their source and date, and annotate the conflict instead of picking one arbitrarily.",
+      "studyRef": "§3 Task 5.6 (conflicting values with source attribution; temporal data)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-009",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "2.3",
+      "secondaryTasks": [],
+      "stem": "Your invoice extraction agent was given 18 tools over time, including web search, email sending and file deletion, as well as the three it actually needs: OCR, vendor lookup and the extraction tool. It sometimes picks the wrong tool, and once it searched the web for a missing invoice total and filled in a figure it found there. What should you do?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Give the agent only the OCR, vendor lookup and extraction tools, and remove the ones its role doesn't need.",
+          "correct": true,
+          "explanation": "Too many tools make selection less reliable, and tools outside the agent's role invite misuse like the web search. A small set limited to its job fixes both problems.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add a sentence to each unneeded tool's description saying that the agent shouldn't use it.",
+          "correct": false,
+          "explanation": "The tools are still there, still adding to the choice, and still usable. Removing them is simpler and actually guarantees they won't be used.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Add a second agent that checks every tool call before it runs and blocks the ones it thinks are wrong.",
+          "correct": false,
+          "explanation": "This adds a model to guard tools the agent never needed. Taking them away is a one-line change and can't miss anything.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Keep all 18 tools, so the agent can still find missing values on the web or elsewhere when an invoice is incomplete.",
+          "correct": false,
+          "explanation": "A value found on the web isn't the value on this invoice. Filling gaps from outside sources is fabrication; missing fields should be null and reviewed.",
+          "trap": "TOOL_OVERLOAD"
+        }
+      ],
+      "keyConcept": "Give each agent only the tools its role needs; extra tools reduce selection reliability and invite misuse.",
+      "studyRef": "§3 Task 2.3 (scoped tool access)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-010",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 1,
+      "primaryTask": "4.4",
+      "secondaryTasks": [],
+      "stem": "Your validator checks each extracted invoice, for example that `invoice_date` is in ISO format and that `currency` is a three-letter code. When a check fails, the pipeline currently sends the same request again unchanged, and it usually fails in the same way. What should the retry request include so the model can correct the extraction? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "The specific validation errors, such as \"invoice_date '03/04/25' is not ISO 8601 (YYYY-MM-DD)\".",
+          "correct": true,
+          "explanation": "A specific error tells the model exactly what was wrong and what is expected. An unchanged retry gives it no reason to answer differently.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "The original document together with the failed extraction, so the model can see what it produced from it.",
+          "correct": true,
+          "explanation": "With the source and its previous attempt side by side, the model can fix the specific fields that failed instead of starting again from nothing.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "A general note that \"the previous extraction had errors, please be more careful\" added before the request.",
+          "correct": false,
+          "explanation": "This doesn't say which field failed or why, so the model has to guess. It will often repeat the same mistake.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "A higher temperature setting, so that the retry is more likely to produce a different answer from the first attempt.",
+          "correct": false,
+          "explanation": "A different answer isn't the same as a correct one. Extra randomness doesn't tell the model which field failed or what the validator expects.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "e",
+          "text": "Nothing extra: skip the retry and mark the invoice as failed, so that bad data never reaches downstream systems.",
+          "correct": false,
+          "explanation": "Format errors are exactly the kind a retry with feedback usually fixes. Failing them outright sends easy cases to manual work.",
+          "trap": "TOTAL_FAILURE"
+        }
+      ],
+      "keyConcept": "On retry, include the original document, the failed extraction and the specific validation errors.",
+      "studyRef": "§3 Task 4.4 (retry with error feedback)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-011",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.4",
+      "secondaryTasks": [
+        "4.3"
+      ],
+      "stem": "Your invoice tool uses strict mode, and every output matches the schema. Even so, finance finds invoices where the line items add up to $4,180 but `total` says $4,810, and some where a value from the tax column landed in `subtotal`. A colleague says strict mode should already prevent this. How should you design the extraction to catch these errors?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Have the model also output `calculated_total` and a `conflict_detected` flag, and check them in code.",
+          "correct": true,
+          "explanation": "Strict mode prevents schema errors, not wrong values. Asking for the sum of the line items next to the stated total, and checking both in code, catches the mismatch automatically.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add `minimum` and `maximum` limits to the `total` field in the schema, so that strict mode rejects totals that are out of range.",
+          "correct": false,
+          "explanation": "$4,810 is a perfectly reasonable total; it is just inconsistent with the line items. A range can't detect values that don't agree with each other.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Enable the tool's `validate_semantics` option, which checks that the extracted values agree with each other.",
+          "correct": false,
+          "explanation": "There is no such option. Checking that values agree is your pipeline's job, using fields such as a calculated total.",
+          "trap": "NONEXISTENT_FEATURE"
+        },
+        {
+          "id": "d",
+          "text": "Ask the model at the end of the prompt to double-check its arithmetic before it calls the tool.",
+          "correct": false,
+          "explanation": "The model may still get it wrong and nothing would notice. A value checked in code catches every mismatch, not just most of them.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        }
+      ],
+      "keyConcept": "Strict schemas stop syntax errors, not semantic ones; add calculated_total and conflict_detected fields to catch them.",
+      "studyRef": "§3 Task 4.4 (self-correction validation); Task 4.3 (strict mode limits)",
+      "sources": [
+        "exam-guide",
+        "research-6c-d4"
+      ]
+    },
+    {
+      "id": "S6-012",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "4.1",
+      "secondaryTasks": [],
+      "stem": "Your contract pipeline is asked to \"flag any risky clauses\" for the legal team. The flagged list varies a lot between similar contracts, and lawyers say most flags are standard clauses they always accept, while some clauses they care about, such as uncapped liability, are missed. What is the most effective change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Name the clauses to flag, such as uncapped liability or auto-renewal over a year, and the standard ones to skip.",
+          "correct": true,
+          "explanation": "\"Risky\" means something different on every run unless it is defined. Explicit categories to flag and to skip make the results consistent and focused on what lawyers care about.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Change the instruction to \"flag only clauses that are really risky\", and leave the rest of the prompt unchanged.",
+          "correct": false,
+          "explanation": "This is just as vague as before. The model still has to decide on its own what \"really risky\" means.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Flag only the clauses whose risk score from the model is above 8 out of 10, and hide all of the others from lawyers.",
+          "correct": false,
+          "explanation": "The model's own risk score is based on the same unclear idea of risk. It can rate a standard clause highly and miss an uncapped liability.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "d",
+          "text": "Flag only the longest clauses in each contract, since long clauses usually contain the most complex terms.",
+          "correct": false,
+          "explanation": "Length has little to do with risk; an uncapped liability clause can be one sentence. Real risks would be missed.",
+          "trap": "UNRELIABLE_PROXY"
+        }
+      ],
+      "keyConcept": "Replace vague criteria like \"risky clauses\" with explicit categories to flag and to skip.",
+      "studyRef": "§3 Task 4.1 (explicit criteria)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-013",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.5",
+      "secondaryTasks": [],
+      "stem": "Your extraction agent uses an `ocr_document` tool backed by two OCR services. One returns amounts in cents and dates like \"2025-03-04\"; the other returns amounts in dollars and dates like \"4 Mar 2025\". The agent sometimes mixes them up, and some invoices end up a hundred times too large. How should you fix this most reliably?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a `PostToolUse` hook that converts OCR results to one format for amounts and dates before the agent sees them.",
+          "correct": true,
+          "explanation": "A hook runs in code on every tool result, so the agent always sees one consistent format. It doesn't depend on the model remembering which service used which units.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Explain both services' formats in the system prompt and ask the agent to convert the values itself.",
+          "correct": false,
+          "explanation": "The agent already gets the units wrong sometimes, and a prompt can't make the conversion reliable. A deterministic hook does it the same way every time.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Have a validator reject any invoice whose total is above $100,000, since those are usually unit mistakes.",
+          "correct": false,
+          "explanation": "Real large invoices would be rejected, and unit errors on smaller invoices would get through. The format mismatch is still there.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Switch off the second OCR service and send every document through the first service only, whatever the daily load.",
+          "correct": false,
+          "explanation": "This removes capacity the pipeline relies on to work around a format difference. Normalising the results keeps both services usable.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "PostToolUse hooks normalise heterogeneous tool results deterministically before the agent processes them.",
+      "studyRef": "§3 Task 1.5 (PostToolUse hooks for normalisation)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-014",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "5.5",
+      "secondaryTasks": [],
+      "stem": "Your extraction pipeline reaches 97% field accuracy on a validation set of 5,000 documents, and management wants to stop human review entirely. The set is 80% typed invoices, 15% contracts and 5% scanned handwritten receipts. Receipts are a growing share of new volume. What should you do before reducing human review?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Measure accuracy separately for each document type and key field, and reduce review only where each one is good.",
+          "correct": true,
+          "explanation": "A high overall figure can hide a weak segment, especially a small one. Checking each type and field shows whether receipts, say, are much worse before review is removed from them.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Stop human review for all documents, since 97% is above the 95% target the team agreed on at the start.",
+          "correct": false,
+          "explanation": "The overall figure is dominated by typed invoices. Receipts could be far below target and still leave the total at 97%.",
+          "trap": "AGGREGATE_METRIC_MASKING"
+        },
+        {
+          "id": "c",
+          "text": "Keep full human review of every document until the overall accuracy reaches 99.5%.",
+          "correct": false,
+          "explanation": "This keeps reviewers busy on segments that may already be reliable, and still uses only the overall number. It never shows where the errors actually are.",
+          "trap": "AGGREGATE_METRIC_MASKING"
+        },
+        {
+          "id": "d",
+          "text": "Remove human review only for documents where the model's own confidence in its extraction is above 90%.",
+          "correct": false,
+          "explanation": "Uncalibrated self-reported confidence isn't a reliable guide, and the model can be confident on poor receipts. Measure accuracy by segment first.",
+          "trap": "UNRELIABLE_PROXY"
+        }
+      ],
+      "keyConcept": "Aggregate accuracy can mask poor segments; validate accuracy by document type and field before reducing human review.",
+      "studyRef": "§3 Task 5.5 (aggregate metrics masking segment performance)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-015",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "5.5",
+      "secondaryTasks": [],
+      "stem": "Your pipeline auto-approves extractions with high field-level confidence and sends the rest to human reviewers. After six months, nobody checks the auto-approved records any more. New supplier invoice layouts keep appearing, and you want to know whether high-confidence extractions are still accurate and to catch new kinds of error early. Which two practices should you adopt? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Have reviewers check a regular random sample of auto-approved extractions to measure their real error rate.",
+          "correct": true,
+          "explanation": "Without sampling, errors in auto-approved records are never seen. A random sample gives an ongoing, honest error rate for the records nobody else looks at.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Stratify that sample by document type and supplier layout, so small and new segments are also checked.",
+          "correct": true,
+          "explanation": "A purely random sample is dominated by the most common documents. Stratifying makes sure rare and new layouts are sampled too, which is where new error patterns appear.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Track the share of extractions that are auto-approved, and investigate only if that share drops sharply.",
+          "correct": false,
+          "explanation": "If the model is confidently wrong on new layouts, the approval rate stays high. This measures how often the model is confident, not whether it is right.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "d",
+          "text": "Rely on downstream teams to report errors they find, and review only the records they complain about.",
+          "correct": false,
+          "explanation": "Many errors are never noticed downstream, or are noticed much later. Waiting for complaints leaves the real error rate unknown.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "e",
+          "text": "Send every high-confidence extraction back to human review, so that no error at all can be missed.",
+          "correct": false,
+          "explanation": "This throws away the capacity that auto-approval frees up. A well-designed sample measures accuracy at a small fraction of the cost.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "Use stratified random sampling of high-confidence extractions to measure error rates and detect new error patterns.",
+      "studyRef": "§3 Task 5.5 (stratified random sampling)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-016",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "2.5",
+      "secondaryTasks": [],
+      "stem": "You are using Claude Code to rename the field `inv_date` to `invoice_date` across the extraction pipeline's code. First you need to find every file under `schemas/` whose name ends in `.schema.json`, and then every line in the codebase that mentions `inv_date`. Which built-in tools fit these two steps?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Glob with `schemas/**/*.schema.json` to find the files, then Grep for `inv_date` to find the lines.",
+          "correct": true,
+          "explanation": "Glob matches file paths by pattern, which fits the first step. Grep searches file contents, which fits the second. Each tool is built for one of the two jobs.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Grep for `.schema.json` to find the files, then Glob for `inv_date` to find every line that uses it.",
+          "correct": false,
+          "explanation": "This swaps the tools. Glob matches file names, not text inside files, so it can't find lines that mention `inv_date`.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Read every file in the repository one by one, and note the matching file names and lines along the way.",
+          "correct": false,
+          "explanation": "This works eventually but wastes time and context on hundreds of irrelevant files. Glob and Grep find the matches directly.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Use the Edit tool to replace `inv_date` straight away, since it will report any files it couldn't change.",
+          "correct": false,
+          "explanation": "Edit changes one file at a time and needs a unique match in that file; it doesn't search the codebase. You still need to find the files first.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Use Glob to find files by name pattern and Grep to search file contents.",
+      "studyRef": "§3 Task 2.5 (Glob vs Grep)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-017",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.2",
+      "secondaryTasks": [
+        "4.3"
+      ],
+      "stem": "Since making `payment_terms` nullable, fabricated values have stopped. But the field is now null on 40% of invoices, and reviewers find the terms are in the document for most of them: \"Net 30\" in a footer, \"due within 14 days\" in a sentence, or a \"Terms\" row in a table. The model returns null when they aren't in a labelled field. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add examples showing payment terms found in a footer, a sentence and a table, plus one where null is correct.",
+          "correct": true,
+          "explanation": "Examples show the model the different places and wordings terms can have, and the null example keeps it from inventing them. It learns where to look without losing the honest null.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Make `payment_terms` required again, so the model has to look harder for the terms in every invoice.",
+          "correct": false,
+          "explanation": "Invoices that really have no terms would get invented ones again. This brings back the fabrication problem the nullable field fixed.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Fill every null `payment_terms` with \"Net 30\", since that's the most common value across all invoices.",
+          "correct": false,
+          "explanation": "Invoices with different terms, or none at all, would get a wrong value that looks real. Downstream systems couldn't tell it was a guess.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Send every invoice with a null `payment_terms` to human review until the field's null rate falls below 10%.",
+          "correct": false,
+          "explanation": "This sends a huge volume to reviewers for something examples can fix in the prompt. Escalate genuinely uncertain cases, not a known prompt gap.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "Few-shot examples showing values in varied formats and locations fix excessive null fields without bringing back fabrication.",
+      "studyRef": "§3 Task 4.2 (few-shot examples to address empty or null fields)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-018",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.4",
+      "secondaryTasks": [],
+      "stem": "Your extraction agent posts approved invoices to the payment system with a `post_to_erp` tool. Company policy says invoices over $10,000 must be approved by a person first. The system prompt states this rule, and the agent follows it in testing, but an audit found three large invoices that were paid without approval. How should you enforce the policy?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Have `post_to_erp` refuse invoices over $10,000 unless an approval record exists, and return a clear error.",
+          "correct": true,
+          "explanation": "When a rule must hold every time, it belongs in code. A check in the tool can't be skipped, and the error tells the agent to route the invoice for approval.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Repeat the rule in the tool's description, so the agent sees it again right before it posts.",
+          "correct": false,
+          "explanation": "The agent already knows the rule and sometimes breaks it. Restating it lowers the rate a little but doesn't guarantee anything.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Have finance check the payments report each month and recover any large payments that weren't approved.",
+          "correct": false,
+          "explanation": "The money has already left by then, and recovery may not be possible. The control should stop the payment, not find it later.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Send every invoice, whatever its amount, to a person for approval before the agent may post it.",
+          "correct": false,
+          "explanation": "Thousands of small invoices would wait on reviewers for no reason. Only invoices over the $10,000 limit need a person to approve them.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "Enforce rules that must always hold with programmatic checks, not prompt instructions.",
+      "studyRef": "§3 Task 1.4 (programmatic enforcement over prompts)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-019",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.5",
+      "secondaryTasks": [],
+      "stem": "You move overnight invoice extraction to the Message Batches API to cut costs. In the synchronous version, the model called `lookup_vendor`, your code returned the result, and the model then finished the extraction. In the batch version, the vendor IDs come back missing or as unfinished tool calls. Vendor data is needed for every invoice. How should you redesign the batch job?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Look up vendor data in code before submitting, and include it in each request, so no tool call is needed.",
+          "correct": true,
+          "explanation": "A batch request gets one response; your code can't return a tool result and let the model continue. Supplying the vendor data up front makes each request complete on its own.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Set the batch's `allow_tool_turns` option, so each request can run several rounds of tool calls before finishing.",
+          "correct": false,
+          "explanation": "There is no such option. The Batch API doesn't support multi-turn tool calling within a single request, so any data the model needs must be in the request.",
+          "trap": "NONEXISTENT_FEATURE"
+        },
+        {
+          "id": "c",
+          "text": "Move the overnight job back to synchronous calls and give up the batch savings for this workload.",
+          "correct": false,
+          "explanation": "Nothing waits on this overnight job, so it suits the Batch API. Providing the vendor data in the request keeps the 50% saving.",
+          "trap": "WRONG_LATENCY_MODE"
+        },
+        {
+          "id": "d",
+          "text": "Accept the missing vendor IDs, and let finance fill them in by hand in the morning when they review the batch.",
+          "correct": false,
+          "explanation": "Every invoice needs vendor data, so this creates manual work for each one. The problem is in the job's design and can be fixed.",
+          "trap": "SILENT_FAILURE"
+        }
+      ],
+      "keyConcept": "Batch requests can't run multi-turn tool calls, so supply needed data in the request itself.",
+      "studyRef": "§3 Task 4.5 (no multi-turn tool calling in batches)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-020",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "2.2",
+      "secondaryTasks": [],
+      "stem": "Your MCP `fetch_document` tool returns `isError: true` with the message \"Operation failed\" for every problem: a storage timeout, a corrupted PDF that can never be read, and a document the agent isn't allowed to open. The agent retries all of them, wasting calls on documents that will never work. Which two changes should you make to the error response? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add an `errorCategory` field, such as transient, validation or permission, describing what went wrong.",
+          "correct": true,
+          "explanation": "A category tells the agent what kind of problem it faces, so it can respond correctly: wait, give up, or escalate for access, instead of treating everything alike.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add an `isRetryable` flag, true for the timeout and false for the corrupted file and the denied access.",
+          "correct": true,
+          "explanation": "The flag tells the agent directly whether another attempt can succeed, so it stops wasting retries on documents that will never load.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Return an empty document instead of an error, so the agent can carry on with the rest of the batch.",
+          "correct": false,
+          "explanation": "The agent would treat an empty document as a real one and extract nothing from it. Failures need to stay visible and distinct from empty results.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Make the message longer and friendlier, such as \"Sorry, something went wrong while fetching the file\".",
+          "correct": false,
+          "explanation": "The message is still the same for every failure. The agent still can't tell a timeout from a file that will never work.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "e",
+          "text": "Have the agent stop the whole run as soon as any `fetch_document` call returns an error of any kind.",
+          "correct": false,
+          "explanation": "One bad PDF would stop every other document from being processed. Most failures can be handled without ending the run.",
+          "trap": "TOTAL_FAILURE"
+        }
+      ],
+      "keyConcept": "Structured error metadata (errorCategory, isRetryable) lets agents handle each failure appropriately instead of retrying everything.",
+      "studyRef": "§3 Task 2.2 (structured error responses)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-021",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.3",
+      "secondaryTasks": [],
+      "stem": "Your schema defines `invoice_date` as a string and `amount` as a number, with strict mode on. Outputs always match the schema, but downstream systems fail on dates like \"4/3/25\", \"March 4th 2025\" and \"2025-03-04\", and on European amounts such as \"1.250,00\" being read as 1.25. The invoices come from many countries. What is the best fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add rules to the prompt, such as ISO 8601 dates and how to read local number formats, and keep the strict schema.",
+          "correct": true,
+          "explanation": "The schema fixes the field types but can't say which string format a date should use or how to read \"1.250,00\". Normalisation rules in the prompt cover that, alongside the schema.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Change the schema so that every field is a plain string, and let each downstream system parse the values its own way.",
+          "correct": false,
+          "explanation": "Each system would interpret the same values differently, which multiplies the inconsistency. The extraction should produce one consistent format that every system can rely on.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Rely on strict mode, which converts every extracted value to the format each schema type expects.",
+          "correct": false,
+          "explanation": "Strict mode checks that a date is a string and an amount is a number; it doesn't convert formats. \"4/3/25\" is a valid string.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Send every invoice from outside your own country to human review before its extracted values are used.",
+          "correct": false,
+          "explanation": "Reviewers would get a large volume of invoices that clear format rules could handle automatically. Escalation should be for genuinely uncertain cases.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "Include format normalisation rules in the prompt alongside a strict output schema.",
+      "studyRef": "§3 Task 4.3 (format normalisation rules with strict schemas)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-022",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "4.4",
+      "secondaryTasks": [
+        "5.5"
+      ],
+      "stem": "Human reviewers correct or reject about 15% of the fields your extraction pipeline sends them. Each month you get a spreadsheet of corrections, but nobody can tell whether they share causes, such as totals read from the wrong column or dates read in the wrong order, so improvements are guesswork. What change would make these errors easiest to analyse?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Have the model record a `detected_pattern` for each flagged field, such as \"total near tax column\", to group errors.",
+          "correct": true,
+          "explanation": "A pattern field records why each value was extracted or flagged. Grouping reviewer corrections by pattern shows which causes recur, so fixes target the biggest ones.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Report the monthly correction rate to the team, and investigate only when it rises above 20%.",
+          "correct": false,
+          "explanation": "One overall rate says how many errors there are, not why. A rising cause can hide behind a stable total.",
+          "trap": "AGGREGATE_METRIC_MASKING"
+        },
+        {
+          "id": "c",
+          "text": "Ask reviewers to write a free-text comment explaining every correction they make.",
+          "correct": false,
+          "explanation": "Free-text comments vary too much to group reliably, and they add reviewer work. A structured field recorded with each extraction is far easier to analyse.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Delete the correction history every month once the fixes are applied, so the spreadsheet stays short and easy to read.",
+          "correct": false,
+          "explanation": "The history is what shows whether errors recur after a fix. Deleting it removes the data needed to see patterns over time.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "A detected_pattern field lets you analyse correction and false-positive patterns systematically.",
+      "studyRef": "§3 Task 4.4 (detected_pattern fields)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-023",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.6",
+      "secondaryTasks": [],
+      "stem": "For high-value contracts, your pipeline asks the same conversation that produced the extraction to \"now verify each field against the contract\". It confirms nearly every field, yet lawyers later find errors in about one contract in ten, often fields where the model misread a clause. What is the most effective change to the verification step?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Verify with a separate instance given the contract and extracted fields, but not the extraction conversation.",
+          "correct": true,
+          "explanation": "The extracting conversation keeps its own reading of each clause and tends to confirm it. A separate instance reads the contract fresh, so it is far more likely to catch a misreading.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add \"be very sceptical and assume there are errors\" to the verification message in the same conversation.",
+          "correct": false,
+          "explanation": "The same conversation still holds the reasoning that led to the misreading. Asking it to be sceptical doesn't remove that bias, so it still tends to confirm its own reading.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Run the same verification message three times in the conversation and treat any change in answer as an error.",
+          "correct": false,
+          "explanation": "Each run has the same context and tends to agree with itself, so consistent mistakes pass every time. Repetition isn't independence.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "d",
+          "text": "Have the extracting conversation report its confidence per field, and verify only fields it rates below 70%.",
+          "correct": false,
+          "explanation": "The misread fields were ones it confirmed, so it is confident about them. Its own ratings can't point to the errors it doesn't see.",
+          "trap": "UNRELIABLE_PROXY"
+        }
+      ],
+      "keyConcept": "Independent verification instances without the extraction context catch errors that self-review misses.",
+      "studyRef": "§3 Task 4.6 (independent review instances)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-024",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "4.5",
+      "secondaryTasks": [
+        "4.4"
+      ],
+      "stem": "You are about to process an archive of 200,000 scanned supplier contracts with the Message Batches API, using an extraction prompt you have only tried on a handful of documents. Results must be written back to the right contract records, and some requests are bound to fail. Which two steps should you take? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Run the prompt on a representative sample of a few hundred contracts first, and refine it before the full run.",
+          "correct": true,
+          "explanation": "A prompt problem found on a sample costs a few hundred requests; found after the full run, it costs 200,000. Refining first is the cheapest way to get the large batch right.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Give each request a `custom_id` with the contract's record ID, to map results back and resubmit failures.",
+          "correct": true,
+          "explanation": "Batch results aren't guaranteed to come back in order. The `custom_id` ties each result to its contract and lets you resubmit only the requests that failed.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Rely on the batch results coming back in the same order as the requests, and match them to contracts by position.",
+          "correct": false,
+          "explanation": "Results can come back in any order, so matching by position can write one contract's data into another's record without anyone noticing.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Submit all 200,000 now, and if the results look wrong, fix the prompt and run the whole archive again.",
+          "correct": false,
+          "explanation": "A prompt issue would waste the entire run and delay results by a day or more. A sample shows the same issue at a tiny fraction of the cost.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "e",
+          "text": "Process the archive with synchronous calls instead, so that each failure can be handled the moment it occurs.",
+          "correct": false,
+          "explanation": "Nothing waits on this archive, so paying double for synchronous calls brings no benefit. Batch failures can be resubmitted by `custom_id`.",
+          "trap": "WRONG_LATENCY_MODE"
+        }
+      ],
+      "keyConcept": "Refine prompts on a sample before large batches, and use custom_id to correlate results and resubmit failures.",
+      "studyRef": "§3 Task 4.5 (sample refinement; custom_id)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S6-025",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "5.5",
+      "secondaryTasks": [],
+      "stem": "Your model outputs a confidence score for each extracted field, and anything under 0.8 goes to human review. Reviewers are overloaded with fields that turn out to be correct, while some wrong fields scored 0.9 and were auto-approved. You have a labelled validation set of 3,000 documents with verified correct values. How should you set the routing?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Use the labelled set to see how scores relate to real accuracy per field, and set each field's threshold from that.",
+          "correct": true,
+          "explanation": "Raw scores aren't calibrated, and the same score means different things for different fields. Thresholds chosen against labelled data send reviewers the fields that really need them.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Lower the threshold to 0.6 for every field, so that fewer fields go to the reviewers and their workload drops quickly.",
+          "correct": false,
+          "explanation": "Reviewer load falls, but more wrong fields are auto-approved. The number is still a guess that isn't based on how accurate scores really are.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Ask the model in the prompt to give lower confidence scores when it is unsure about a value.",
+          "correct": false,
+          "explanation": "The model already thinks it is giving honest scores. An instruction can't calibrate them; comparing them with known correct answers can.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Average the confidence across all of a document's fields, and send the whole document to review if it is low.",
+          "correct": false,
+          "explanation": "One wrong field with a high score is hidden among others, and reviewers get whole documents instead of the fields that matter. Routing should work per field.",
+          "trap": "AGGREGATE_METRIC_MASKING"
+        }
+      ],
+      "keyConcept": "Calibrate field-level confidence thresholds against a labelled validation set before using them to route human review.",
+      "studyRef": "§3 Task 5.5 (field-level confidence calibration)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    }
+  ]
+}

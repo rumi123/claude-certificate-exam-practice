@@ -1,0 +1,1186 @@
+{
+  "scenario": "S4",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S4-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "2.5",
+      "secondaryTasks": [],
+      "stem": "An engineer new to a large Python monorepo asks the assistant: \"Where is `calculate_invoice_total` called?\" The repository has about 6,000 files spread across dozens of packages, and the function could be called from any of them. Which built-in tool should the assistant use first?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Grep, searching file contents for `calculate_invoice_total` across the whole repository.",
+          "correct": true,
+          "explanation": "The question is about what files contain, not what they are called. Grep searches contents across the codebase and returns every line that mentions the function, so it answers the question directly.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Glob, with a pattern such as `**/*invoice*.py` to find every file whose name relates to invoices.",
+          "correct": false,
+          "explanation": "Glob matches file paths, not contents. Callers can live in files with any name, so a name pattern would miss most of them and include invoice files that never call the function.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Read, opening each package's main modules one after another until the calls to the function have been found.",
+          "correct": false,
+          "explanation": "Reading files one by one in a 6,000-file repository is slow and fills the context with code that has nothing to do with the question. A content search finds the calls in one step.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "d",
+          "text": "Bash, running a custom script that parses every Python file into a syntax tree and lists the calls it finds.",
+          "correct": false,
+          "explanation": "Writing a parser is far more work than the question needs. A content search for the function name gives the same answer at once, and the results can be refined afterwards.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Use Grep to search file contents (function names, error messages, imports) and Glob to match file paths.",
+      "studyRef": "§3 Task 2.5 (Grep for content search)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "3.1",
+      "secondaryTasks": [],
+      "stem": "One engineer likes long, step-by-step explanations of every change and added \"Always explain each change in detail, line by line\" to the repository's root `CLAUDE.md`. Since that file was committed, the rest of the team complains that the assistant has become slow and wordy for them too. Where should this instruction go?",
+      "options": [
+        {
+          "id": "a",
+          "text": "In that engineer's user-level `~/.claude/CLAUDE.md`, which applies only to them and isn't committed.",
+          "correct": true,
+          "explanation": "This is a personal preference, so it belongs in the user-level file. It keeps applying to that engineer in every project, and the shared project file goes back to holding only team-wide guidance.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "In the root `CLAUDE.md`, but rewritten to say \"explain changes in detail only when the user wants that\".",
+          "correct": false,
+          "explanation": "The file is still shared, so every teammate's assistant now has to guess who wants detail. A personal preference shouldn't live in team configuration at all.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "c",
+          "text": "In a new `.claude/rules/explanations.md` file with `paths: [\"**/*\"]`, so that it is kept apart from the main file.",
+          "correct": false,
+          "explanation": "A rule matching every path is loaded for everyone, exactly like the root file. Moving the text into a committed rules file doesn't make it personal.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "In the project's `.claude/settings.json`, using an `explanation_level: \"detailed\"` setting for that user.",
+          "correct": false,
+          "explanation": "There is no such setting, and `settings.json` holds configuration such as permissions, not writing preferences. Instructions like this belong in a `CLAUDE.md` file at the right level.",
+          "trap": "NONEXISTENT_FEATURE"
+        }
+      ],
+      "keyConcept": "Personal preferences go in user-level ~/.claude/CLAUDE.md; the committed project CLAUDE.md holds team-wide standards.",
+      "studyRef": "§3 Task 3.1 (CLAUDE.md hierarchy; user-level settings are not shared)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-003",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.7",
+      "secondaryTasks": [],
+      "stem": "Yesterday an engineer spent three hours in a session named `billing-legacy` mapping how the old billing module works. Overnight a teammate changed two of the twenty files that session analysed; the rest of the analysis is still accurate. This morning the engineer wants to carry on where they left off. What is the best approach?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Run `--resume billing-legacy` and tell the session which two files changed, so it re-analyses just those.",
+          "correct": true,
+          "explanation": "Most of yesterday's context is still valid, so resuming keeps it. Naming the changed files lets the session re-read only those instead of trusting outdated results or redoing everything.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Start a new session and redo the whole three-hour analysis from the beginning.",
+          "correct": false,
+          "explanation": "Eighteen of the twenty files haven't changed, so this throws away hours of valid work. Only the two changed files need fresh analysis.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Run `--resume billing-legacy` and continue straight away, since the session will notice the changes on its own.",
+          "correct": false,
+          "explanation": "A resumed session still holds its old view of the two files and has no reason to re-read them. It would reason from results that are now out of date.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "d",
+          "text": "Resume with the `--refresh-changed` flag, which makes the session re-scan any file modified since it last ran.",
+          "correct": false,
+          "explanation": "There is no such flag. You resume the named session and tell it which files changed so it can re-analyse them.",
+          "trap": "NONEXISTENT_FEATURE"
+        }
+      ],
+      "keyConcept": "Resume a named session when context is mostly valid, and tell it which files changed for targeted re-analysis.",
+      "studyRef": "§3 Task 1.7 (--resume with session names; informing about changed files)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-004",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "2.4",
+      "secondaryTasks": [
+        "2.1"
+      ],
+      "stem": "Your team connected an internal MCP server whose `search_code_index` tool searches a semantic index of every repository in the company, including ownership data. Its description is \"Searches code.\" When engineers ask \"Which team owns the payment retry logic?\", the assistant uses Grep on the local checkout instead and often gives incomplete answers. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Expand the MCP tool's description to say what it covers that Grep can't, and for which questions to use it.",
+          "correct": true,
+          "explanation": "The model picks tools from their descriptions. \"Searches code\" sounds like Grep, so it uses the familiar built-in tool; a description naming cross-repository search and ownership data shows when the MCP tool is better.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Remove Grep from the assistant's allowed tools, so that the MCP tool is the only code search the assistant can use.",
+          "correct": false,
+          "explanation": "Grep is still the right tool for quick searches in the local checkout. Removing it trades one wrong choice for another instead of telling the model when each tool fits.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add a line to `CLAUDE.md` saying \"always use search_code_index for every code search, never use Grep\".",
+          "correct": false,
+          "explanation": "A blanket rule forces the MCP tool even for simple local searches where Grep is better. The real gap is a description that doesn't explain what the MCP tool offers.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Build a routing layer that inspects each question and decides whether to send it to Grep or to the MCP tool.",
+          "correct": false,
+          "explanation": "A separate router adds a component to work around a one-line description. The model can already choose well between tools once their descriptions say what each one is for.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Enhance MCP tool descriptions so agents don't prefer built-in tools like Grep over more capable MCP tools.",
+      "studyRef": "§3 Task 2.4 (enhancing MCP tool descriptions vs built-in tools)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-005",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "2.4",
+      "secondaryTasks": [
+        "3.1"
+      ],
+      "stem": "Every engineer on the team should get the company's issue-tracker MCP server, which needs an API token. One engineer also wants to try an experimental MCP server they are writing, without affecting anyone else. Tokens must never be committed to the repository. Which two configurations should you use? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add the issue-tracker server to the project's `.mcp.json`, with the token given as `${ISSUE_TRACKER_TOKEN}`.",
+          "correct": true,
+          "explanation": "A committed project `.mcp.json` gives every engineer the same server. Environment variable expansion means each person supplies the token from their own environment, so no secret is committed.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Configure the experimental server in that engineer's user-level `~/.claude.json`, which isn't shared.",
+          "correct": true,
+          "explanation": "User-level configuration applies only to that engineer. They can try their server freely while teammates' setups stay exactly as they were.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Add the issue-tracker server to `.mcp.json` with the real API token written directly into the file, so it works at once.",
+          "correct": false,
+          "explanation": "This commits a secret to version control, which breaks the stated requirement. Environment variable expansion gives the same setup without exposing the token.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "Add the experimental server to the project's `.mcp.json` too, so the whole team can help test it if they want.",
+          "correct": false,
+          "explanation": "Everyone who pulls the repository would load an unfinished server that might break their sessions. Personal and experimental servers belong in user-level configuration until they are ready to share.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "e",
+          "text": "Add the server to `.mcp.json` with the real token and set `\"secret\": true` on it, so Claude Code keeps the value out of git.",
+          "correct": false,
+          "explanation": "There is no such field, and Claude Code doesn't decide what gets committed. Writing the token into the file still puts it in the repository; `${VAR}` expansion keeps it out.",
+          "trap": "NONEXISTENT_FEATURE"
+        }
+      ],
+      "keyConcept": "Shared MCP servers go in project .mcp.json with env-var expansion; experimental ones go in user-level ~/.claude.json.",
+      "studyRef": "§3 Task 2.4 (.mcp.json vs ~/.claude.json; environment variable expansion); §6c Domain 2 Q3",
+      "sources": [
+        "exam-guide",
+        "research-6c-d2"
+      ]
+    },
+    {
+      "id": "S4-006",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.1",
+      "secondaryTasks": [],
+      "stem": "Your team built a custom exploration agent on the Claude API. Its loop checks `stop_reason`, runs any tool Claude requests and sends the next request. In testing, the agent keeps running the same Grep searches over and over and never reaches a conclusion. Logs show each new request contains only the original question and Claude's earlier tool requests. What is the most likely fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Append each tool result to the conversation history before the next request, so Claude can see what it found.",
+          "correct": true,
+          "explanation": "Without the results in the history, Claude never sees what its searches returned, so it asks for them again. Appending each result lets it reason about the next step.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add an iteration cap of ten loops so the agent stops repeating itself and returns whatever answer it has by then.",
+          "correct": false,
+          "explanation": "A cap would stop the repetition but not fix it. Claude would still never see a single search result, so the answer it returns would be uninformed.",
+          "trap": "ITERATION_CAP"
+        },
+        {
+          "id": "c",
+          "text": "Tell Claude in the system prompt to remember the results of its earlier searches and avoid repeating the same ones.",
+          "correct": false,
+          "explanation": "Claude can't remember results it was never shown. The results have to be in the request; an instruction can't replace missing data.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Raise `max_tokens` on each request so that Claude has more room to keep track of its earlier search results.",
+          "correct": false,
+          "explanation": "`max_tokens` limits the length of Claude's reply, not what it can see. The results still aren't in the request, so nothing changes.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Tool results must be appended to the conversation history so the model can reason about its next action.",
+      "studyRef": "§3 Task 1.1 (appending tool results between iterations)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-007",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "3.4",
+      "secondaryTasks": [],
+      "stem": "An engineer asks the assistant to fix an off-by-one error in `paginate()` in `utils/pagination.py`. The engineer has already found the faulty line, knows the fix and has a failing test that shows the bug. No other files are involved. How should the assistant handle this task?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Use direct execution: make the one-line fix and run the failing test to confirm it now passes.",
+          "correct": true,
+          "explanation": "This is a small, well-understood change in one file with a clear check. Direct execution suits it; plan mode adds steps without reducing any real risk.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Use plan mode to explore the codebase and propose a plan for review before touching `utils/pagination.py`.",
+          "correct": false,
+          "explanation": "Plan mode is for large changes with several valid approaches. Here the cause and fix are already known, so planning only delays a one-line change.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "c",
+          "text": "Spawn an Explore subagent to map every caller of `paginate()` across the repository before making any change.",
+          "correct": false,
+          "explanation": "The fix and its test are already known, and no other files are involved. A full discovery pass adds work and context the task doesn't need.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Make the fix and then ask the same session to review its own change for problems before running any of the tests.",
+          "correct": false,
+          "explanation": "The failing test is a far better check than a self-review. A session tends to confirm its own change, while the test shows whether the bug is gone.",
+          "trap": "SELF_REVIEW"
+        }
+      ],
+      "keyConcept": "Use direct execution for simple, well-scoped changes such as a single-file bug fix with a known cause.",
+      "studyRef": "§3 Task 3.4 (direct execution for well-understood changes)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-008",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "2.5",
+      "secondaryTasks": [],
+      "stem": "The assistant needs to change the timeout in one block of a generated config module. The file contains the same five-line block, `retries: 3` and `timeout: 30`, twelve times, once per service. Its Edit call fails because the text to replace isn't unique in the file. What should the assistant do next?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Read the whole file, make the change to the right block, and use Write to save the updated file.",
+          "correct": true,
+          "explanation": "Edit needs its anchor text to appear exactly once. When the file repeats the block, reading it and writing the full updated version is the documented fallback.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Retry the same Edit call a few more times, since a failed Edit is often caused by a temporary file lock on the module.",
+          "correct": false,
+          "explanation": "The failure isn't temporary: the text appears twelve times and will still appear twelve times on every retry. Retrying can't fix a match that isn't unique.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Use Edit with `replace_all` so the timeout changes in all twelve blocks at once.",
+          "correct": false,
+          "explanation": "Only one service's timeout should change. Replacing every copy would silently change the other eleven services as well, and nothing would report that they had been altered.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Delete the file with Bash and ask the engineer to regenerate the config module by hand with the new timeout.",
+          "correct": false,
+          "explanation": "Deleting the file to change one value throws away the rest of its content and hands simple work back to the engineer. Read and Write handle it directly.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "When Edit fails because its anchor text isn't unique, fall back to Read plus Write for the change.",
+      "studyRef": "§3 Task 2.5 (Read + Write when Edit lacks unique anchor text)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-009",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.6",
+      "secondaryTasks": [
+        "2.5"
+      ],
+      "stem": "A new engineer asks the assistant: \"Help me understand how our 15-year-old order-processing system works, so I can start fixing bugs in it next week.\" The system has about 400 files, no documentation and several modules nobody on the team has touched in years. How should the assistant approach this?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Map the overall structure first, find the most important flows, then explore those in an order that adapts.",
+          "correct": true,
+          "explanation": "This is open-ended, and what matters only becomes clear as the structure appears. Mapping first, then following a prioritised plan that adapts, puts effort where the engineer will need it.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Read all 400 files in alphabetical order and write a summary of each file before trying to explain the overall system.",
+          "correct": false,
+          "explanation": "Reading everything in a fixed order fills the context with low-value files and gives no sense of which parts matter. It is slow and doesn't adapt to what is found.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Run a fixed checklist on each module: list functions, list imports, count lines, then move on to the next module.",
+          "correct": false,
+          "explanation": "A fixed checklist treats a rarely used helper the same as the core order flow. Open-ended understanding needs a plan that changes with what is discovered.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Ask the engineer which modules are important before starting, and explore only the ones they name.",
+          "correct": false,
+          "explanation": "The engineer is new and asked precisely because they don't know. The assistant can find the important flows itself by mapping the structure.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "For open-ended exploration, map structure first, identify high-impact areas, then follow an adaptive prioritised plan.",
+      "studyRef": "§3 Task 1.6 (adaptive investigation plans)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-010",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "2.5",
+      "secondaryTasks": [],
+      "stem": "An engineer is preparing to upgrade a logging library. They ask the assistant for two things: every test file in the repository, whose names end in `.spec.ts`, and every file that imports the deprecated `legacyLogger` module. Which two tool choices are correct? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Use Glob with the pattern `**/*.spec.ts` to find every test file by its name, wherever it is.",
+          "correct": true,
+          "explanation": "Finding files by a naming pattern is exactly what Glob does. The `**` matches any directory depth, so test files anywhere in the repository are found.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Use Grep to search file contents for imports of `legacyLogger` to find every file that uses it.",
+          "correct": true,
+          "explanation": "Import statements are inside files, so this is a content search. Grep finds every file whose text imports the module, whatever the file is called.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Use Grep to search file contents for the text `.spec.ts` to find all of the test files in the repository.",
+          "correct": false,
+          "explanation": "This matches files that mention the string, such as configs, and misses test files whose contents never contain their own name. File names are a job for Glob.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Use Glob with the pattern `**/*legacyLogger*` to find every file that imports the deprecated logging module.",
+          "correct": false,
+          "explanation": "Glob only matches paths. Files that import the module can have any name, so this finds the module itself and misses the files that use it.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "e",
+          "text": "Use Read on every TypeScript file in turn, noting test files and logger imports as it goes through the codebase.",
+          "correct": false,
+          "explanation": "Reading every file is slow and floods the context. Glob and Grep each answer one of the two questions directly.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Glob finds files by name or path pattern; Grep finds files by their contents, such as imports.",
+      "studyRef": "§3 Task 2.5 (Grep vs Glob)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-011",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.3",
+      "secondaryTasks": [
+        "3.1"
+      ],
+      "stem": "Your monorepo has 14 services, each with its own `db/migrations/` folder. Migrations must follow strict conventions: reversible changes only, no data updates in schema migrations, and a fixed naming format. Right now these rules sit in the root `CLAUDE.md` and load for every task, even CSS fixes. How should you configure them?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Move them to a `.claude/rules/migrations.md` file with `paths: [\"**/db/migrations/**\"]` in its frontmatter.",
+          "correct": true,
+          "explanation": "A path-scoped rule loads only when matching files are being edited. One glob covers the migration folders of all 14 services, and other work no longer carries these rules.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Copy the rules into a `CLAUDE.md` inside each of the 14 `db/migrations/` folders, and delete them from the root file.",
+          "correct": false,
+          "explanation": "This works but leaves 14 copies to keep in sync, and they will drift. A single glob-scoped rule covers every migration folder from one place.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "c",
+          "text": "Keep the rules in the root `CLAUDE.md` but mark them \"apply only to migration files\".",
+          "correct": false,
+          "explanation": "The root file still loads for every task, so the rules still take up context for CSS fixes. Path scoping is what keeps them out.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Move the rules into each engineer's `~/.claude/CLAUDE.md`, so they only load for people who work on database migrations.",
+          "correct": false,
+          "explanation": "Team rules in personal files aren't shared, and anyone who hasn't copied them gets none. They would also still load for every task that person does.",
+          "trap": "WRONG_CONFIG_LAYER"
+        }
+      ],
+      "keyConcept": "Use .claude/rules/ files with glob paths so conventions load only for matching files across directories.",
+      "studyRef": "§3 Task 3.3 (path-scoped rules for conventions spanning directories)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-012",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "2.1",
+      "secondaryTasks": [
+        "2.4"
+      ],
+      "stem": "The issue-tracker MCP server has a `find_issues` tool described as \"Finds issues.\" It expects a query such as `project:PAY status:open label:bug`, but the assistant usually passes plain sentences like \"open payment bugs\" and gets errors or no results. When it does use the query syntax, results are good. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Expand the tool's description with the query syntax, a few example queries and what each field accepts.",
+          "correct": true,
+          "explanation": "The model can only use a format it has been told about. A description with the syntax, examples and valid fields shows it how to build queries that work.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Have the assistant retry each failed search with slightly different wording until it gets at least one result.",
+          "correct": false,
+          "explanation": "Rewording plain sentences won't produce the query syntax the tool expects. It turns one failed call into several without fixing the cause.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add a second model that turns plain sentences into query syntax before each call.",
+          "correct": false,
+          "explanation": "An extra model adds cost and its own errors to fix a two-word description. The assistant can write the syntax itself once it knows it.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Treat an empty result from a malformed query as \"no matching issues\" and carry on without reporting it to the engineer.",
+          "correct": false,
+          "explanation": "A malformed query that returns nothing is a failure, not an answer. Engineers would be told there are no bugs when the search never ran properly.",
+          "trap": "SILENT_FAILURE"
+        }
+      ],
+      "keyConcept": "Tool descriptions should include input formats, example queries and boundaries so the model calls tools correctly.",
+      "studyRef": "§3 Task 2.1 (descriptions with input formats and examples)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-013",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.3",
+      "secondaryTasks": [],
+      "stem": "Early in a session, an engineer explains the team's conventions for new services: a specific folder layout, structured logging and a health-check endpoint. Later the main session spawns a subagent to generate boilerplate for a new service, with the prompt \"Create a new service called `inventory-sync`.\" The result ignores every convention. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Include the conventions the engineer explained directly in the prompt given to the boilerplate subagent.",
+          "correct": true,
+          "explanation": "A subagent starts with only the prompt it is given and can't see the main conversation. The conventions have to be passed to it explicitly.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add \"follow the conventions we discussed earlier in this conversation\" to the subagent's prompt.",
+          "correct": false,
+          "explanation": "The subagent never saw that discussion, so it has nothing to follow. It needs the conventions themselves, not a reference to them.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "c",
+          "text": "Have the main session review the generated service and fix every convention it missed once the subagent has finished.",
+          "correct": false,
+          "explanation": "This repairs the output after the fact on every run. Passing the conventions up front means the subagent gets it right the first time.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Set `inherit_parent_context: true` when spawning the subagent so it receives the full conversation.",
+          "correct": false,
+          "explanation": "No such option exists. Subagents always start with isolated context, so everything they need, including team conventions explained earlier, has to go in the prompt they are given.",
+          "trap": "NONEXISTENT_FEATURE"
+        }
+      ],
+      "keyConcept": "Subagents don't inherit the parent conversation; pass everything they need explicitly in their prompt.",
+      "studyRef": "§3 Task 1.3 (explicit context passing)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-014",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.5",
+      "secondaryTasks": [],
+      "stem": "An engineer wants the assistant to refactor a 600-line legacy function, `compute_shipping()`, into smaller functions. It has no tests, it handles many unusual cases nobody fully remembers, and its behaviour must not change. Two earlier refactoring attempts broke rarely used shipping rules that were only found in production. What is the best approach?",
+      "options": [
+        {
+          "id": "a",
+          "text": "First write tests that capture current behaviour, including edge cases, then refactor and share any failures.",
+          "correct": true,
+          "explanation": "Tests written first turn \"don't change behaviour\" into something that can be checked. Each failure during the refactor points to exactly which rule broke, before it reaches production.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Refactor the function in one pass, then ask the same session to review its own result carefully for any behaviour changes.",
+          "correct": false,
+          "explanation": "The session that wrote the refactor tends to confirm it, and nobody remembers the rare cases to check. That is how the last two attempts failed.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "c",
+          "text": "Add \"do not change any behaviour\" in bold to the request, so the assistant is extra careful with the rarely used rules.",
+          "correct": false,
+          "explanation": "The assistant already knows the goal; the problem is that nothing checks it. An instruction can't guarantee rules nobody can list are kept.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Leave the function as it is and add a wrapper around it, so new code never has to touch the legacy logic directly.",
+          "correct": false,
+          "explanation": "This avoids the refactor rather than doing it. The 600-line function stays just as hard to fix, which is what the engineer wanted to change.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Write tests covering expected behaviour and edge cases first, then iterate by sharing test failures.",
+      "studyRef": "§3 Task 3.5 (test-driven iteration)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-015",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "3.2",
+      "secondaryTasks": [
+        "3.4"
+      ],
+      "stem": "Your team has an `/explain-module` skill that reads every file in a module and writes a long walkthrough. Engineers complain that after running it, their main conversation is full of file contents and later answers get worse. One run also edited a file, though the skill should only ever read. Which two changes should you make to the skill's `SKILL.md`? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add `context: fork` to the frontmatter so the skill runs in an isolated subagent and returns only its result.",
+          "correct": true,
+          "explanation": "A forked skill does its verbose reading in a separate context. The main conversation receives the walkthrough instead of every file the skill read.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add `allowed-tools` to the frontmatter listing only read-only tools, such as Read, Grep and Glob.",
+          "correct": true,
+          "explanation": "Restricting the skill's tools makes editing impossible while it runs. That is a guarantee, unlike asking the skill not to edit.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Add \"never edit files\" and \"keep the output short\" to the skill's instructions, so the skill behaves better on future runs.",
+          "correct": false,
+          "explanation": "Instructions make good behaviour more likely but can't guarantee it, and a short output still leaves file contents in the context. Frontmatter settings enforce both.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Tell engineers to run `/clear` after every use of the skill to remove the file contents from their conversation.",
+          "correct": false,
+          "explanation": "Clearing also throws away everything else in the conversation, including context the engineer still needs. Forking the skill keeps the file contents out of the main context from the start.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "e",
+          "text": "Move the whole skill into the project's root `CLAUDE.md`, so its instructions are always loaded and don't need a command.",
+          "correct": false,
+          "explanation": "An on-demand procedure in `CLAUDE.md` loads for every task and still runs in the main context. It fixes neither problem.",
+          "trap": "WRONG_CONFIG_LAYER"
+        }
+      ],
+      "keyConcept": "In SKILL.md, context: fork isolates verbose output and allowed-tools restricts what the skill can do.",
+      "studyRef": "§3 Task 3.2 (context: fork; allowed-tools)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-016",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "2.4",
+      "secondaryTasks": [],
+      "stem": "The internal docs MCP server offers `search_docs` and `get_doc`. At the start of most sessions, the assistant makes 10 to 20 exploratory searches just to learn which documentation exists and how it is organised, before it can answer anything. The documentation hierarchy rarely changes. What is the most effective improvement?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Expose the documentation hierarchy as an MCP resource, so the assistant sees what exists without searching.",
+          "correct": true,
+          "explanation": "MCP resources work as content catalogues. With the hierarchy available up front, the assistant can go straight to the right document instead of searching to discover what exists.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Paste the full text of every document into the project's `CLAUDE.md`, so the assistant never has to search the docs again.",
+          "correct": false,
+          "explanation": "Loading every document into every session wastes a huge amount of context on pages that are rarely needed. A catalogue gives visibility without the bulk.",
+          "trap": "TOOL_OVERLOAD"
+        },
+        {
+          "id": "c",
+          "text": "Limit the assistant to three `search_docs` calls per session, so it spends fewer turns on exploring.",
+          "correct": false,
+          "explanation": "A limit cuts the searches but not the need for them. The assistant would still not know what exists, and would give worse answers with fewer searches.",
+          "trap": "ITERATION_CAP"
+        },
+        {
+          "id": "d",
+          "text": "Replace both tools with a custom server the team builds and maintains to index the documentation differently.",
+          "correct": false,
+          "explanation": "Building a new server is a large project for a problem the existing one can solve by exposing its hierarchy as a resource.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Expose content catalogues such as documentation hierarchies as MCP resources to reduce exploratory tool calls.",
+      "studyRef": "§3 Task 2.4 (MCP resources as content catalogues)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-017",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.2",
+      "secondaryTasks": [
+        "1.3"
+      ],
+      "stem": "For a migration analysis, the main agent delegates one service to each of four subagents. The subagent analysing `checkout` finds it depends on a database schema that the `catalog` subagent is still analysing. It needs that schema to finish its work. How should the information reach the `checkout` analysis?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Through the coordinator: it collects the schema from `catalog` and passes it to a follow-up `checkout` task.",
+          "correct": true,
+          "explanation": "In hub-and-spoke designs, the coordinator routes all information between subagents. It sees the dependency, has the schema once `catalog` finishes, and can pass it on explicitly.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "The `checkout` subagent sends a message straight to the `catalog` subagent and waits there for its reply.",
+          "correct": false,
+          "explanation": "Subagents talking to each other bypass the coordinator, which loses track of the dependency and of any errors. All routing should go through the hub.",
+          "trap": "BYPASS_COORDINATOR"
+        },
+        {
+          "id": "c",
+          "text": "The `checkout` subagent assumes that the `catalog` findings will be visible in its own context once they are ready.",
+          "correct": false,
+          "explanation": "Subagents have isolated context and never see each other's work, even when it finishes. Nothing appears in the `checkout` analysis unless the coordinator explicitly passes it in.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "d",
+          "text": "The `checkout` subagent guesses the likely schema from the table names in its own code and finishes its analysis without it.",
+          "correct": false,
+          "explanation": "Guessing produces an analysis that looks finished but rests on an assumption. The real schema will be available shortly through the coordinator.",
+          "trap": "SILENT_FAILURE"
+        }
+      ],
+      "keyConcept": "In hub-and-spoke designs, the coordinator routes all information between subagents, which share no context.",
+      "studyRef": "§3 Task 1.2 (hub-and-spoke; coordinator routes information)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-018",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.1",
+      "secondaryTasks": [],
+      "stem": "Your repository has a `legacy/` directory with very different conventions from the rest of the code: tabs instead of spaces, an old error-handling pattern, and no new dependencies allowed. Only engineers working inside `legacy/` need these rules. Engineers say the assistant keeps applying modern conventions there. Where should the legacy conventions go?",
+      "options": [
+        {
+          "id": "a",
+          "text": "In a `CLAUDE.md` file inside the `legacy/` directory, which loads when work happens in that directory.",
+          "correct": true,
+          "explanation": "Directory-level `CLAUDE.md` files hold conventions for one part of the tree. They apply when working there and stay out of the way for the rest of the codebase.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "In the root `CLAUDE.md`, which every session loads, with a heading that says \"Legacy directory conventions\".",
+          "correct": false,
+          "explanation": "Every task would carry these rules, and they directly contradict the modern conventions next to them. Conventions for one directory belong at that directory's level.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "c",
+          "text": "In each legacy engineer's `~/.claude/CLAUDE.md`, since they are the only people who work inside that directory.",
+          "correct": false,
+          "explanation": "Anyone else who touches `legacy/` gets none of the rules, and the legacy engineers carry them into every other project. The rules belong to the code, not the person.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "In a `/legacy-mode` skill that engineers should remember to run before working on files in `legacy/`.",
+          "correct": false,
+          "explanation": "Conventions that must apply whenever someone works in the directory shouldn't depend on someone remembering a command. File-based configuration loads them automatically.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        }
+      ],
+      "keyConcept": "Directory-level CLAUDE.md files hold conventions that apply only within that part of the codebase.",
+      "studyRef": "§3 Task 3.1 (directory-level CLAUDE.md in the hierarchy)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-019",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.4",
+      "secondaryTasks": [
+        "5.1"
+      ],
+      "stem": "Midway through a long session, an engineer asks: \"Before we change the event bus, find every place that publishes or subscribes to it.\" Answering means searching and reading dozens of files. The engineer still needs the rest of the session's context afterwards to plan the actual change. What is the best way to do the discovery?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Use the Explore subagent to do the searching and reading, and return a summary of where the event bus is used.",
+          "correct": true,
+          "explanation": "The Explore subagent keeps the verbose discovery in its own context. The main session gets a concise summary and keeps room for planning the change.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Search and read all of the files in the main session, then run `/compact` afterwards to free up the space they took.",
+          "correct": false,
+          "explanation": "The files fill the context first, and compaction then summarises everything, including earlier details the engineer still needs. Isolating the discovery avoids both.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Start a new session for the discovery and copy its full output back into the main session.",
+          "correct": false,
+          "explanation": "Pasting the full output back brings all the verbose material into the main context anyway. A summary is what the main session needs.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Have the main session read only the first file that matches, and assume the other uses follow the same pattern.",
+          "correct": false,
+          "explanation": "Assuming one file stands for dozens will miss the unusual uses, which are exactly the ones a change to the event bus could break.",
+          "trap": "UNRELIABLE_PROXY"
+        }
+      ],
+      "keyConcept": "Use the Explore subagent to isolate verbose discovery and return a summary, preserving the main session's context.",
+      "studyRef": "§3 Task 3.4 (Explore subagent for verbose discovery)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-020",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 3,
+      "primaryTask": "1.6",
+      "secondaryTasks": [],
+      "stem": "An engineer asks the assistant to review a 32-file pull request that changes how authentication tokens are validated. In one pass over the whole diff, the assistant gives detailed comments on the first few files, misses obvious bugs in later ones, and doesn't notice that two files now validate tokens inconsistently. Which two changes should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Split the review into passes that each analyse one file on its own, so every file gets the same attention.",
+          "correct": true,
+          "explanation": "A single pass over 32 files spreads attention thinly, and later files get less of it. Per-file passes give each file a focused review.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add a separate cross-file pass that checks how the changed files interact, such as consistent token validation.",
+          "correct": true,
+          "explanation": "Per-file passes look at each file alone, so they can't see conflicts between files. A dedicated integration pass catches problems such as two files validating tokens in different ways.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Use a larger model with a bigger context window so the whole 32-file diff can be reviewed together in one pass.",
+          "correct": false,
+          "explanation": "Fitting more into the context doesn't make attention even. Long inputs still get uneven focus, so later files would still be reviewed less carefully.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Ask the assistant to re-read its own review and add anything it missed in the later files of the pull request.",
+          "correct": false,
+          "explanation": "The same session tends to confirm its first review. The problem is the single-pass structure, which a second look doesn't change.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "e",
+          "text": "Limit the review to the ten files with the largest diffs, since they are most likely to contain the serious bugs.",
+          "correct": false,
+          "explanation": "Diff size is a poor guide to risk; a one-line change can break token validation. The inconsistency could sit in a small file that never gets reviewed.",
+          "trap": "UNRELIABLE_PROXY"
+        }
+      ],
+      "keyConcept": "Split large reviews into per-file local passes plus a separate cross-file integration pass.",
+      "studyRef": "§3 Task 1.6 (per-file passes plus cross-file integration pass)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-021",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "3.2",
+      "secondaryTasks": [],
+      "stem": "The team shares a project skill, `/new-endpoint`, in `.claude/skills/`. One engineer wants a version that also generates their preferred extra debug logging. The rest of the team is happy with the current skill and shouldn't see any change in its behaviour. What should the engineer do?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Create a personal copy in `~/.claude/skills/` under a different name, such as `/new-endpoint-debug`.",
+          "correct": true,
+          "explanation": "Personal skills live in the user's own directory, and a different name keeps them from clashing with the team's skill. Teammates keep using the shared version unchanged.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Edit the shared `.claude/skills/new-endpoint` skill to add the extra logging, then commit the change for everyone.",
+          "correct": false,
+          "explanation": "The shared skill is committed, so this changes it for the whole team, which is exactly what must not happen.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "c",
+          "text": "Keep using the team skill and ask the assistant to add the extra debug logging by hand after every run.",
+          "correct": false,
+          "explanation": "This works, but it repeats the same manual request on every run and is easy to forget. A personal skill makes the extra logging automatic without touching the team version.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Add \"also add debug logging\" to the project `CLAUDE.md`, so the skill picks it up whenever it runs.",
+          "correct": false,
+          "explanation": "The project `CLAUDE.md` is shared, so every teammate would get the extra logging too. A personal preference belongs in personal configuration.",
+          "trap": "WRONG_CONFIG_LAYER"
+        }
+      ],
+      "keyConcept": "Personal skill variants go in ~/.claude/skills/ under different names, so teammates aren't affected.",
+      "studyRef": "§3 Task 3.2 (personal skill customisation)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-022",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "2.5",
+      "secondaryTasks": [],
+      "stem": "An engineer asks where `sendNotification` is used. Grep finds only its definition in `core/notify.ts` and one call. But `core/index.ts` re-exports it as `notifyUser`, and a wrapper module exports `alertCustomer`, which calls `notifyUser`. Most of the codebase uses those names. How should the assistant find all the real usages?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Find each name it is exported under through the wrappers, then search the codebase for every one of those names.",
+          "correct": true,
+          "explanation": "Wrappers and re-exports give the same function new names. Following the export chain first, then searching for each name, finds usages that a search for the original name misses.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Report the one call Grep found, since a content search across the whole repository is complete by definition.",
+          "correct": false,
+          "explanation": "The search was complete only for that exact name. Most calls use the re-exported names, so the report would miss most real usages without saying so.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "c",
+          "text": "Use Glob with `**/*notif*` to find every file whose name suggests it sends notifications.",
+          "correct": false,
+          "explanation": "Callers can be in files with any name, and many files with \"notif\" in the name may never call the function. Usage is a question about contents.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Read every TypeScript file in the repository one after another to find indirect uses of the function through wrappers.",
+          "correct": false,
+          "explanation": "Reading everything is slow and fills the context. Tracing the exported names and searching for them gets the same answer in a few steps.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Trace usage across wrapper modules by identifying all exported names, then searching for each across the codebase.",
+      "studyRef": "§3 Task 2.5 (tracing function usage across wrapper modules)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-023",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.7",
+      "secondaryTasks": [
+        "5.1"
+      ],
+      "stem": "Two weeks ago an engineer analysed the reporting module in a session named `reports-deep-dive`. Since then the module has been heavily refactored: most of the files that session read have been renamed, split or rewritten. The engineer's conclusions about the design and its known problems still matter. How should they continue the work?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Start a fresh session, give it a structured summary of the earlier conclusions, and re-explore the new code.",
+          "correct": true,
+          "explanation": "When most earlier tool results are stale, resuming means reasoning from code that no longer exists. A fresh start with a summary keeps the conclusions without the outdated file contents.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Run `--resume reports-deep-dive` and continue, since the earlier session already understands the module well.",
+          "correct": false,
+          "explanation": "The session's understanding is built on files that have been renamed, split or rewritten. It would confidently describe code that isn't there any more.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "c",
+          "text": "Start a fresh session and begin exploring with no notes, so that nothing from the old analysis can mislead it.",
+          "correct": false,
+          "explanation": "This throws away the engineer's still-useful conclusions about the design and its problems. A summary carries them forward without the stale details.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "d",
+          "text": "Resume the old session and list every one of the changed files, so it can re-analyse them one by one.",
+          "correct": false,
+          "explanation": "Telling a session about changed files works when most context is still valid. Here most of it is stale, so the session would be re-analysing almost everything from the wrong starting point.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "When prior tool results are stale, start fresh with a structured summary rather than resuming the old session.",
+      "studyRef": "§3 Task 1.7 (fresh start with injected summary vs resumption)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-024",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 3,
+      "primaryTask": "3.5",
+      "secondaryTasks": [],
+      "stem": "The assistant generated a date-range helper. Testing shows three problems. Ranges that cross a time-zone boundary are wrong, and ranges that span a daylight-saving change are wrong; both come from the same conversion step. Separately, the helper's error messages don't follow the team's format. How should the engineer give this feedback? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Report the time-zone and daylight-saving problems together in one message, with a failing example of each.",
+          "correct": true,
+          "explanation": "The two problems come from the same conversion step, so fixing one alone may break or hide the other. Raising them together, with concrete cases, lets the assistant fix that step once.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Raise the error-message format separately, before or after the date fix, as its own independent change.",
+          "correct": true,
+          "explanation": "The message format doesn't interact with the date logic. Handling it as a separate iteration keeps each change simple to check.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Report the time-zone problem first, and raise the daylight-saving problem only once the time-zone fix has been accepted.",
+          "correct": false,
+          "explanation": "Both problems sit in the same conversion step. Fixing one alone may need redoing when the other is raised, so interacting problems should be handled together.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Tell the assistant \"there are some date bugs and the errors look wrong\" and let it work out the details.",
+          "correct": false,
+          "explanation": "Vague feedback leaves the assistant to guess which cases fail. Specific failing inputs with expected outputs are what make the fix precise.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "e",
+          "text": "Ask the assistant to regenerate the whole helper from scratch, because a fresh attempt may avoid all three problems.",
+          "correct": false,
+          "explanation": "Starting over throws away the parts that work and may introduce new bugs. Targeted feedback fixes the known problems directly.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "Address interacting problems together in one message; iterate on independent problems separately.",
+      "studyRef": "§3 Task 3.5 (batching interacting issues vs sequential iteration)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    },
+    {
+      "id": "S4-025",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.3",
+      "secondaryTasks": [
+        "2.5"
+      ],
+      "stem": "The main session sends exploration subagents to map how three services handle retries. Each returns a prose summary such as \"Retries are handled in the HTTP client layer with backoff.\" To plan changes, the main session then has to search again to find which files and lines each summary refers to, repeating much of the subagents' work. What should change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Have subagents return structured findings, each with its file path and line numbers alongside the description.",
+          "correct": true,
+          "explanation": "Keeping the content and its location together means the main session can go straight to the code. Separating findings from metadata such as paths and lines makes subagent output usable downstream.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Have the subagents include the full text of every file they read, so the main session can find the right lines itself.",
+          "correct": false,
+          "explanation": "Full file contents would flood the main session's context, which the subagents exist to protect. Paths and line numbers give the location at a fraction of the size.",
+          "trap": "TOOL_OVERLOAD"
+        },
+        {
+          "id": "c",
+          "text": "Have the main session do the exploration itself instead of using subagents, so that it has every detail directly.",
+          "correct": false,
+          "explanation": "This brings all the verbose exploration back into the main context. The subagents are useful; they just need to return their results in a better form.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "d",
+          "text": "Ask the subagents for longer, more detailed prose summaries of each finding.",
+          "correct": false,
+          "explanation": "More detailed prose is still prose. The main session would still have to search for the exact locations, because paths and lines aren't recorded as data.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Subagents should return structured findings that separate content from metadata such as file paths and line numbers.",
+      "studyRef": "§3 Task 1.3 (structured data separating content from metadata)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ]
+    }
+  ]
+}

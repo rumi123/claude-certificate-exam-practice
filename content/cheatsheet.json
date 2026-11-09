@@ -1,0 +1,309 @@
+{
+  "version": 1,
+  "decisions": [
+    {
+      "situation": "A financial or safety rule must hold every time",
+      "choose": "A hook or programmatic gate",
+      "why": "Code is deterministic; a prompt instruction fails some of the time",
+      "task": "1.4"
+    },
+    {
+      "situation": "A best-effort style or tone preference",
+      "choose": "A system-prompt instruction",
+      "why": "Occasional misses are acceptable, so enforcement would be over-engineering",
+      "task": "4.1"
+    },
+    {
+      "situation": "Normalise mixed tool-result formats (timestamps, units)",
+      "choose": "A PostToolUse hook",
+      "why": "It transforms results deterministically before the model sees them",
+      "task": "1.5"
+    },
+    {
+      "situation": "A multi-file or architectural change with several valid approaches",
+      "choose": "Plan mode",
+      "why": "Explore and agree on an approach before editing many files",
+      "task": "3.4"
+    },
+    {
+      "situation": "A clear, single-file fix",
+      "choose": "Direct execution",
+      "why": "Plan mode only adds overhead for well-scoped changes",
+      "task": "3.4"
+    },
+    {
+      "situation": "The model must call some tool, but may pick which",
+      "choose": "tool_choice \"any\"",
+      "why": "\"auto\" may return text; forcing removes the choice",
+      "task": "2.3"
+    },
+    {
+      "situation": "A specific tool must run first",
+      "choose": "Forced tool_choice {\"type\":\"tool\",\"name\":...}",
+      "why": "Guarantees that exact call on that request",
+      "task": "2.3"
+    },
+    {
+      "situation": "A workflow blocks on the result (pre-merge check, live chat)",
+      "choose": "Synchronous API",
+      "why": "Batches have no latency SLA and can take up to 24 hours",
+      "task": "4.5"
+    },
+    {
+      "situation": "A latency-tolerant job (overnight report, weekly audit)",
+      "choose": "Message Batches API",
+      "why": "About 50% cheaper when nothing waits on the result",
+      "task": "4.5"
+    },
+    {
+      "situation": "Match batch results to inputs and resubmit failures",
+      "choose": "A custom_id on every request",
+      "why": "Results aren't returned in input order",
+      "task": "4.5"
+    },
+    {
+      "situation": "A subagent fails",
+      "choose": "Return structured error context (type, query, partial results, alternatives)",
+      "why": "The coordinator can recover instead of aborting or guessing",
+      "task": "5.3"
+    },
+    {
+      "situation": "A subagent needs earlier findings or requirements",
+      "choose": "Pass them explicitly in its prompt",
+      "why": "Subagents have isolated context and inherit nothing",
+      "task": "1.3"
+    },
+    {
+      "situation": "Subagents need to share findings",
+      "choose": "Route them through the coordinator",
+      "why": "Hub-and-spoke keeps the system observable and errors handled consistently",
+      "task": "1.2"
+    },
+    {
+      "situation": "The customer explicitly asks for a human",
+      "choose": "Escalate immediately",
+      "why": "An explicit request is a trigger; don't try to resolve first",
+      "task": "5.2"
+    },
+    {
+      "situation": "A frustrated customer with a simple issue",
+      "choose": "Acknowledge, offer to resolve, escalate if they ask again",
+      "why": "Sentiment isn't complexity",
+      "task": "5.2"
+    },
+    {
+      "situation": "A lookup returns several matching customers",
+      "choose": "Ask for another identifier",
+      "why": "Acting on a heuristic guess risks the wrong account",
+      "task": "5.2"
+    },
+    {
+      "situation": "A long conversation is losing amounts, dates and IDs",
+      "choose": "A persistent case-facts block",
+      "why": "Progressive summarisation drops exact values",
+      "task": "5.1"
+    },
+    {
+      "situation": "A tool can't reach its source vs finds nothing",
+      "choose": "Return isError for the failure; a success with no results for a true empty",
+      "why": "Otherwise the agent treats an outage as \"nothing exists\"",
+      "task": "2.2"
+    },
+    {
+      "situation": "An agent has too many tools and picks wrongly",
+      "choose": "Cut to about 4–5 tools scoped to its role",
+      "why": "Selection reliability falls as tool count grows",
+      "task": "2.3"
+    },
+    {
+      "situation": "Two tools with overlapping descriptions get confused",
+      "choose": "Rewrite or rename the descriptions to remove overlap",
+      "why": "Descriptions are the main selection signal; fix them before adding layers",
+      "task": "2.1"
+    },
+    {
+      "situation": "Find files by name pattern vs search file contents",
+      "choose": "Glob for names; Grep for contents",
+      "why": "Each is built for one job",
+      "task": "2.5"
+    },
+    {
+      "situation": "Team-wide vs personal Claude Code config",
+      "choose": "Committed project files vs ~/.claude or settings.local.json",
+      "why": "Only project files reach teammates through git",
+      "task": "3.1"
+    },
+    {
+      "situation": "A team MCP server vs a personal one",
+      "choose": "Project .mcp.json with ${VAR} vs ~/.claude.json",
+      "why": "Shared config is committed; secrets come from env vars",
+      "task": "2.4"
+    },
+    {
+      "situation": "Conventions for one file type spread across many folders",
+      "choose": "A .claude/rules/ file with a paths glob",
+      "why": "A subdirectory CLAUDE.md only covers its own folder",
+      "task": "3.3"
+    },
+    {
+      "situation": "A skill whose verbose output shouldn't flood the conversation",
+      "choose": "context: fork in SKILL.md frontmatter",
+      "why": "It runs in an isolated sub-agent and returns only the result",
+      "task": "3.2"
+    },
+    {
+      "situation": "A field is often absent and the model invents values",
+      "choose": "Make it optional and nullable",
+      "why": "The model can return null instead of fabricating",
+      "task": "4.3"
+    },
+    {
+      "situation": "Retry an extraction: format error vs missing data",
+      "choose": "Retry with the specific errors for format; don't retry missing data",
+      "why": "Retries can't find what the source doesn't contain",
+      "task": "4.4"
+    },
+    {
+      "situation": "Reviewing generated code",
+      "choose": "An independent instance or fresh session",
+      "why": "The generating session keeps its reasoning and rarely questions it",
+      "task": "4.6"
+    },
+    {
+      "situation": "A large PR review misses issues",
+      "choose": "Per-file passes plus a cross-file integration pass",
+      "why": "Avoids diluting attention across everything",
+      "task": "4.6"
+    },
+    {
+      "situation": "Deciding whether to reduce human review",
+      "choose": "Accuracy segmented by document type and field",
+      "why": "An aggregate can hide one failing segment",
+      "task": "5.5"
+    },
+    {
+      "situation": "Resume a session vs start fresh",
+      "choose": "Resume if context is mostly valid (say what changed); start fresh with a summary if results are stale",
+      "why": "Stale tool results mislead the model",
+      "task": "1.7"
+    },
+    {
+      "situation": "Compare two approaches from the same analysis",
+      "choose": "fork_session",
+      "why": "Branches share the baseline but stay independent",
+      "task": "1.7"
+    },
+    {
+      "situation": "Synthesis from sources that disagree",
+      "choose": "Keep claim-source mappings; report both values with attribution",
+      "why": "Picking one silently loses provenance",
+      "task": "5.6"
+    }
+  ],
+  "alwaysWrong": [
+    {
+      "text": "Parsing natural-language phrases (\"done\", \"complete\") to end the agent loop",
+      "why": "Text is unreliable; the loop should be controlled by stop_reason",
+      "trap": "NL_TERMINATION"
+    },
+    {
+      "text": "An iteration cap as the main stopping rule",
+      "why": "A cap guesses task length; keep it only as a safety net beside stop_reason",
+      "trap": "ITERATION_CAP"
+    },
+    {
+      "text": "Enforcing a critical rule with a prompt instruction",
+      "why": "Prompts are probabilistic; use a hook, gate or schema",
+      "trap": "PROMPT_FOR_GUARANTEE"
+    },
+    {
+      "text": "Escalating on the model's self-reported confidence",
+      "why": "Self-confidence is poorly calibrated; use explicit escalation criteria",
+      "trap": "UNRELIABLE_PROXY"
+    },
+    {
+      "text": "Escalating on customer sentiment",
+      "why": "Sentiment doesn't measure case complexity or policy gaps",
+      "trap": "UNRELIABLE_PROXY"
+    },
+    {
+      "text": "Generic error messages like \"Operation failed\"",
+      "why": "The agent can't choose a recovery; return category and retryability",
+      "trap": "SYMPTOM_PATCH"
+    },
+    {
+      "text": "Silently suppressing errors or returning empty success",
+      "why": "A failure looks like a valid empty result; return isError",
+      "trap": "SILENT_FAILURE"
+    },
+    {
+      "text": "Giving one agent many tools \"for convenience\"",
+      "why": "Selection degrades; scope about 4–5 tools to the role",
+      "trap": "TOOL_OVERLOAD"
+    },
+    {
+      "text": "Same-session self-review",
+      "why": "The generator keeps its reasoning; use an independent instance",
+      "trap": "SELF_REVIEW"
+    },
+    {
+      "text": "Trusting aggregate metrics",
+      "why": "Averages hide per-type and per-field failures; segment them",
+      "trap": "AGGREGATE_METRIC_MASKING"
+    }
+  ],
+  "keyFacts": [
+    {
+      "group": "Exam format and scoring",
+      "items": [
+        "60 questions in 120 minutes, closed book",
+        "Scaled score 100–1000; 720 passes (not the same as 72%)",
+        "No guessing penalty; unanswered questions count as wrong",
+        "4 of the 6 scenarios are drawn at random",
+        "Single-answer questions have 4 options; multiple-response questions also appear",
+        "Domain weights: D1 27%, D2 18%, D3 20%, D4 20%, D5 15%",
+        "$125, valid 12 months; up to 4 attempts in 12 months, with waits of 14, 30 and 90 days"
+      ]
+    },
+    {
+      "group": "Config file locations and precedence",
+      "items": [
+        "CLAUDE.md: user ~/.claude/CLAUDE.md, project .claude/CLAUDE.md or root CLAUDE.md, and subdirectory files; concatenated from broadest to most specific",
+        "@import pulls in other files; .claude/rules/*.md with paths frontmatter load only for matching files",
+        "Commands: .claude/commands/ (project, shared) vs ~/.claude/commands/ (personal)",
+        "Skills: .claude/skills/<name>/SKILL.md with frontmatter such as context: fork, allowed-tools, argument-hint",
+        "MCP: .mcp.json (project, ${VAR} expansion) vs ~/.claude.json (user)",
+        "Settings: .claude/settings.json is committed and shared; .claude/settings.local.json is personal; permissions go under permissions.allow",
+        "/memory shows which memory files are loaded"
+      ]
+    },
+    {
+      "group": "CLI flags for CI",
+      "items": [
+        "-p / --print runs non-interactively",
+        "--output-format json for machine-readable output",
+        "--json-schema to constrain the output shape",
+        "--resume <session-name> continues a named session",
+        "fork_session branches from a shared baseline"
+      ]
+    },
+    {
+      "group": "tool_choice options",
+      "items": [
+        "\"auto\": the model may call a tool or reply with text",
+        "\"any\": the model must call a tool, but chooses which",
+        "{\"type\":\"tool\",\"name\":\"...\"}: the model must call that specific tool"
+      ]
+    },
+    {
+      "group": "Message Batches API",
+      "items": [
+        "About 50% cheaper; results within up to 24 hours; no latency SLA",
+        "No multi-turn tool calling within one request",
+        "custom_id matches results to requests and lets you resubmit only failures",
+        "Refine the prompt on a sample before submitting the full batch",
+        "Set submission frequency from the SLA (e.g. a 30-hour SLA → submit in 4-hour windows)"
+      ]
+    }
+  ]
+}

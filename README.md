@@ -143,12 +143,7 @@ After each session the **summary** shows your score, time, accuracy per domain a
 Out of scope: accounts, cloud sync, deployment and copying other sites' lesson text.
 
 ## Docs
-- [`docs/specification.md`](docs/specification.md): every feature, the formulas and the flows
-- [`docs/architecture.md`](docs/architecture.md): stack, folders, data model and content import
-- [`docs/milestones.md`](docs/milestones.md): build history
-- [`docs/question-authoring-guide.md`](docs/question-authoring-guide.md): how to write or add questions
-- [`docs/plan.md`](docs/plan.md): goals and decisions
-- [`docs/ccaf-exam-research.md`](docs/ccaf-exam-research.md): the study notes behind the questions
+- [`docs/ccaf-exam-research.md`](docs/ccaf-exam-research.md): the study notes behind the questions (shown at `/research`)
 
 ## Performance check
 ```

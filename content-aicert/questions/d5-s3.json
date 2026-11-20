@@ -1,0 +1,398 @@
+{
+  "scenario": "S3",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S3-D5-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "5.3",
+      "secondaryTasks": ["2.2"],
+      "stem": "The dataset subagent in the Northgate system calls `fetch_dataset` for national emissions tables. When the provider times out, its wrapper returns an empty list. The coordinator has just told a minister's office that \"no government data exists for 2023 methane output\", when the table exists but could not be reached. The coordinator must still be able to carry on with the other datasets. What should `fetch_dataset` return when the provider times out?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A generic status of `dataset unavailable`, which keeps the response short and easy for the coordinator to log.",
+          "correct": false,
+          "explanation": "A generic status hides what the coordinator needs: the failure type, what was attempted and whether a retry could succeed. It is no better than the empty list for deciding how to recover.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "b",
+          "text": "A structured error with the failure type, the query attempted, a retryable flag and any partial results, so that a timeout is never mistaken for a valid empty result.",
+          "correct": true,
+          "explanation": "A structured error lets the coordinator tell a timeout from a real no-data answer, retry or use an alternative source, and carry on with the other datasets while reporting an honest gap.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "An `isError` result with the failure type and the message `Timeout contacting provider`, but no query, retryable flag or partial results.",
+          "correct": false,
+          "explanation": "Flagging the failure is better than an empty list, but a bare message string carries no query, retryable flag or partial results. The coordinator cannot choose between retrying and trying another source.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "The same empty list, with the timeout changed from 10 seconds to 60 seconds so that the failures happen less often than they do today.",
+          "correct": false,
+          "explanation": "A longer timeout leaves the real defect in place: when the provider is down, the empty list is still reported as no data. It would only suit a provider that is merely slow.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Return structured errors that separate access failures from valid empty results, so the coordinator can decide how to recover.",
+      "studyRef": "§3 Task 5.3; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S3-D5-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "5.3",
+      "secondaryTasks": [],
+      "stem": "A Northgate briefing on five adaptation topics is due to a minister in 48 hours. The academic database for one topic, flood defences, is down for the whole 48-hour window, so the literature subagent returns an error. The other four topics have full results. Synthesis currently writes the briefing as if all five topics were covered, but the minister's office needs it on time. How should the final briefing be produced?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Hold the briefing until the flood-defences database is back, so that all five topics are covered in one complete report.",
+          "correct": false,
+          "explanation": "The outage lasts the whole window, so waiting means missing the deadline and giving the minister nothing. Four well-supported topics can be delivered now.",
+          "trap": "TOTAL_FAILURE"
+        },
+        {
+          "id": "b",
+          "text": "Let the synthesis subagent write the flood section from its background knowledge so that the briefing reads as complete.",
+          "correct": false,
+          "explanation": "Unsourced text presented as researched hides the gap and misleads the reader. A missing source should be visible, not papered over.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "c",
+          "text": "Have the coordinator retry the flood-defences search every ten minutes, and mark the topic as a gap only if it is still down at the deadline.",
+          "correct": false,
+          "explanation": "Retrying suits a transient timeout, but the database is down for the whole window, so every attempt fails and the briefing stays unannotated until the last minute. The gap should be recorded now.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Deliver it on time, annotating flood defences as a gap because its database is down and the other four topics as supported by full results.",
+          "correct": true,
+          "explanation": "Annotating coverage keeps the supported findings usable and tells the reader exactly where evidence is missing and why, so the briefing is honest and on time.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Synthesis should annotate coverage, marking well-supported findings and gaps from unavailable sources, instead of hiding or waiting out failures.",
+      "studyRef": "§3 Task 5.3; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S3-D5-003",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "5.3",
+      "secondaryTasks": [],
+      "stem": "The Northgate dataset subagent already retries a timed-out `fetch_dataset` call twice with backoff before giving up. In a run of 12 queries, 9 succeed and 3 still fail, and the subagent returns an error naming the failure type, the 3 failed queries and the 9 results. The coordinator treats any error as fatal for that subagent and re-delegates all 12 queries, which takes nine minutes, and the 48-hour briefing must still go out on time. What should the coordinator do instead?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep the 9 completed results, re-delegate only the 3 failed queries or an alternative source for them, and annotate every one that still fails as a gap.",
+          "correct": true,
+          "explanation": "The structured error says exactly what failed and what succeeded. Keeping the 9 results, retrying only the 3 (or trying another source) and annotating what remains is cheap and honest.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Keep the 9 results, send the 3 failed queries back to the same subagent with a longer timeout, and hold the report until all 12 are in.",
+          "correct": false,
+          "explanation": "Re-delegating only the failures is right, but the queries already failed after local retries, so waiting for them blocks the briefing with no promise of success. Any that still fail should be annotated as gaps.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Mark the whole dataset source as unavailable for this request and proceed without any government data, noting it in the limitations.",
+          "correct": false,
+          "explanation": "Nine queries returned good data, and discarding them over three failures throws away most of the source. A partial failure should not end use of the whole source.",
+          "trap": "TOTAL_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Set the subagent's local retries to six with longer backoff, so that failed queries are rarely passed up to the coordinator.",
+          "correct": false,
+          "explanation": "More retries do nothing about how the coordinator handles an error, and they would slow each run. The coordinator's reaction, not the retry count, is what wastes nine minutes.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Coordinators should use structured error context to keep partial results and retry only failed work, not rerun everything or drop the source.",
+      "studyRef": "§3 Task 5.3; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S3-D5-004",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "5.6",
+      "secondaryTasks": [],
+      "stem": "Northgate's literature and dataset subagents currently return prose summaries, and the synthesis subagent merges them into a briefing within a limited context budget. Reviewers cannot tell which source supports each figure, and two figures from different years were presented as a conflict. Which two fields should every structured finding from the subagents include? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "A list of source URLs at the end of each report, without saying which claim each one supports.",
+          "correct": false,
+          "explanation": "A bare list shows what was read but not what backs each figure, so reviewers still cannot trace a number to its source. Each claim needs its own mapping.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "A claim-source mapping: the source URL or document name plus the excerpt that supports the claim.",
+          "correct": true,
+          "explanation": "Tying each claim to its source and supporting excerpt lets reviewers verify figures and lets synthesis keep attribution as it merges.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "The date on which the subagent retrieved each source page, taken from the fetch log.",
+          "correct": false,
+          "explanation": "A retrieval date says when the page was fetched, not which year the figure describes, so two figures from different years would still look like a conflict. The publication or data collection date is what matters.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "The complete text of each source page, so that synthesis can look up any citation itself.",
+          "correct": false,
+          "explanation": "Passing whole pages would overrun the synthesis agent's limited context and bury the figures. A short excerpt and source reference carry what is needed.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "e",
+          "text": "The publication or data collection date for each figure, so that different years are not read as a contradiction.",
+          "correct": true,
+          "explanation": "With dates attached, synthesis can see that figures for different years are not in conflict and can present each with its period.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Require subagents to output structured claim-source mappings with dates, which downstream agents preserve through synthesis.",
+      "studyRef": "§3 Task 5.6; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S3-D5-005",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "5.6",
+      "secondaryTasks": [],
+      "stem": "Northgate's synthesis subagent currently converts everything it receives into bullet points: national emissions figures from datasets, a week of news about a carbon-tax debate, and technical findings about methane monitoring. Ministers want a briefing that is quick to skim, but they say the three-year emissions comparison is hard to read and the news summary has lost its narrative. What is the best change to the synthesis step?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Convert everything to prose paragraphs, since ministers read full sentences more easily than bullet lists, and keep the section order.",
+          "correct": false,
+          "explanation": "Prose would fix the news summary but make the emissions comparison harder to scan. Swapping one uniform format for another ignores that the content types differ.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Render the emissions figures as tables, with the three-year comparison in one, and keep everything else as bullet points, because only the numbers are hard to read.",
+          "correct": false,
+          "explanation": "Tables for the figures are right, but the news summary has also lost its narrative and needs prose. Leaving it as bullets leaves half of the complaint unresolved.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add a separate formatting agent that rewrites the finished briefing in a single house style, so that every section looks consistent.",
+          "correct": false,
+          "explanation": "A new agent adds a step and still applies one style to different content. The fix is in how synthesis renders each content type.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Render each content type in a fitting form: tables for the emissions datasets, prose for the carbon-tax news and lists for the methane findings, in every briefing.",
+          "correct": true,
+          "explanation": "Matching the form to the content, tables for numbers, prose for narrative and lists for discrete findings, solves both complaints inside the existing synthesis step.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Synthesis should render content types appropriately, tables for data, prose for news, lists for findings, rather than one uniform format.",
+      "studyRef": "§3 Task 5.6; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S3-D5-006",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "5.4",
+      "secondaryTasks": [],
+      "stem": "In phase 1 of a 300-document review, the Northgate coordinator's subagents mapped each document to one of five policy areas and noted the 12 most important findings per area. Phase 2 starts five new subagents, one per area, each with a limited context window and an empty history, but each spends about 35 minutes re-reading documents to rediscover what phase 1 already found. What is the most effective change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Start the phase 2 subagents from the coordinator's session so that they inherit its history from phase 1 and need no briefing at all.",
+          "correct": false,
+          "explanation": "A standard subagent starts with isolated context and sees nothing from phase 1 unless it is passed in its prompt. A fork would copy the coordinator's whole history, which is far more than each subagent's limited window can usefully hold.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "b",
+          "text": "Summarise phase 1 into the document-to-area list and the key findings, and include it in each phase 2 subagent's starting prompt.",
+          "correct": true,
+          "explanation": "A compact summary of the phase 1 results gives each subagent what it needs on day one and removes the re-reading, while staying inside its limited context.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Pass the complete phase 1 outputs, the document-to-area map and every finding for all 300 documents, into each phase 2 subagent's initial prompt.",
+          "correct": false,
+          "explanation": "Injecting phase 1 output is right, but passing the raw material fills each subagent's limited window with detail it does not need. The key findings and the area map are what carry forward.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Let each phase 2 subagent message the phase 1 subagents directly to ask what they found.",
+          "correct": false,
+          "explanation": "Direct subagent-to-subagent messaging goes around the coordinator, which owns routing and context passing. It also leaves the coordinator unaware of what each subagent was told.",
+          "trap": "BYPASS_COORDINATOR"
+        }
+      ],
+      "keyConcept": "Summarise one exploration phase's key findings and inject them into the next phase's subagent prompts, as subagents inherit nothing.",
+      "studyRef": "§3 Task 5.4; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S3-D5-007",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "5.4",
+      "secondaryTasks": [],
+      "stem": "A Northgate run uses six subagents over 36 hours, each working through its own batch of units. The coordinator writes a manifest of subagent status only once all six have finished. When the host rebooted at hour 22, two subagents had completed and four were part-way through, and the rerun began from nothing. Redoing the finished and part-finished work costs about 14 hours, which would miss the 48-hour briefing deadline. What change makes a fast resume possible without repeating finished units?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep the manifest in the coordinator's conversation history and rebuild it from there after each restart, since the history records what each subagent reported.",
+          "correct": false,
+          "explanation": "The history records what subagents reported, not the progress of units that were part-way through, so rebuilding from it cannot say which units are done. State has to be written to a known location as work proceeds.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Have each subagent export its state to a known location when its whole batch finishes, and have the coordinator load the manifest on resume and inject it into prompts.",
+          "correct": false,
+          "explanation": "Exporting at the end saves the two finished subagents but loses all the progress of the four that were part-way through, and injecting the manifest cannot restore work that was never saved. State has to be exported as each unit finishes.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Have each subagent write its output to a shared store that the others read, so that any of them can continue another's work.",
+          "correct": false,
+          "explanation": "Subagents sharing a store go around the coordinator, which owns routing and recovery. The coordinator would still not know what was done on resume.",
+          "trap": "BYPASS_COORDINATOR"
+        },
+        {
+          "id": "d",
+          "text": "Have each subagent export state to a known location after each unit, and have the coordinator load the manifest on resume and inject it into prompts.",
+          "correct": true,
+          "explanation": "Exporting as units finish means a reboot loses at most the unit in progress. The coordinator loads the manifest and injects it into each subagent's prompt, so only unfinished work is redone.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "For crash recovery, each agent exports state as it goes to a known location, and the coordinator loads the manifest on resume.",
+      "studyRef": "§3 Task 5.4; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S3-D5-008",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 1,
+      "primaryTask": "5.1",
+      "secondaryTasks": [],
+      "stem": "A Northgate synthesis subagent receives 38 findings in one 22,000-token input. In tests, findings from the middle of the input are often left out of the briefing, while those near the start and the end are covered. The briefing finishes well inside its output limit, and the findings themselves cannot be removed. Which two changes reduce this effect? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Put a short summary of the key findings at the top of the prompt, ahead of the detailed findings.",
+          "correct": true,
+          "explanation": "Models handle the start and end of a long input best, so the key findings belong at the top of the prompt, where they are far less likely to be missed than if they sit in the middle.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Repeat each key finding in capital letters and bold in the middle of the input, so that it stands out.",
+          "correct": false,
+          "explanation": "Emphasis inside the middle does not change how position affects what the model picks up, so the same findings are still skipped. It adds noise instead of changing the structure.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Split the findings into two inputs of 19 and run synthesis separately on each, then merge the two drafts.",
+          "correct": false,
+          "explanation": "Each half still has a middle where findings are lost, the two halves cannot be weighed against each other, and a merge step is added. Moving key points to the top and adding headers addresses position directly.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Organise the detailed findings under explicit section headers, one per policy area, below the summary.",
+          "correct": true,
+          "explanation": "Clear headers give the model landmarks in the long input, so findings in the middle are located and covered instead of blending into the text.",
+          "trap": null
+        },
+        {
+          "id": "e",
+          "text": "Give the briefing a `max_tokens` of 6,000 instead of 3,000, so that it has room to mention every one of the 38 findings.",
+          "correct": false,
+          "explanation": "`max_tokens` caps the length of the output, and this briefing already ends well inside it, so running out of room is not the cause. Findings are missed because of where they sit in the input, and a bigger context window would not change that.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Counter lost-in-the-middle effects by placing key findings summaries at the top of the prompt and using explicit section headers for detail.",
+      "studyRef": "§3 Task 5.1; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S3-D5-009",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "5.6",
+      "secondaryTasks": ["5.3"],
+      "stem": "A Northgate document analysis subagent extracts total methane emissions from a 40-page national report. The executive summary says 18.4 Mt, while an appendix table says 21.1 Mt and a footnote shows a different base year. The subagent reports only the executive-summary value, and a reviewer found the discrepancy later. The team added a prompt rule to verify each value twice, which changed nothing because both readings were accurate. What should the subagent do?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Report the average of the two values, 19.75 Mt, with a note that it was derived from two readings in the same report.",
+          "correct": false,
+          "explanation": "An average is a number the report never states, and it hides both the discrepancy and the differing base years. Reviewers would have no way to trace it to a source.",
+          "trap": "AGGREGATE_METRIC_MASKING"
+        },
+        {
+          "id": "b",
+          "text": "Complete the analysis with both values, each annotated with its location and base year, and let the coordinator reconcile all conflicts before synthesis.",
+          "correct": true,
+          "explanation": "Both values and their context travel to the coordinator, which can reconcile them or flag the conflict, so neither the discrepancy nor the base-year difference is lost.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Report both values with their locations and base years, and have the subagent pick the more recent base year as the figure for synthesis.",
+          "correct": false,
+          "explanation": "Keeping both values is right, but choosing one in the subagent hides the conflict from the coordinator, which owns reconciliation. A newer base year is also not proof that its value is the right one.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Stop analysing the report and return an error until a researcher confirms which of the two figures belongs in the briefing.",
+          "correct": false,
+          "explanation": "A conflict between sources is information, not a failure. Stopping blocks the whole analysis when the subagent could report both values and move on.",
+          "trap": "TOTAL_FAILURE"
+        }
+      ],
+      "keyConcept": "When a source gives conflicting values, include both with their context and let the coordinator decide, rather than picking or averaging.",
+      "studyRef": "§3 Task 5.6; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    }
+  ]
+}

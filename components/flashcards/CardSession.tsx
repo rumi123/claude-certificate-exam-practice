@@ -58,7 +58,7 @@ export default function CardSession({
 
   if (!card) {
     return (
-      <div className="mt-6">
+      <div className="mx-auto mt-6 max-w-3xl">
         <EmptyState icon={CircleCheck} title="Done for now." testId="cards-done">
           {earliest !== null && `Next card due ${new Date(earliest).toLocaleDateString()}`}
         </EmptyState>
@@ -67,7 +67,7 @@ export default function CardSession({
   }
 
   return (
-    <section className="mt-6" aria-label="Card">
+    <section className="mx-auto mt-6 max-w-3xl" aria-label="Card">
       <p className="text-sm text-muted">
         Card {index + 1} of {cards.length}
       </p>

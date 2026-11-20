@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation';
 import FeedbackPanel from '@/components/feedback/FeedbackPanel';
 import { Card, Chip, InlineText } from '@/components/ui';
 import { getQuestionWithOptions, getScenarios } from '@/lib/db/queries/catalog';
-import { getQuestionHistory } from '@/lib/db/queries/questions';
+import ClearMarkButton from '@/components/questions/ClearMarkButton';
+import { getQuestionHistory, isMarked } from '@/lib/db/queries/questions';
 import { getFeedback } from '@/lib/db/queries/sessions';
 
 export const dynamic = 'force-dynamic';
@@ -14,12 +15,15 @@ export default async function QuestionPage({ params }: { params: Promise<{ id: s
   const q = getQuestionWithOptions(id);
   if (!q || q.pool !== 'practice') notFound();
   const scenario = getScenarios().find((s) => s.id === q.scenarioId);
+  const history = getQuestionHistory(id);
+  const marked = isMarked(id);
+  // Show the latest answer in the order it was displayed; unanswered questions show the key only.
+  const latest = history.at(-1);
   const feedback = getFeedback(
     id,
-    [],
-    q.options.map((o) => o.key),
+    latest?.selected ?? [],
+    latest?.optionOrder ?? q.options.map((o) => o.key),
   );
-  const history = getQuestionHistory(id);
 
   return (
     <>
@@ -36,20 +40,26 @@ export default async function QuestionPage({ params }: { params: Promise<{ id: s
         <h1 className="whitespace-nowrap text-2xl font-bold">{q.id}</h1>
         <Chip tone="neutral">{feedback.tags.domain}</Chip>
         <Chip tone="accent">{feedback.tags.primaryTask.id}</Chip>
+        {marked && <Chip tone="accent">Marked</Chip>}
+        {marked && <ClearMarkButton questionId={id} />}
       </div>
-      {scenario && (
-        <Card aria-label="Scenario" className="mt-4">
-          <h2 className="font-semibold">{scenario.name}</h2>
-          <p data-testid="scenario-setup" className="mt-1 whitespace-pre-line text-sm">
-            <InlineText text={scenario.setup} />
+      <div className="mt-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
+        <div className="lg:sticky lg:top-16 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
+          {scenario && (
+            <Card aria-label="Scenario">
+              <h2 className="font-semibold">{scenario.name}</h2>
+              <p data-testid="scenario-setup" className="mt-1 whitespace-pre-line text-sm">
+                <InlineText text={scenario.setup} />
+              </p>
+            </Card>
+          )}
+          <p data-testid="stem" className="mt-4 whitespace-pre-line text-lg">
+            <InlineText text={q.stem} />
           </p>
-        </Card>
-      )}
-      <p data-testid="stem" className="mt-4 whitespace-pre-line text-lg">
-        <InlineText text={q.stem} />
-      </p>
-      {q.type === 'multi' && <p className="mt-1 text-sm text-muted">Select {q.selectCount}</p>}
-      <FeedbackPanel feedback={feedback} />
+          {q.type === 'multi' && <p className="mt-1 text-sm text-muted">Select {q.selectCount}</p>}
+        </div>
+        <FeedbackPanel feedback={feedback} />
+      </div>
       <section aria-label="History" className="mt-8">
         <h2 className="text-lg font-semibold">Your answers</h2>
         {history.length === 0 ? (

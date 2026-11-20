@@ -1,12 +1,28 @@
 import { Check, Circle, CircleAlert, CircleCheck, CircleX, Lightbulb, X } from 'lucide-react';
 import { Button, Card, Chip, InlineText } from '@/components/ui';
 import type { Tone } from '@/components/ui';
-import { bannerText, type FeedbackData } from '@/lib/feedback';
+import {
+  bannerText,
+  OPTION_STATUS_LABEL,
+  optionStatus,
+  type FeedbackData,
+  type OptionStatus,
+} from '@/lib/feedback';
 import AskClaudeButton from './AskClaudeButton';
 import FlagForm from './FlagForm';
+import TeachingSection from './TeachingSection';
 import TrapBadge from './TrapBadge';
 
 type Result = NonNullable<FeedbackData['result']>;
+
+const STATUS_TONE: Record<OptionStatus, Tone> = {
+  'chosen-correct': 'good',
+  'chosen-wrong': 'weak',
+  missed: 'close',
+  'not-chosen': 'neutral',
+  correct: 'good',
+  wrong: 'weak',
+};
 
 function OptionMark({ o }: { o: FeedbackData['options'][number] }) {
   if (o.isCorrect) {
@@ -40,8 +56,16 @@ function banner(result: Result): { tone: Tone; Icon: typeof CircleCheck; cls: st
   return { tone: 'weak', Icon: CircleX, cls: 'bg-weak-soft text-weak' };
 }
 
-export default function FeedbackPanel({ feedback }: { feedback: FeedbackData }) {
+// The runner collapses the reasoning through `reasoningOpen`; other pages always show it.
+export default function FeedbackPanel({
+  feedback,
+  reasoningOpen: open = true,
+}: {
+  feedback: FeedbackData;
+  reasoningOpen?: boolean;
+}) {
   const { questionId, result, options, keyConcept, tags, links } = feedback;
+  const answered = result !== null;
   const b = result ? banner(result) : null;
   return (
     <section aria-label="Feedback" className="mt-4 space-y-4">
@@ -54,7 +78,7 @@ export default function FeedbackPanel({ feedback }: { feedback: FeedbackData }) 
           {bannerText(result)}
         </p>
       )}
-      <ul className="space-y-2">
+      <ul hidden={!open} className="space-y-2">
         {options.map((o) => (
           <li
             key={o.key}
@@ -69,32 +93,48 @@ export default function FeedbackPanel({ feedback }: { feedback: FeedbackData }) 
                 </span>
                 {!o.isCorrect && o.trap && <TrapBadge trap={o.trap} />}
               </p>
+              <div className="mt-1">
+                <Chip tone={STATUS_TONE[optionStatus(o, answered)]} data-testid="option-status">
+                  {OPTION_STATUS_LABEL[optionStatus(o, answered)]}
+                </Chip>
+              </div>
               <p className="mt-1 text-base text-muted">
-                <InlineText text={o.explanation} />
+                <InlineText text={o.reasoning ?? o.explanation} />
               </p>
+              {o.tempting && (
+                <p className="mt-1 text-base text-muted">
+                  <span className="font-semibold">Why it was tempting.</span>{' '}
+                  <InlineText text={o.tempting} />
+                </p>
+              )}
             </div>
           </li>
         ))}
       </ul>
-      <Card className="flex gap-3 bg-accent-soft">
-        <Lightbulb size={20} aria-hidden="true" className="mt-0.5 shrink-0 text-accent" />
-        <p>
-          <span className="font-semibold">Key concept:</span> <InlineText text={keyConcept} />
-        </p>
-      </Card>
-      <div className="flex flex-wrap items-center gap-2">
-        <Chip tone="neutral">{tags.scenario}</Chip>
-        <Chip tone="neutral">{tags.domain}</Chip>
-        <Chip tone="accent" data-testid="task-tag">
-          {tags.primaryTask.id} {tags.primaryTask.title}
-        </Chip>
-        {tags.secondaryTasks.map((k) => (
-          <Chip key={k.id} tone="neutral">
-            {k.id} {k.title}
-          </Chip>
-        ))}
-        <Chip tone="neutral">Difficulty {tags.difficulty}</Chip>
-      </div>
+      {open && (
+        <>
+          <Card className="flex gap-3 bg-accent-soft">
+            <Lightbulb size={20} aria-hidden="true" className="mt-0.5 shrink-0 text-accent" />
+            <p>
+              <span className="font-semibold">Key concept:</span> <InlineText text={keyConcept} />
+            </p>
+          </Card>
+          {feedback.lesson && <TeachingSection lesson={feedback.lesson} />}
+          <div className="flex flex-wrap items-center gap-2">
+            <Chip tone="neutral">{tags.scenario}</Chip>
+            <Chip tone="neutral">{tags.domain}</Chip>
+            <Chip tone="accent" data-testid="task-tag">
+              {tags.primaryTask.id} {tags.primaryTask.title}
+            </Chip>
+            {tags.secondaryTasks.map((k) => (
+              <Chip key={k.id} tone="neutral">
+                {k.id} {k.title}
+              </Chip>
+            ))}
+            <Chip tone="neutral">Difficulty {tags.difficulty}</Chip>
+          </div>
+        </>
+      )}
       <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
         <Button variant="secondary" size="sm" href={links.research}>
           Read

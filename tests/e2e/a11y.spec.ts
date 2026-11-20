@@ -2,7 +2,18 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { sql } from './helpers/db';
 
-const PAGES = ['/', '/report', '/practice', '/review', '/questions', '/flashcards', '/cheatsheet'];
+const PAGES = [
+  '/',
+  '/report',
+  '/practice',
+  '/review',
+  '/exams',
+  '/questions',
+  '/flashcards',
+  '/cheatsheet',
+  '/learn',
+  '/questions/S1-002',
+];
 
 async function expectNoSeriousViolations(page: Page): Promise<void> {
   const { violations } = await new AxeBuilder({ page }).analyze();
@@ -32,8 +43,8 @@ test('axe: runner and feedback panel', async ({ page }) => {
 
   await page.getByRole('radio').first().check();
   await page.getByRole('radio', { name: 'Sure', exact: true }).check();
-  await page.getByRole('button', { name: 'Submit' }).click();
-  await expect(page.getByTestId('feedback-option').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Submit', exact: true }).click();
+  await expect(page.getByRole('status')).toBeVisible();
   await expectNoSeriousViolations(page);
 });
 

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { importContent } from '@/lib/content/import';
 import { loadContent, type RawContent } from '@/lib/content/load';
@@ -34,15 +34,19 @@ describe('importContent', () => {
   it('inserts everything on the first import', () => {
     const res = importContent(getDb(), raw());
     expect(res).toMatchObject({ inserted: 150, updated: 0, unchanged: 0, retired: 0 });
-    expect(res.cards).toEqual({ inserted: 120, updated: 0, unchanged: 0, retired: 0 });
-    expect(getDb().select().from(t.questionOption).all()).toHaveLength(630);
+    expect(res.cards).toEqual({ inserted: 121, updated: 0, unchanged: 0, retired: 0 });
+    // Counted for the practice pool only, so a mock paper in content/ doesn't change it.
+    const options = getDb().get<{ n: number }>(
+      sql`select count(*) as n from question_option o join question q on q.id = o.question_id where q.pool = 'practice'`,
+    );
+    expect(options.n).toBe(630);
   });
 
   it('reports everything unchanged on the second import', () => {
     importContent(getDb(), raw());
     const res = importContent(getDb(), raw());
     expect(res).toMatchObject({ inserted: 0, updated: 0, unchanged: 150, retired: 0 });
-    expect(res.cards).toEqual({ inserted: 0, updated: 0, unchanged: 120, retired: 0 });
+    expect(res.cards).toEqual({ inserted: 0, updated: 0, unchanged: 121, retired: 0 });
   });
 
   it('bumps the version of an edited question', () => {

@@ -210,3 +210,8 @@ body {
     display: table-header-group;
   }
 }
+
+/* Keeps the layout still when a page grows long enough to need a scrollbar. */
+html {
+  scrollbar-gutter: stable;
+}

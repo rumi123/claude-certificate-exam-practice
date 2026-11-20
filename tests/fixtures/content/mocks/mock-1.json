@@ -1,0 +1,748 @@
+{
+  "pool": "mock-1",
+  "version": 1,
+  "scenarios": [
+    "S1",
+    "S2",
+    "S3",
+    "S4"
+  ],
+  "questions": [
+    {
+      "id": "M1-S1-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.4",
+      "secondaryTasks": [
+        "1.5"
+      ],
+      "stem": "Your, support agent, built on the Claude Agent SDK, must confirm who it is talking to before touching any account. Logs show it skips `get_customer` in 12% of conversations and calls `lookup_order` with the name the customer typed, which twice led to refunds on the wrong account. The verification order must hold every time. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a programmatic prerequisite that blocks `lookup_order` and `process_refund` until `get_customer` returns a verified customer ID.",
+          "correct": true,
+          "explanation": "The order has to be guaranteed, so it's enforced in code rather than requested in the prompt. A gate on the downstream tools makes it impossible to reach them without a verified ID, which removes the 12% failure path entirely.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Strengthen the system prompt with a bold, top-of-prompt rule stating that `get_customer` must always be called before any other tool.",
+          "correct": false,
+          "explanation": "A prompt rule makes skipping less likely but can't guarantee it. Some share of conversations would still skip verification, and here every skip risks a refund on the wrong account.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Add a routing classifier in front of the agent that decides which tools each conversation may use based on the customer's first message.",
+          "correct": false,
+          "explanation": "A classifier controls which tools are available, not the order they run in. It adds a new component to maintain and still lets the agent call `lookup_order` before verifying who the customer is.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Change `lookup_order` to retry with a fuzzy name match whenever the exact customer name returns no result or more than one result.",
+          "correct": false,
+          "explanation": "Fuzzy matching makes it more likely to land on the wrong account, which is exactly the harm in the logs. Missing verification is the cause; retrying the lookup only patches the symptom.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "When a tool order must be guaranteed, enforce it with a programmatic prerequisite, not a prompt instruction.",
+      "studyRef": "§3 Task 1.4; §5 Key decision frameworks (financial rule → hook or gate)",
+      "sources": [
+        "exam-guide",
+        "research-6a-q1"
+      ],
+      "scenario": "S1"
+    },
+    {
+      "id": "M1-S1-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.4",
+      "secondaryTasks": [
+        "1.3"
+      ],
+      "stem": "Customers, often raise several problems in one message, such as a damaged item on one order, a double charge on another and an address change. In 30% of these conversations the agent resolves the first problem, writes a closing reply and never touches the others. Customers then reopen the case, which counts against first-contact resolution. What is the best approach?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Split the message into separate issues, investigate each with the relevant tools in parallel, and reply with one combined resolution.",
+          "correct": true,
+          "explanation": "The failure is that the agent treats a multi-concern request as one issue. Breaking it into separate items, investigating each and synthesising one answer makes every concern visible and resolved in the same contact.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Raise the agent loop's maximum iteration count from 10 to 25 so it has enough turns left to reach the later problems.",
+          "correct": false,
+          "explanation": "The agent isn't running out of turns; it ends on its own after the first fix. More iterations don't change how it reads the request, and a cap should only ever be a safety net, not what decides the work gets done.",
+          "trap": "ITERATION_CAP"
+        },
+        {
+          "id": "c",
+          "text": "Spawn one subagent per problem with the instruction to resolve the issue it was assigned, relying on it to read the details from the conversation.",
+          "correct": false,
+          "explanation": "Subagents don't see the main conversation. Each one would start without the order numbers or the customer's identity, so it would ask again or act on guesses.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "d",
+          "text": "Escalate any conversation that mentions more than one order to a human agent, since multi-issue cases are too complex to automate.",
+          "correct": false,
+          "explanation": "Each of these problems is routine on its own. Handing all of them to humans would push first-contact resolution further below target when the agent can resolve them.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "Split multi-concern requests into distinct items, investigate each, and return one unified resolution.",
+      "studyRef": "§3 Task 1.4 (decomposing multi-concern requests)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ],
+      "scenario": "S1"
+    },
+    {
+      "id": "M1-S1-003",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.4",
+      "secondaryTasks": [
+        "1.5"
+      ],
+      "stem": "Product, wants the agent to suggest store credit before a cash refund when it seems a good fit, but customers may always insist on cash and policy allows it. An engineer proposes a `PreToolUse` hook that blocks `process_refund` until the agent has offered store credit in the conversation. Nothing about this preference is a legal or financial requirement. What is the best approach?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Put the preference in the system prompt with a few examples of when offering store credit fits and when to go straight to a cash refund.",
+          "correct": true,
+          "explanation": "This is a best-effort preference, and the decision table maps those to prompt guidance. Examples teach the judgment about when an offer fits, and an occasional miss costs nothing because policy allows cash anyway.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Implement the proposed `PreToolUse` hook so that `process_refund` stays blocked until a store credit offer appears in the conversation.",
+          "correct": false,
+          "explanation": "Hooks are for rules that must hold every time. Here the hook would force an offer even when it is pointless, such as a customer who already said they want cash, and adds enforcement the business never asked for.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "c",
+          "text": "Add a classifier before the agent that predicts which customers will accept store credit and only exposes `process_refund` for the rest.",
+          "correct": false,
+          "explanation": "A new model and routing layer for a soft preference is far more than the problem needs. It also wrongly hides a refund tool from customers who are entitled to a cash refund.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Route customers who decline the store credit offer to `escalate_to_human` so a person can try once more to persuade them.",
+          "correct": false,
+          "explanation": "Declining store credit is allowed and simple to handle. Sending those cases to a human hurts first-contact resolution with no policy reason to escalate.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "Use prompt guidance for best-effort preferences; reserve hooks and gates for rules that must be guaranteed.",
+      "studyRef": "§5 Key decision frameworks (best-effort preference → prompt guidance); §3 Task 1.4",
+      "sources": [
+        "dnacenta",
+        "research"
+      ],
+      "scenario": "S1"
+    },
+    {
+      "id": "M1-S1-004",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.5",
+      "secondaryTasks": [
+        "5.1"
+      ],
+      "stem": "Your, MCP tools come from different teams: `get_customer` returns dates as Unix timestamps, `lookup_order` returns ISO 8601 strings, and order status is a numeric code. In 9% of return requests the agent miscalculates whether the 30-day return window has passed. You want the agent to see one consistent format without rewriting the MCP servers. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a `PostToolUse` hook that converts all dates to one format and maps status codes to names before the model sees results.",
+          "correct": true,
+          "explanation": "A `PostToolUse` hook transforms tool results deterministically before the model reasons over them. The agent always sees consistent dates and statuses, so the date arithmetic stops depending on format conversion.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add a section to the system prompt explaining each tool's date format and listing what every numeric status code means.",
+          "correct": false,
+          "explanation": "The model would still have to convert formats itself every time, which is where the 9% errors come from. Instructions reduce mistakes but can't make the conversion reliable the way a hook does.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Introduce a separate normalisation subagent that receives every tool result, rewrites it into a standard format and passes it back.",
+          "correct": false,
+          "explanation": "This adds a model call and another agent to do a mechanical transformation. It is slower, costs more and is still probabilistic, while a hook does the same job in plain code.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Ask the agent to double-check its date calculations against the raw tool output before telling the customer the result.",
+          "correct": false,
+          "explanation": "The same model that misread the format is checking its own reasoning, so it tends to confirm the same mistake. The mixed formats remain the root cause.",
+          "trap": "SELF_REVIEW"
+        }
+      ],
+      "keyConcept": "Use a PostToolUse hook to normalise heterogeneous tool output before the model processes it.",
+      "studyRef": "§3 Task 1.5 (PostToolUse normalisation)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ],
+      "scenario": "S1"
+    },
+    {
+      "id": "M1-S1-005",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.5",
+      "secondaryTasks": [
+        "1.4"
+      ],
+      "stem": "Finance, policy says refunds above $500 need manager approval. The system prompt states this rule clearly, yet an audit found 4 refunds between $600 and $900 issued by the agent last month. Any refund above the limit must be stopped before money moves, and the customer should then be routed to a person. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a hook that intercepts `process_refund` calls, blocks amounts above $500 and redirects the case to `escalate_to_human`.",
+          "correct": true,
+          "explanation": "Intercepting the outgoing call stops the refund before it executes, every time. Redirecting to escalation keeps the customer moving toward the approval the policy requires.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Move the $500 rule to the very top of the system prompt and add three examples showing the agent escalating the large refunds.",
+          "correct": false,
+          "explanation": "The rule is already in the prompt and was broken four times. Moving it or adding examples lowers the rate but can't promise zero violations, which a money rule needs.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Add a `PostToolUse` hook on `process_refund` that flags any completed refund above $500 for finance to review the next day.",
+          "correct": false,
+          "explanation": "A `PostToolUse` hook runs after the tool has executed, so the money has already moved. It detects violations rather than preventing them.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Let the agent issue refunds above $500 only when it reports confidence of at least 0.9 that the refund is justified.",
+          "correct": false,
+          "explanation": "The policy requires approval regardless of how sure the agent is. Self-reported confidence is poorly calibrated, and this keeps the violations the audit found.",
+          "trap": "UNRELIABLE_PROXY"
+        }
+      ],
+      "keyConcept": "Block policy-violating tool calls with an interception hook before they execute, and redirect to escalation.",
+      "studyRef": "§3 Task 1.5 (interception hooks block policy violations); §6c Domain 1 Q3",
+      "sources": [
+        "exam-guide",
+        "research-6c-d1"
+      ],
+      "scenario": "S1"
+    },
+    {
+      "id": "M1-S1-006",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.1",
+      "secondaryTasks": [],
+      "stem": "Your, agent loop ends when the assistant's reply contains the phrase \"Is there anything else I can help with\". Logs show that in 6% of conversations the model writes that phrase in the same response where it requests a `process_refund` tool call, so the refund is never executed although the customer is told it was. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Drive the loop with `stop_reason`: run the requested tools while it is `\"tool_use\"`, and stop when it is `\"end_turn\"`.",
+          "correct": true,
+          "explanation": "`stop_reason` says directly whether the model is waiting for tool results. Using it means a pending `process_refund` is always executed, whatever text the model writes alongside it.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Extend the list of closing phrases and check that none of them appears in a response before deciding to stop the loop.",
+          "correct": false,
+          "explanation": "This is still parsing text to decide when to stop. The model can phrase things in endless ways, and a closing phrase next to a tool request would still be mishandled.",
+          "trap": "NL_TERMINATION"
+        },
+        {
+          "id": "c",
+          "text": "Remove the phrase check and stop the loop after a fixed eight iterations, which covers the longest conversations seen so far.",
+          "correct": false,
+          "explanation": "A fixed count either cuts off conversations that need more steps or keeps looping after the work is done. A cap is a safety net, not the stopping rule.",
+          "trap": "ITERATION_CAP"
+        },
+        {
+          "id": "d",
+          "text": "Instruct the model in the system prompt never to write a closing phrase in the same response as a tool call.",
+          "correct": false,
+          "explanation": "This tries to make the model avoid the case the loop handles badly, instead of fixing the loop. It would still fail some of the time, and each failure is a promised refund that never happens.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        }
+      ],
+      "keyConcept": "Control the agentic loop with stop_reason: continue on \"tool_use\", stop on \"end_turn\".",
+      "studyRef": "§3 Task 1.1; §5 The 10 critical anti-patterns (1, 2)",
+      "sources": [
+        "exam-guide",
+        "research-6c-d1"
+      ],
+      "scenario": "S1"
+    },
+    {
+      "id": "M1-S1-007",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "1.4",
+      "secondaryTasks": [
+        "5.2"
+      ],
+      "stem": "When, your agent calls `escalate_to_human`, the human agent receives only the text \"customer needs assistance\". Human agents report spending about six minutes per case asking customers to repeat their account details, order numbers and what has already been tried. You want every handoff to be immediately actionable. Which two changes should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Have the agent compile a handoff summary with the verified customer ID, the order IDs involved, the root cause it found and its recommended action.",
+          "correct": true,
+          "explanation": "A structured summary gives the human what the agent already learned, so they can act without re-interviewing the customer. Root cause and recommended action turn a vague transfer into a decision ready for review.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Define the `escalate_to_human` input schema with required fields such as `customer_id`, `root_cause` and `recommended_action`.",
+          "correct": true,
+          "explanation": "Required fields in the tool's schema mean an escalation can't be sent without the key details. It makes the handoff format consistent every time, rather than depending on how the agent happens to phrase it.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Attach the full raw transcript and every tool result to the escalation so the human agent can read through everything that happened.",
+          "correct": false,
+          "explanation": "This moves the work to the human instead of summarising it. They would still spend minutes digging through 40 turns and long tool outputs to find the account and the problem.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Add the customer's sentiment score to the escalation so the human queue can prioritise the angriest customers first.",
+          "correct": false,
+          "explanation": "Sentiment doesn't tell the human what the problem is or how urgent it really is. It adds nothing to the missing account and order details that cause the delay.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "e",
+          "text": "Have the human agent greet the customer by asking them to summarise their issue in their own words before starting.",
+          "correct": false,
+          "explanation": "This throws away everything the agent already gathered and makes the customer repeat themselves, which is exactly the six-minute problem the team wants to remove.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "Escalations should carry a structured handoff: customer ID, root cause and recommended action.",
+      "studyRef": "§3 Task 1.4 (structured handoff protocols)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ],
+      "scenario": "S1"
+    },
+    {
+      "id": "M1-S1-008",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 3,
+      "primaryTask": "1.5",
+      "secondaryTasks": [
+        "2.2"
+      ],
+      "stem": "Policy, forbids sending a refund to any payment method other than the one used for the order, because of fraud risk. The agent did so three times last quarter after customers asked for refunds to a new card. You need these refunds stopped every time, while the customer still understands what happens next. Which two changes should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a `PreToolUse` hook that compares the refund destination in each `process_refund` call with the order's original payment method and blocks any mismatch.",
+          "correct": true,
+          "explanation": "The hook checks the call before it executes, so a mismatched destination can never go through. That is the guarantee a fraud rule needs.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "When the hook blocks a call, return a structured, non-retryable reason the agent can explain, and let it offer `escalate_to_human` for exceptions.",
+          "correct": true,
+          "explanation": "Blocking alone leaves the agent confused or retrying. A clear non-retryable reason lets it tell the customer why and offer a person for a genuine exception, so the conversation still moves forward.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Add a capitalised rule to the system prompt saying refunds must only ever go back to the original payment method.",
+          "correct": false,
+          "explanation": "The agent broke this rule under customer pressure, and a louder instruction is still only a nudge. Fraud controls need enforcement in code, not wording.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Add a `PostToolUse` hook that rewrites the destination in the refund result to the original payment method before the agent sees it.",
+          "correct": false,
+          "explanation": "By the time a `PostToolUse` hook runs, the refund has already been sent to the wrong card. Changing the result only hides what happened from the agent.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "e",
+          "text": "End the conversation with an error message whenever the hook blocks a refund, so the customer must start a new contact.",
+          "correct": false,
+          "explanation": "One blocked action shouldn't end the whole interaction. The customer loses their progress and the contact fails, when the agent could explain the rule and offer a next step.",
+          "trap": "TOTAL_FAILURE"
+        }
+      ],
+      "keyConcept": "Interception hooks should block the violating call and redirect the workflow with a clear, non-retryable reason.",
+      "studyRef": "§3 Task 1.5 (block and redirect); §3 Task 2.2 (business-rule errors)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ],
+      "scenario": "S1"
+    },
+    {
+      "id": "M1-S2-009",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "3.1",
+      "secondaryTasks": [],
+      "stem": "Your, team's coding conventions, covering error handling, log format and naming, live in a senior developer's `~/.claude/CLAUDE.md`. Claude Code follows them perfectly for that developer, but two engineers who joined this month get code that ignores every convention. The conventions should apply to everyone working in the repository. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Move the conventions into the project `CLAUDE.md` at the repository root and commit it, so every clone loads them.",
+          "correct": true,
+          "explanation": "User-level instructions apply only to the person whose machine they are on. The project `CLAUDE.md` is committed, so everyone who clones the repository, including future hires, gets the same conventions automatically.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Ask each new engineer to copy the senior developer's `~/.claude/CLAUDE.md` onto their own machine during onboarding.",
+          "correct": false,
+          "explanation": "User-level files aren't shared through version control, so every copy is made by hand and they drift apart as the conventions change. The next hire hits the same problem.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "c",
+          "text": "Create a `/conventions` slash command that new engineers run at the start of every session to load the team's rules.",
+          "correct": false,
+          "explanation": "Conventions that apply to all code shouldn't depend on someone remembering a command. Every session where nobody runs it still produces code that ignores them.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Add a CI job that rejects any pull request whose code breaks the conventions in the senior developer's file.",
+          "correct": false,
+          "explanation": "A CI check catches violations after the code is written and adds a new system to maintain. Claude still never sees the conventions when it writes code for the new engineers.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Team-wide instructions belong in the committed project CLAUDE.md; user-level CLAUDE.md applies to one person only.",
+      "studyRef": "§3 Task 3.1 (hierarchy; diagnosing user-level vs project-level config)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ],
+      "scenario": "S2"
+    },
+    {
+      "id": "M1-S2-010",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.1",
+      "secondaryTasks": [],
+      "stem": "Two, developers in the same repository get different behaviour from Claude Code. For one, it writes tests with Vitest as the project `CLAUDE.md` says; for the other, it keeps using Jest. Neither has changed the project file, and the second developer says they \"may have some old personal settings\". What should you do first to find the cause?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Run `/memory` in both developers' sessions and compare which memory files are loaded and what each one says.",
+          "correct": true,
+          "explanation": "`/memory` shows exactly which CLAUDE.md files a session has loaded. Comparing the two sessions will reveal, for example, an old user-level file telling Claude to use Jest, which is the likely cause here.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Repeat the Vitest instruction in capital letters near the top of the project `CLAUDE.md` so that it stands out more.",
+          "correct": false,
+          "explanation": "This might outweigh the conflicting instruction some of the time, but you still don't know where the Jest rule comes from. That other file stays loaded and keeps conflicting.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Ask Claude in the second developer's session which instructions it is following and why it keeps choosing Jest.",
+          "correct": false,
+          "explanation": "The model's own account of its instructions isn't a reliable diagnostic and may not name the file at all. `/memory` lists the loaded files directly.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "d",
+          "text": "Set `\"temperature\": 0` in the project `.claude/settings.json` so both developers get the same output from Claude.",
+          "correct": false,
+          "explanation": "Claude Code settings have no temperature key, and randomness isn't the cause anyway. The two sessions differ because they load different instructions.",
+          "trap": "NONEXISTENT_FEATURE"
+        }
+      ],
+      "keyConcept": "Use /memory to see which CLAUDE.md files are loaded when behaviour differs between users or sessions.",
+      "studyRef": "§3 Task 3.1 (/memory to diagnose inconsistent behaviour)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ],
+      "scenario": "S2"
+    },
+    {
+      "id": "M1-S2-011",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "3.1",
+      "secondaryTasks": [],
+      "stem": "Your, monorepo has twelve packages. Shared standards live in `docs/standards/` as separate files: `testing.md`, `api.md`, `react.md` and `security.md`. Each package needs a different subset; for example, backend packages need `api.md` and `security.md` but not `react.md`. The standards change monthly, and each package's instructions must stay in sync with them. What is the best approach?",
+      "options": [
+        {
+          "id": "a",
+          "text": "In each package's `CLAUDE.md`, reference only the standards it needs with `@` imports, such as `@../../docs/standards/api.md`.",
+          "correct": true,
+          "explanation": "Imports pull in the current text of each standards file, so a monthly change is made once and every package picks it up. Each package loads only the standards that apply to it.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Write a script that rebuilds every package's `CLAUDE.md` from the standards files, and run it as a pre-commit hook.",
+          "correct": false,
+          "explanation": "This works, but it adds tooling to maintain for something `@` imports already do. Generated files can also be edited by hand and then silently overwritten.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "c",
+          "text": "Merge all four standards into the root `CLAUDE.md`, under headings that say which packages each section applies to.",
+          "correct": false,
+          "explanation": "Every session would load all four standards, including React rules during backend work, and Claude has to infer which headings apply. That wastes context and makes the rules less reliable.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Put each team's standards into its developers' own `~/.claude/CLAUDE.md`, based on the packages they usually work on.",
+          "correct": false,
+          "explanation": "User-level files aren't shared or tied to a package. A developer who works in an unfamiliar package gets the wrong standards, and every file needs updating by hand each month.",
+          "trap": "WRONG_CONFIG_LAYER"
+        }
+      ],
+      "keyConcept": "Use @ imports so each package's CLAUDE.md includes just the shared standards files it needs.",
+      "studyRef": "§3 Task 3.1 (@import for modular CLAUDE.md)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ],
+      "scenario": "S2"
+    },
+    {
+      "id": "M1-S2-012",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "3.2",
+      "secondaryTasks": [],
+      "stem": "Your, team wrote a `/review` slash command that checks a change against the team's review checklist. It currently lives in one developer's `~/.claude/commands/` folder, so nobody else can use it. You want it available to every developer as soon as they clone or pull the repository. Where should the command be defined?",
+      "options": [
+        {
+          "id": "a",
+          "text": "As a Markdown file in the project's `.claude/commands/` directory, committed to the repository.",
+          "correct": true,
+          "explanation": "Project commands in `.claude/commands/` are shared through version control, so anyone who clones or pulls the repository gets `/review` with no extra setup.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "In each developer's own `~/.claude/commands/` folder, copied there from a shared drive during onboarding.",
+          "correct": false,
+          "explanation": "User-level commands are personal. Every developer would need a manual copy, and the copies would drift apart whenever the checklist changes.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "c",
+          "text": "As a section of the project `CLAUDE.md` that describes the checklist and tells Claude to run it on request.",
+          "correct": false,
+          "explanation": "CLAUDE.md holds instructions, not command definitions, so no `/review` command is created. The checklist would also be loaded into every session, even when nobody is reviewing.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "In a `commands` array inside a project `.claude/config.json` file listing each command's name and prompt.",
+          "correct": false,
+          "explanation": "Claude Code has no `.claude/config.json` commands array. Custom commands are defined as Markdown files in a `commands` directory, so this file would be ignored and no `/review` command would appear.",
+          "trap": "NONEXISTENT_FEATURE"
+        }
+      ],
+      "keyConcept": "Project-scoped slash commands in .claude/commands/ are shared with everyone through version control.",
+      "studyRef": "§3 Task 3.2; §6a Q4",
+      "sources": [
+        "exam-guide",
+        "research-6a-q4"
+      ],
+      "scenario": "S2"
+    },
+    {
+      "id": "M1-S2-013",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.2",
+      "secondaryTasks": [
+        "5.4"
+      ],
+      "stem": "Your, `/audit-deps` skill scans every package manifest, lists all transitive dependencies and checks each against a vulnerability list. One run prints about 4,000 lines into the conversation. Developers then struggle to continue their actual work because the context is full of audit output, though they only need the final list of vulnerable packages. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add `context: fork` to the skill's `SKILL.md` frontmatter so it runs in an isolated subagent and returns only its result.",
+          "correct": true,
+          "explanation": "A forked skill does its verbose work in a separate context. The main conversation receives only the final list of vulnerable packages, so developers keep their working context.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Tell developers to run `/clear` after every audit so that the audit output stops taking up space in their conversation.",
+          "correct": false,
+          "explanation": "Clearing removes the audit output, but also everything else the developer was working on. They lose their whole context just to get rid of the noise.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Add a line to the skill's instructions asking it to keep its output short and print only the most important findings.",
+          "correct": false,
+          "explanation": "The skill still reads and processes every dependency inside the main conversation, so most of that work lands there anyway. Asking for brevity doesn't isolate it.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Move the audit instructions from the skill into the project `CLAUDE.md` so Claude can run an audit whenever one is needed.",
+          "correct": false,
+          "explanation": "This loads the audit instructions into every session and still runs the audit in the main conversation. It makes the context problem worse, not better.",
+          "trap": "WRONG_CONFIG_LAYER"
+        }
+      ],
+      "keyConcept": "Use context: fork in SKILL.md to run verbose skills in an isolated subagent and keep the main conversation clean.",
+      "studyRef": "§3 Task 3.2 (context: fork)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ],
+      "scenario": "S2"
+    },
+    {
+      "id": "M1-S2-014",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "3.1",
+      "secondaryTasks": [
+        "3.3"
+      ],
+      "stem": "Your, root `CLAUDE.md` has grown to 900 lines covering testing, API conventions, database migrations, deployment and code style. Developers say Claude often misses rules buried deep in the file, and edits to it keep colliding in review. Several sections apply only to certain kinds of files. Which two changes should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Split the topic sections into focused files in `.claude/rules/`, such as `testing.md`, `api-conventions.md` and `migrations.md`.",
+          "correct": true,
+          "explanation": "Focused files are easier to read, own and review than one 900-line document, so edits stop colliding. Each topic stays complete instead of being buried among unrelated rules.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add `paths` frontmatter with glob patterns, such as `**/*.test.ts`, to rule files that apply only to some files.",
+          "correct": true,
+          "explanation": "Path-scoped rules load only when Claude works on matching files, so migration rules don't fill context during frontend work. With less irrelevant text loaded, the rules that do load are followed more reliably.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Move the sections each developer cares about into their own `~/.claude/CLAUDE.md`, keeping only shared basics in the root file.",
+          "correct": false,
+          "explanation": "Team rules would stop being shared through the repository. Each developer would see a different subset, and nobody would get rules for areas they rarely touch.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "Condense the 900 lines into a 100-line overview, removing the detailed examples and edge cases to save space.",
+          "correct": false,
+          "explanation": "Cutting the content throws away the detail that makes the rules usable. Claude might follow the vaguer rules more consistently, but the specific conventions would be gone.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "e",
+          "text": "Repeat the most often missed rules at both the top and the bottom of the file, written in capital letters.",
+          "correct": false,
+          "explanation": "This makes the file even longer and only helps the rules you repeat. The structure that buries rules and causes review collisions stays the same.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Split a monolithic CLAUDE.md into focused .claude/rules/ files, path-scoping those that apply only to some files.",
+      "studyRef": "§3 Task 3.1 (.claude/rules/ instead of a monolithic CLAUDE.md); §3 Task 3.3",
+      "sources": [
+        "exam-guide",
+        "research"
+      ],
+      "scenario": "S2"
+    },
+    {
+      "id": "M1-S2-015",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 3,
+      "primaryTask": "3.2",
+      "secondaryTasks": [],
+      "stem": "Your, `/release-notes` skill should only read files and run `git log` to draft notes for a given version. Last week it ran a formatter that rewrote twelve source files. Developers also often invoke it without a version number, and it then guesses which version they mean, usually wrongly. Which two changes to the skill should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add `allowed-tools` to the `SKILL.md` frontmatter, listing only read tools and `Bash(git log:*)`.",
+          "correct": true,
+          "explanation": "`allowed-tools` restricts what the skill can use while it runs. Without editing tools or general Bash access, it can't run a formatter or rewrite source files.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add an `argument-hint` such as `<version>` to the frontmatter, so developers are prompted for the version.",
+          "correct": true,
+          "explanation": "The hint shows the required parameter when the skill is invoked, so developers supply a version instead of leaving the skill to guess. It fixes the missing input at its source.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Add a line to the skill's instructions saying that it must never modify files and may only use `git log`.",
+          "correct": false,
+          "explanation": "An instruction makes edits less likely but leaves the tools that made them available. The skill could still run a formatter, which is exactly what must be ruled out.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Have the skill use the most recent git tag whenever no version is given, and carry on without asking the developer.",
+          "correct": false,
+          "explanation": "This swaps one guess for another. When a developer means an older release, the skill drafts the wrong notes instead of asking for the input it needs.",
+          "trap": "FAILURE_TO_ESCALATE"
+        },
+        {
+          "id": "e",
+          "text": "Copy the skill into each developer's `~/.claude/skills/` folder under the same name so each person can tune its behaviour.",
+          "correct": false,
+          "explanation": "Personal copies mean every developer runs a different version, and fixes made to the team's skill stop reaching anyone with a copy. Neither the edits nor the guessing are fixed.",
+          "trap": "WRONG_CONFIG_LAYER"
+        }
+      ],
+      "keyConcept": "In SKILL.md frontmatter, allowed-tools restricts tool access and argument-hint prompts for required parameters.",
+      "studyRef": "§3 Task 3.2 (allowed-tools, argument-hint)",
+      "sources": [
+        "exam-guide",
+        "research"
+      ],
+      "scenario": "S2"
+    }
+  ]
+}

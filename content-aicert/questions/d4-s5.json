@@ -1,0 +1,531 @@
+{
+  "scenario": "S5",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S5-D4-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "4.1",
+      "secondaryTasks": ["3.6"],
+      "stem": "Cobalt Pay's CI reviewer runs `claude -p` on each of the 350 daily pull requests with the instruction \"Make sure error handling is robust.\" It now posts 40 to 60 error-handling comments a day, mostly asking for extra logging, wider `catch` blocks and retry wrappers on code that already behaves correctly. Developers have started muting the bot, and the team wants fewer comments without losing the real defects. What change most directly improves precision?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add the cases that matter to the instruction: report swallowed exceptions and failed charges recorded as successful, and skip logging, `catch` width and retry preferences.",
+          "correct": true,
+          "explanation": "Naming the categories to report and the ones to skip tells the reviewer exactly which error-handling problems matter, so the comments that remain are ones developers act on. The vague word \"robust\" left that judgment to the model, which produced the daily nitpicks.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Replace it with criteria that list the patterns to report: missing logging, wide `catch` blocks, absent retry wrappers and any swallowed exception in a payment path.",
+          "correct": false,
+          "explanation": "Explicit criteria are the right kind of fix, but this list names the very nitpicks developers are muting. The detail the stem decides is which categories count; criteria that include logging and retries would keep the noise and add structure to it.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Switch the reviewer to the strongest model available, which should judge for itself which error handling is good enough in a codebase that handles card data.",
+          "correct": false,
+          "explanation": "A stronger model still has no definition of the team's standard, so it would still guess. Writing the criteria is a small change that addresses the cause, while a model switch adds cost and leaves the ambiguity in place.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Filter out any comment that mentions logging or retries in a post-processing job before the bot posts it to the pull request.",
+          "correct": false,
+          "explanation": "A keyword filter hides the noise but also removes a genuine finding that happens to mention logging, such as a swallowed payment exception. The instruction still asks for the wrong thing, so new kinds of nitpick would appear.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Replace vague review instructions with explicit categorical criteria that state what to report and what to skip.",
+      "studyRef": "§3 Task 4.1; §6c Domain 4 Q1",
+      "sources": ["exam-guide", "research", "research-6c-d4"]
+    },
+    {
+      "id": "S5-D4-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "4.2",
+      "secondaryTasks": ["4.1"],
+      "stem": "Cobalt Pay's monorepo uses `float` for money in a few places. The CI reviewer either flags every `float` in the repository, including the display-only charts under `reporting/`, or after a prompt tweak flags none of them, and it missed a `float` addition in the settlement ledger last week. The written rule alone doesn't help the reviewer tell the cases apart, and the team must keep one review prompt rather than build a new pipeline. What should you add to it?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add three examples, each with its reasoning: a `float` in a display-only chart (skip), a `float` in settlement arithmetic (report) and a `float` in a test fixture (skip).",
+          "correct": true,
+          "explanation": "A few varied examples show where the line falls between acceptable and genuine, and the reasoning lets the reviewer carry that distinction to cases it hasn't seen. Two skips and one report cover the ambiguity the written rule couldn't express.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add one example of the settlement ledger bug, flagged with its reasoning, so the reviewer has a clear model of what to report.",
+          "correct": false,
+          "explanation": "One example is copied closely and shows nothing about what to leave alone, so the reviewer may flag the charts again. Two to four varied examples that include acceptable cases are what carry the distinction.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Add a pipeline filter that drops any finding about a `float` under `reporting/` before the comment is posted, and keep the written rule for the rest of the repository.",
+          "correct": false,
+          "explanation": "A path filter removes the chart noise but cannot judge the code. If a reporting module later does money arithmetic, its bug is silently dropped, and the reviewer's inconsistency elsewhere is unchanged.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Add a routing step that classifies each changed file by its purpose in the monorepo, then calls a separate reviewer prompt written for each class of file.",
+          "correct": false,
+          "explanation": "This adds a classifier and several prompts to maintain for a problem that examples in one prompt can settle. Separate prompts would be reasonable only if the file classes needed completely different review styles.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Use two to four varied few-shot examples, including acceptable patterns, to teach the reviewer where genuine issues begin.",
+      "studyRef": "§3 Task 4.2",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S5-D4-003",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "4.1",
+      "secondaryTasks": ["3.6"],
+      "stem": "Cobalt Pay's CI reviewer reports on four categories. Security findings are wrong about 8% of the time and bug findings about 11%, but performance findings are wrong 55% of the time and comment-accuracy findings 62%. Developers now skim past the whole review. The team wants to restore trust this sprint and also fix the cause, without losing the two accurate categories. Which two changes should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Tell the reviewer to attach a confidence score to each finding, and post only findings scored above 0.9 out of 1.0 across all four categories.",
+          "correct": false,
+          "explanation": "Self-reported confidence is poorly calibrated, so a threshold wouldn't separate wrong findings from right ones. It could also hide real security findings, and no explicit criteria would change.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "b",
+          "text": "Switch off the performance and comment-accuracy categories for now, and keep the security and bug categories running for every pull request.",
+          "correct": true,
+          "explanation": "A category with a high false-positive rate undermines trust in the accurate ones. Pausing the two noisy categories removes most of the noise immediately while security and bug findings keep their value.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Rewrite the criteria for the two noisy categories but leave them running meanwhile, so developers see the new wording take effect in live reviews.",
+          "correct": false,
+          "explanation": "Rewriting criteria is the right fix, but leaving the categories live keeps a 55% to 62% false-positive rate in front of developers this sprint. Trust is restored by pausing them first and re-enabling once they are accurate.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Rewrite the criteria for the two noisy categories to say what to report and what to skip, and re-enable each one once its false positives drop.",
+          "correct": true,
+          "explanation": "The noise comes from vague criteria, so the lasting fix is explicit report-and-skip rules. Re-enabling a category only after it proves accurate keeps developers' trust from being lost again.",
+          "trap": null
+        },
+        {
+          "id": "e",
+          "text": "Add a final stage in the same session where the reviewer rereads its own comments and removes any it doubts before the bot posts them.",
+          "correct": false,
+          "explanation": "The reviewer keeps the reasoning that produced each comment and rarely questions it. An independent instance would help, but explicit criteria address the cause directly.",
+          "trap": "SELF_REVIEW"
+        }
+      ],
+      "keyConcept": "Disable high false-positive categories temporarily and rewrite their criteria explicitly before turning them back on.",
+      "studyRef": "§3 Task 4.1",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S5-D4-004",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.5",
+      "secondaryTasks": ["3.6"],
+      "stem": "Cobalt Pay must run a PCI security audit on every change merged into the card-handling services within 36 hours of the merge. The plan is one Message Batches API job each night at 02:00 covering everything merged since the previous run, mainly for the cost saving. Each batch is allowed up to 24 hours to complete. A change merged at 02:05 would wait almost a day for the next submission, but the team still wants the batch discount. What should it do?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep the nightly batch as planned, because it is the cheapest option and the audit is not interactive.",
+          "correct": false,
+          "explanation": "Being non-interactive doesn't make a batch fit the deadline. A change merged just after 02:00 waits almost 24 hours and then up to 24 more, around 48 hours in the worst case, which breaks the 36-hour rule.",
+          "trap": "WRONG_LATENCY_MODE"
+        },
+        {
+          "id": "b",
+          "text": "Submit a batch every 18 hours, so a change waits at most 18 hours and the batch discount is kept for the audit.",
+          "correct": false,
+          "explanation": "Batching more often is the right idea, but 18 hours of waiting plus up to 24 hours of batch time is 42 hours, over the 36-hour limit. The submission interval has to be short enough for wait plus processing to fit.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Submit the nightly batch with a `priority` setting that guarantees completion within 12 hours for the card-handling audit jobs.",
+          "correct": false,
+          "explanation": "The Message Batches API has no priority setting or latency guarantee. It offers a discount in exchange for a processing window of up to 24 hours, so the submission frequency must be planned around that.",
+          "trap": "NONEXISTENT_FEATURE"
+        },
+        {
+          "id": "d",
+          "text": "Submit a batch every 6 hours, since the worst-case wait plus a 24-hour batch is 30 hours, inside the 36-hour limit.",
+          "correct": true,
+          "explanation": "Worst-case wait plus worst-case processing must fit the deadline: 6 hours of waiting plus up to 24 hours of batch time is 30 hours, under 36. The job keeps the batch discount because nothing is waiting on it interactively.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Plan batch submission frequency so the wait for the next submission plus the 24-hour window fits within the deadline.",
+      "studyRef": "§3 Task 4.5; §5 Key decision frameworks",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S5-D4-005",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "4.6",
+      "secondaryTasks": ["3.6"],
+      "stem": "At the end of each code-generation job, Cobalt Pay's pipeline asks the same Claude Code session that wrote a fix to \"review the changes you just made for bugs.\" The review nearly always says the change looks correct, yet human reviewers reject about one fix in five. The team wants a stronger automated review before merge, without adding a human approval step. What should they change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Turn on extended thinking for the review step so the same session reasons for longer about its own change.",
+          "correct": false,
+          "explanation": "Extra thinking in the same session still starts from the reasoning that wrote the fix, so the model tends to confirm its own choices. A longer chain of thought doesn't replace a fresh perspective.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "b",
+          "text": "Start a separate `claude -p` instance for every fix, giving it the diff and the team's review criteria but none of the generator's reasoning.",
+          "correct": true,
+          "explanation": "An instance without the author's reasoning isn't anchored to the choices that produced the code, so it catches subtler issues. The diff and criteria are enough context for a pre-merge review.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Start a separate `claude -p` instance for the review, giving it the diff and the generator's full session transcript so it can see why each change was made.",
+          "correct": false,
+          "explanation": "A separate instance is the right shape, but handing it the transcript passes on the author's reasoning and anchors the reviewer to the same choices. Independence comes from the reviewer not seeing that reasoning.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "d",
+          "text": "Add a line to the generator's prompt to write correct code and to test each change before finishing, so fewer flawed fixes get through.",
+          "correct": false,
+          "explanation": "A generic instruction is a nudge that can't stand in for a review, and the generator would still judge its own work. It may help the quality of the code, but it adds no independent check.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        }
+      ],
+      "keyConcept": "Review generated code with a separate Claude instance that doesn't have the generator's reasoning, not with the same session.",
+      "studyRef": "§3 Task 4.6; §5 anti-pattern 9",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S5-D4-006",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "4.3",
+      "secondaryTasks": ["3.6"],
+      "stem": "Cobalt Pay's pipeline parses the reviewer's free-text output with regular expressions to find the file, line, severity and message, then posts comments and blocks merges on critical findings. About 4% of runs produce a layout the regex can't parse, and those pull requests get no findings at all. The job must stay a single `claude -p` command, and the pipeline needs output it can act on without human interpretation. What is the most reliable fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Run `claude -p` with `--output-format json` and `--json-schema` for the findings, then have the pipeline read each field from the result.",
+          "correct": true,
+          "explanation": "A JSON schema makes the output machine-readable by construction, so there is nothing to guess at with a regex. It removes the 4% of runs whose layout can't be parsed, and the pipeline reads fields directly.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Run `claude -p` with `--output-format json` alone, then apply the existing regular expressions to the `result` field, which is easier to locate.",
+          "correct": false,
+          "explanation": "The JSON output format wraps the reply in a structured envelope, but the findings inside it are still free text. Without a schema, the layout the regex can't parse still appears, so some runs would fail as before.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Add \"Respond only with valid JSON in exactly this format\" to the prompt, followed by an array of findings with the fields the pipeline reads.",
+          "correct": false,
+          "explanation": "A format request in the prompt improves the odds but doesn't guarantee valid structure, so some runs would still break the parser. A schema enforces the structure where the pipeline depends on it.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Extend the regular expressions to cover each layout seen so far, and log any run they still can't parse for a developer to look at.",
+          "correct": false,
+          "explanation": "Every new layout needs another pattern, and the unparsed runs keep appearing. This patches individual failures instead of removing the free-text format that causes them.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Use `--output-format json` with `--json-schema` in CI when a pipeline needs machine-parseable findings.",
+      "studyRef": "§3 Task 3.6; §3 Task 4.3",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S5-D4-007",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 1,
+      "primaryTask": "4.5",
+      "secondaryTasks": ["3.6"],
+      "stem": "Cobalt Pay's pipeline has several jobs that use synchronous calls, and the team wants to cut cost with the Message Batches API wherever it is safe. Some of the jobs are checks that developers wait on, others are reports that people read later, and one needs a tool result in the middle of a request. Which two jobs are good candidates to move? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "A weekly audit that scans all 1,400 services in the monorepo for outdated cryptography settings and publishes a report on Monday.",
+          "correct": true,
+          "explanation": "Nobody waits on a weekly audit, so a processing window of up to 24 hours costs nothing and the batch discount of up to 50% is pure saving. It is the kind of latency-tolerant work the Batches API is for.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "The security scan on each open pull request, which must pass before the merge button is enabled for the developer who is waiting on it.",
+          "correct": false,
+          "explanation": "A blocking check can't wait up to 24 hours for a result with no latency guarantee. Pre-merge checks need synchronous calls even though they cost more.",
+          "trap": "WRONG_LATENCY_MODE"
+        },
+        {
+          "id": "c",
+          "text": "A nightly job that reviews the day's merged diffs and calls an internal ticket-lookup tool partway through each request to fetch the ticket text.",
+          "correct": false,
+          "explanation": "The timing suits a batch, but the Batches API doesn't support multi-turn tool calling inside one request, so the mid-request lookup can't complete. Fetching the ticket text beforehand and including it would be needed first.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "An in-IDE assistant that answers developers' questions about a diff while they wait for the reply in their editor.",
+          "correct": false,
+          "explanation": "An interactive assistant needs a reply in seconds, and a batch may take hours. The saving is not worth breaking a live conversation.",
+          "trap": "WRONG_LATENCY_MODE"
+        },
+        {
+          "id": "e",
+          "text": "A nightly job that generates unit tests for the files changed that day, with the results committed the next morning.",
+          "correct": true,
+          "explanation": "Overnight generation has a built-in gap before anyone needs the output, so batch latency is acceptable. Each request is a single prompt, and the `custom_id` can carry the file path to match results.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Use batch for latency-tolerant work nothing waits on, and synchronous calls for blocking or interactive work.",
+      "studyRef": "§3 Task 4.5; §6a Q11",
+      "sources": ["exam-guide", "research", "research-6a-q11"]
+    },
+    {
+      "id": "S5-D4-008",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.1",
+      "secondaryTasks": ["4.2"],
+      "stem": "Cobalt Pay's CI reviewer prompt contains a growing list of things not to report: \"do not flag import ordering\", \"do not flag trailing commas\", \"do not flag variable naming\", and so on, 38 items so far. Each week developers report a new kind of nitpick and the list grows. The share of dismissed comments has fallen only from 41% to 34% in three months, and the team wants it under 15% without doubling the review cost. What is the better approach?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep extending the exclusion list as each new nitpick appears, and group the items under headings so each rule is easier to find later.",
+          "correct": false,
+          "explanation": "An exclusion list is always one step behind because nitpicks come in unlimited kinds, which is why the share only fell from 41% to 34%. Headings make the list tidier without changing that.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Define the review by what to report: any code that could be improved for readability, performance or security, each category with an example from the codebase.",
+          "correct": false,
+          "explanation": "This takes the right approach of stating what to report, but the categories are so broad that every nitpick still qualifies. The criteria must be narrow enough that style and naming fall outside them.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Define the review by what to report: security flaws and bugs that fail on a stated input, each with an example; all else is out of scope.",
+          "correct": true,
+          "explanation": "Specifying the categories to report gives a closed scope, so new kinds of nitpick are excluded without a new rule. Concrete examples for each category show what meets the bar.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Run a second reviewer pass that decides whether each first-pass comment is a nitpick, and delete the comments it classes that way.",
+          "correct": false,
+          "explanation": "This doubles the review work to filter noise that tighter criteria would stop at the source. Without a definition of a nitpick, the second pass would be as inconsistent as the first.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "State positively which categories to report, with concrete examples, instead of enumerating an ever-growing list of exclusions.",
+      "studyRef": "§3 Task 4.1",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S5-D4-009",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.2",
+      "secondaryTasks": ["4.1"],
+      "stem": "Cobalt Pay's reviewer is inconsistent about what counts as a genuine issue. The team added three few-shot examples, all taken from the Java ledger service, and the Java reviews improved. In the Python reconciliation jobs and the TypeScript checkout widgets, comments still vary in format and severity, and some safe patterns are flagged as bugs. The prompt must stay at about four examples to hold down latency and cost. What is the most effective next step?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add six further Java examples so the reviewer has nine in total and learns from the larger set of ledger cases.",
+          "correct": false,
+          "explanation": "Further examples of the same kind deepen the Java behaviour but teach nothing about Python or TypeScript. The prompt must also stay at about four examples, and variety matters more than count.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "b",
+          "text": "Replace them with three examples covering Java, Python and TypeScript, one of them a safe pattern, each with reasoning.",
+          "correct": true,
+          "explanation": "The technique was right but the examples were all one kind, so the improvement stayed inside Java. Varied examples across the stack, including an acceptable pattern, let the reviewer generalise to the other languages.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Keep the three Java examples and add three examples of real bugs from the Python reconciliation jobs and TypeScript checkout widgets, each with its reasoning, for six in total.",
+          "correct": false,
+          "explanation": "Covering the other languages helps, but six examples overshoot the budget and none shows a safe pattern, which is what the reviewer keeps flagging as a bug. The examples must include acceptable cases within the limit.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Write a paragraph of prose rules for the Python reconciliation jobs and another for the TypeScript checkout widgets, and keep the three Java examples as they are.",
+          "correct": false,
+          "explanation": "Prose rules were the weak point that examples solve: they are read inconsistently and don't show format or borderline decisions. This returns to the approach that left the other languages inconsistent.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "When few-shot examples fix only one case, replace them with varied examples that cover each kind of input.",
+      "studyRef": "§3 Task 4.2",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S5-D4-010",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.6",
+      "secondaryTasks": ["3.6"],
+      "stem": "Cobalt Pay's pipeline has Claude generate fixes for failing tests. To catch what the author misses, a separate Claude Code instance reviews each fix, but it runs as a nightly job over everything merged that day. Several flawed fixes reached the card-handling services before the nightly review flagged them. The reviewer instance is catching real problems and its criteria are sound, but a flawed fix must not reach the card-handling services. What should change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Move the nightly review to the Message Batches API to cut its cost, keeping the nightly schedule and the same criteria for the review job.",
+          "correct": false,
+          "explanation": "Batching suits work nothing waits on, and it would make the review cheaper without making it earlier. The flaws still merge first. For a check that must gate the merge, synchronous calls are right.",
+          "trap": "WRONG_LATENCY_MODE"
+        },
+        {
+          "id": "b",
+          "text": "Let the generating instance review its own fix before it opens the pull request, since that step already runs before the merge and costs nothing extra.",
+          "correct": false,
+          "explanation": "The timing is better but the reviewer is the author, which keeps its reasoning and rarely questions it. The independent instance is working; it only needs to move earlier.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "c",
+          "text": "Run the same independent reviewer every hour on the commits merged since its last run, and revert any commit it flags with a critical finding.",
+          "correct": false,
+          "explanation": "The reviewer is right and the schedule is faster, but it still runs after the merge, so a flawed fix is live in the card-handling services until the next run catches it. The check has to sit before the merge to stop the flaw.",
+          "trap": "WRONG_LATENCY_MODE"
+        },
+        {
+          "id": "d",
+          "text": "Run the same independent reviewer in the pipeline before the merge, as a `claude -p` step on each diff, and block the merge on critical findings.",
+          "correct": true,
+          "explanation": "The reviewer is the right tool but sits at the wrong point in the lifecycle. A blocking pre-merge check catches the flaw before it ships, and a synchronous call is right because the merge waits on the result.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Place the independent review before the merge as a blocking synchronous step, not after the merge in a nightly job.",
+      "studyRef": "§3 Task 4.6; §3 Task 3.6",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S5-D4-011",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "4.6",
+      "secondaryTasks": ["4.1"],
+      "stem": "A pull request in Cobalt Pay's `payments-core` touches 18 files across the ledger, refunds and receipts modules. The CI reviewer reads the whole diff in one request. It gives detailed notes on the first few files and little on the rest, and it missed a refund amount that the ledger stores in cents but the receipt module reads as dollars. Moving to a model with a larger context window changed nothing. Which two changes should the team make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Split the diff into three requests of six files each and treat the result of each request as the final review.",
+          "correct": false,
+          "explanation": "Smaller groups of files reduce the dilution somewhat, but nothing in them checks how a ledger file and a receipt file interact. The cross-module bug would still go through.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Instruct the reviewer to give each file the same depth of attention and to check the units of every field it sees.",
+          "correct": false,
+          "explanation": "An instruction can't force attention to spread evenly across 18 files in one request. The units check is only possible when the receipt and ledger code are examined together in a pass built for it.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Review each changed file in its own pass, so every file gets the reviewer's full attention against the criteria.",
+          "correct": true,
+          "explanation": "Per-file passes avoid the diluted attention that makes a single 18-file read thin on later files. Each file is checked against the criteria on its own, so none gets only a skim.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Add a separate integration pass that examines how the changed files exchange data, such as the units of a shared amount field.",
+          "correct": true,
+          "explanation": "The cents-versus-dollars bug lives between two files, so no per-file pass can see it. A pass dedicated to cross-file data flow is where interface mismatches are caught.",
+          "trap": null
+        },
+        {
+          "id": "e",
+          "text": "Replace the per-file reads with one integration pass over the whole diff, so the reviewer sees how all 18 files fit together.",
+          "correct": false,
+          "explanation": "An integration pass finds the interface bug, but on its own it repeats the single-read problem: attention thins out across 18 files and the later ones get little detail. It belongs beside per-file passes, not instead of them.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Split large reviews into per-file passes plus an integration pass that checks data flow between the changed files.",
+      "studyRef": "§3 Task 4.6; §6a Q12",
+      "sources": ["exam-guide", "research", "research-6a-q12"]
+    },
+    {
+      "id": "S5-D4-012",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "4.1",
+      "secondaryTasks": ["3.6"],
+      "stem": "Cobalt Pay's services log through an internal `SafeLogger` wrapper that masks card numbers, and money values use the team's `Money` class. The CI reviewer keeps commenting that both are \"non-standard\" and suggests the language's default logger and plain decimals, about 20 comments a week. Real misuse, such as logging a raw card number with `print`, appears only a few times a month, and those findings must not be lost. How should the review criteria handle this?",
+      "options": [
+        {
+          "id": "a",
+          "text": "State that `SafeLogger` and `Money` are approved, and instruct the reviewer to report a bypass of them, for example a `print` of card data.",
+          "correct": true,
+          "explanation": "Criteria that separate the team's accepted local patterns from genuine violations remove the noise and keep the real findings. The reviewer skips the wrappers' use and still catches the few bypasses that matter for PCI.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "State that `SafeLogger` and `Money` are approved patterns, and instruct the reviewer to skip every comment about logging or number types in files that already import them.",
+          "correct": false,
+          "explanation": "Naming the approved wrappers is right, but skipping all logging comments in those files also hides a raw `print` of card data sitting beside a `SafeLogger` call. The criteria must still report the bypass.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "c",
+          "text": "Tell the reviewer to be conservative about style and to mention logging only when it is highly confident that something is wrong.",
+          "correct": false,
+          "explanation": "Vague caution doesn't tell the model that these wrappers are intentional. It would remain unsure and still comment, or go quiet on a real raw-card-number log.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "d",
+          "text": "Paste the source of both wrapper classes into the prompt so the reviewer learns to accept them, and instruct it to report any bypass, such as `print` of card data.",
+          "correct": false,
+          "explanation": "Source code doesn't say that the pattern is approved, and it adds prompt length on every run. A short criterion naming the wrappers and what counts as bypassing them says what's needed.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Put accepted local patterns and the violations to report into the review criteria so the reviewer skips the first and flags the second.",
+      "studyRef": "§3 Task 4.1",
+      "sources": ["exam-guide", "research"]
+    }
+  ]
+}

@@ -30,3 +30,14 @@ export const MIN_DISTINCT_TRAPS = 10;
 export const MAX_LONGEST_CORRECT_SHARE = 0.4;
 export const ALWAYS_WRONG_COUNT = 10;
 export const CONCEPT_CARDS_PER_TASK = 3;
+
+// Mock papers (authoring guide section 10.4).
+export const MOCK_QUESTIONS = 60;
+export const MOCK_PER_SCENARIO = 15;
+export const MOCK_MULTI = 12;
+export const MOCK_DOMAIN_MIX: Record<string, number> = { D1: 16, D2: 11, D3: 12, D4: 12, D5: 9 };
+export const MOCK_DOMAIN_TOLERANCE = 2;
+export const MOCK_DIFFICULTY_TARGET: Record<number, number> = { 1: 10, 2: 30, 3: 20 };
+export const MOCK_DIFFICULTY_TOLERANCE = 5;
+export const MOCK_MAX_BEYOND_GUIDE = 4;
+export const MOCK_MAX_NONEXISTENT = 4;

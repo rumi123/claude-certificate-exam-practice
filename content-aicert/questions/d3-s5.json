@@ -1,0 +1,307 @@
+{
+  "scenario": "S5",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S5-D3-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "3.6",
+      "secondaryTasks": [],
+      "stem": "Cobalt Pay's pre-merge job runs `claude -p \"Review this diff and return findings as JSON\" --output-format json`, and a script pipes the reply through `jq` to count blocking findings. About 6% of runs fail because the reply wraps the findings in a sentence or a code fence. The pipeline needs machine-readable findings, and the check must not slow the merge. What should the team change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add two example replies in raw JSON, with no code fence, to the prompt, and keep the `jq` step as it is.",
+          "correct": false,
+          "explanation": "Examples make the format more likely but give no guarantee, so some share of runs would still wrap the reply. A pipeline that counts blocking findings needs the format enforced.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "b",
+          "text": "Add a regular expression before the `jq` step that strips leading text and code fences from the reply, so only the findings object remains.",
+          "correct": false,
+          "explanation": "The regular expression hides the symptom but not the cause. Any new wrapper, a missing field or a changed key still breaks the pipeline, because nothing defines the findings' structure.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add `--json-schema` with a findings schema to the command, so that each run returns structured findings the `jq` step can count.",
+          "correct": true,
+          "explanation": "The schema constrains the output to a defined findings structure, so the reply is machine-parseable on every run. It adds no extra step and no waiting, which keeps the merge fast.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Send the review through the Message Batches API so that each run returns structured findings the `jq` step can count.",
+          "correct": false,
+          "explanation": "Batch results can be slow, up to 24 hours, which would block a pre-merge check. Batching is for work nothing waits on, and it does not fix the reply wrapper in the CLI.",
+          "trap": "WRONG_LATENCY_MODE"
+        }
+      ],
+      "keyConcept": "For machine-parseable CI output, add `--json-schema` with a findings schema rather than relying on prompt wording or cleanup.",
+      "studyRef": "§3 Task 3.6",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S5-D3-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.6",
+      "secondaryTasks": [],
+      "stem": "Cobalt's pipeline has two jobs. Job one runs `claude -p \"Implement ticket $TICKET\"` and prints a session ID. Job two runs `claude -p --resume $SESSION_ID \"Review the change you just made and list defects\"`. Over 140 PRs the review found 2 defects, while human reviewers later found defects in 19 of the same PRs. The review must still run before each merge. Which change makes the automated review more effective?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep `--resume` and add the review criteria from `CLAUDE.md` and the diff to the prompt, so the reviewing session checks each changed file against them.",
+          "correct": false,
+          "explanation": "Criteria help, but the resumed session still carries the reasoning that produced the code and tends to defend it. The review remains the author checking its own work.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "b",
+          "text": "Run the review as a separate `claude -p` call without `--resume`, giving it the diff and the review criteria in `CLAUDE.md` and none of the author's reasoning.",
+          "correct": true,
+          "explanation": "A fresh instance has no memory of why the code was written that way, so it reads the diff critically against written criteria. It still runs before the merge, as required.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Run the review as a separate `claude -p` call without `--resume`, but pass it job one's plan and implementation notes along with the diff.",
+          "correct": false,
+          "explanation": "The call is independent, but the notes hand over the author's reasoning, which biases the reviewer toward the same assumptions. The diff and criteria alone keep the review independent.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "d",
+          "text": "Move the review into a nightly job that checks the day's merged changes in bulk with the Message Batches API, after the code has shipped.",
+          "correct": false,
+          "explanation": "Batch processing suits work nothing waits on, such as a weekly audit. Running after the merge means defects reach `main` first, and it does not address the review's lack of independence.",
+          "trap": "WRONG_LATENCY_MODE"
+        }
+      ],
+      "keyConcept": "Review with an independent Claude instance given the diff and criteria, not the author's session or its reasoning.",
+      "studyRef": "§3 Task 3.6; §5 critical anti-patterns",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S5-D3-003",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.2",
+      "secondaryTasks": ["3.1"],
+      "stem": "Cobalt's engineers use Claude Code locally in the monorepo. Their PCI guidance has two parts: a one-line rule, \"never log a full card number\", that must apply to all code, and a 25-step cardholder-data checklist needed only when someone changes `services/card-vault/`, about 3 times a month. Both sit in the root `CLAUDE.md`, adding roughly 2,500 tokens to every session. The checklist must be available to everyone on the team. How should the team split them?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep the one-line rule in the root `CLAUDE.md` and turn the checklist into a project skill in `.claude/skills/`, invoked whenever someone changes the vault.",
+          "correct": true,
+          "explanation": "The short rule applies to all code, so it stays always-loaded. The checklist is needed about three times a month, so an on-demand skill saves its tokens in every other session, and the project folder shares it with the team.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Keep the one-line rule in `CLAUDE.md` and turn the checklist into a personal skill in `~/.claude/skills/`, invoked when touching the vault.",
+          "correct": false,
+          "explanation": "The skill mechanism is right, but a personal skill reaches only the engineer who wrote it. The team needs the checklist when touching the vault, so it must live in the committed project folder.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "c",
+          "text": "Move both parts into skills so that nothing PCI-related loads until an engineer asks for it, which removes all of the 2,500 tokens.",
+          "correct": false,
+          "explanation": "The one-line rule must apply to all code, and a skill loads only when invoked. An engineer who forgets to invoke it gets no card-number rule at all, so the universal standard belongs in CLAUDE.md.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "Keep both parts in `CLAUDE.md` and add a script that strips the checklist from the file unless the branch touches the vault, so other sessions stay lean.",
+          "correct": false,
+          "explanation": "Editing a committed file by script adds fragile machinery, and the file would differ between branches. A skill gives the same on-demand loading natively.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Keep universal standards in always-loaded CLAUDE.md and move rarely needed procedures into shared project skills.",
+      "studyRef": "§3 Task 3.2",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S5-D3-004",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "3.6",
+      "secondaryTasks": [],
+      "stem": "Developers have stopped reading Cobalt's automated PR review comments. About a third flag patterns the team's standards allow, and after each push the job posts again the comments for issues the author already fixed or dismissed. The review runs as `claude -p` with a short prompt, and the repository has no review guidance. The fix must not slow merges. Which two changes address both complaints? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Ask Claude to rate each finding's confidence from 1 to 10 and post only those rated 8 or higher.",
+          "correct": false,
+          "explanation": "Self-reported confidence is poorly calibrated, so the threshold would drop real findings while keeping confident false ones. The problem is missing criteria, not a missing score.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "b",
+          "text": "Document the review criteria in `CLAUDE.md`, including which patterns the team accepts, so CI-invoked Claude Code knows what to flag.",
+          "correct": true,
+          "explanation": "CLAUDE.md gives CI-invoked Claude the project's review standards. Stating which patterns are allowed removes the false positives at the source.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Run the review twice on every push and post only the findings that appear in both runs.",
+          "correct": false,
+          "explanation": "Two runs double the cost and time, and both runs still lack the criteria, so both can repeat the same false positives. Agreement between runs does not show a finding is wanted.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Include the previous review's findings in the prompt on re-runs, so Claude reports only new or still-open issues.",
+          "correct": true,
+          "explanation": "With earlier findings in the prompt, Claude can skip issues the author already fixed or dismissed. This removes the duplicate comments after each push.",
+          "trap": null
+        },
+        {
+          "id": "e",
+          "text": "Move the review to the Message Batches API so each run can examine the change at lower cost.",
+          "correct": false,
+          "explanation": "Batch results can take up to 24 hours, which would hold up a pre-merge check, and it changes nothing about what the review flags. Batching suits work that nothing is waiting on.",
+          "trap": "WRONG_LATENCY_MODE"
+        }
+      ],
+      "keyConcept": "Give CI-invoked Claude explicit review criteria in CLAUDE.md and prior findings on re-runs, to cut false positives and duplicates.",
+      "studyRef": "§3 Task 3.6",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S5-D3-005",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "3.3",
+      "secondaryTasks": ["3.1"],
+      "stem": "Cobalt's PCI conventions (about 80 lines) apply to `services/card-vault/`, `services/tokenizer/` and `libs/crypto/`, out of roughly 95 directories under `services/` and `libs/`. Local sessions and the CI reviewer should load them only when the work touches one of those three paths, without copies that can drift. One teammate proposes putting them in `services/CLAUDE.md`. Which approach fits the requirement?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Put the conventions in `services/CLAUDE.md`, which covers both service directories and can reference `libs/crypto/` by name.",
+          "correct": false,
+          "explanation": "A parent-directory file loads for work in all of `services/`, so about 90 unrelated directories would get the conventions. It also cannot scope `libs/crypto/` correctly. A path-scoped rule would cover all three paths exactly.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "b",
+          "text": "Add the conventions to the root `CLAUDE.md` under a heading for card-vault, tokenizer and crypto work, so the three areas share one file.",
+          "correct": false,
+          "explanation": "The root file loads in every session, so all engineers carry the 80 lines everywhere. A heading is only a label for Claude, not a condition on loading.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Place a copy of the conventions in a `CLAUDE.md` inside each of the three directories, keeping each in sync with the others.",
+          "correct": false,
+          "explanation": "Three copies must be kept in sync by hand, so they would drift apart. A single file with a glob list achieves the same loading with one source of truth.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Create `.claude/rules/pci.md` with frontmatter `paths: [\"services/card-vault/**\", \"services/tokenizer/**\", \"libs/crypto/**\"]`, so the rules load only for those paths.",
+          "correct": true,
+          "explanation": "One path-scoped rule file lists all three locations, so the conventions load only when Claude works there, in local sessions and in CI. It has no copies, so nothing can drift.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Conventions spanning several directories belong in a path-scoped rule file, not in a parent or copied directory CLAUDE.md.",
+      "studyRef": "§3 Task 3.3",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S5-D3-006",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "3.6",
+      "secondaryTasks": [],
+      "stem": "Cobalt's independent reviewer job runs on every PR and adds 4 minutes to checks. To speed up merges, the team moved it to run on `main` after the merge. Over the next quarter, 22 merged PRs needed follow-up fixes for defects the reviewer reported only after merge, and two of them touched card-handling services. The team still wants the 4 minutes cut, but not at the price of defects reaching `main`. What is the best approach?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep the reviewer running after merge, with a job that automatically reverts any merge whose review reports a defect on `main`.",
+          "correct": false,
+          "explanation": "Auto-revert cleans up after the defect has already reached `main`, and it can revert good changes on a false positive. The review's timing, not its cleanup, is what needs fixing.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Restore the reviewer as a blocking pre-merge check on every PR, an independent `claude -p` run on the PR diff with criteria in `CLAUDE.md`.",
+          "correct": true,
+          "explanation": "A blocking pre-merge review stops defects before they reach `main`. Limiting it to the diff with written criteria keeps the run short, and an independent instance keeps it unbiased.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Run the reviewer nightly across the day's merges with the Message Batches API instead of a blocking pre-merge check, which costs less than a synchronous run.",
+          "correct": false,
+          "explanation": "Batch fits work nothing waits on, such as a nightly audit. A nightly run finds defects a day after merge, so the 22 follow-up fixes would continue.",
+          "trap": "WRONG_LATENCY_MODE"
+        },
+        {
+          "id": "d",
+          "text": "Let the author's own session review its change as a pre-merge step before opening the PR, since its context is already loaded and no new job is needed.",
+          "correct": false,
+          "explanation": "The author's session is less effective at spotting its own mistakes because it carries the reasoning behind them. Removing the independent job saves the 4 minutes but loses the reviewer's value.",
+          "trap": "SELF_REVIEW"
+        }
+      ],
+      "keyConcept": "Review that must gate a merge runs synchronously and independently before the merge; batch review suits only work nothing waits on.",
+      "studyRef": "§3 Task 3.6; §5 Key decision frameworks",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S5-D3-007",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.5",
+      "secondaryTasks": [],
+      "stem": "A Cobalt engineer asked Claude for `round_fee()`, which rounds card processing fees. His prose spec says \"round to the nearest cent, rounding halves the way our ledger does\". The results vary between runs: the decimal `0.125` sometimes becomes `0.12` and sometimes `0.13`, while the ledger expects `0.12` for `0.125` and `0.14` for `0.135`. He needs it merged before month-end close, but the results must be consistent. Which change gives consistent results?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a paragraph to the spec that explains how the ledger rounds halves, with the theory behind it, and ask Claude to follow it exactly.",
+          "correct": false,
+          "explanation": "More prose is the same kind of input that was already interpreted two ways. Concrete examples show the tie-breaking rule directly and leave much less room for reading it differently.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Give Claude two or three input and output examples, such as `0.125 -> 0.12` and `0.135 -> 0.14`, and ask it to match every one.",
+          "correct": true,
+          "explanation": "Examples that include several halves show the exact tie-breaking rule, so Claude can infer it instead of guessing. Two or three varied cases are enough, and they can double as tests.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Lower the sampling temperature for the session so that repeated runs of the same prompt produce the same code on each run.",
+          "correct": false,
+          "explanation": "A lower temperature may make runs more alike, but it would lock in whichever interpretation of \"the way our ledger does\" Claude chose first, which may be the wrong one.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Give Claude one example, `0.125 -> 0.12`, as a reference for the ledger's rule and ask it to match that example.",
+          "correct": false,
+          "explanation": "A single example fits several rules, such as always rounding halves down, and it says nothing about `0.135`. Varied examples that include a half going up pin the rule down.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "When prose is interpreted inconsistently, give two or three concrete input and output examples that pin down the rule.",
+      "studyRef": "§3 Task 3.5",
+      "sources": ["exam-guide"]
+    }
+  ]
+}

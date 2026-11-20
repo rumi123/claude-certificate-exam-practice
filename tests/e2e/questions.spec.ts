@@ -56,8 +56,8 @@ test('answer history shows the letter and confidence', async ({ page }) => {
   await page.waitForURL(/\/practice\/[^/?]+$/);
   await page.getByRole('radio').first().check();
   await page.getByRole('radio', { name: 'Sure', exact: true }).check();
-  await page.getByRole('button', { name: 'Submit' }).click();
-  await expect(page.getByTestId('feedback-option').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Submit', exact: true }).click();
+  await expect(page.getByRole('status')).toBeVisible();
   const id = sql(
     `select question_id from session_item where session_id=${latestSessionId} and position=0`,
   );

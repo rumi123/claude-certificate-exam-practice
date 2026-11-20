@@ -1,0 +1,223 @@
+{
+  "scenario": "S3",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S3-D2-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "2.1",
+      "secondaryTasks": [],
+      "stem": "The Northgate dataset subagent calls `fetch_dataset(series, period)`, whose description reads \"Fetches a government dataset.\" The API accepts a `series` slug from the catalogue and a `period` in `YYYY-MM` form, but the subagent passes values such as \"emissions 2019\" or \"FY2020\", and 31% of calls fail validation. The team added a 15-line format guide to the coordinator's system prompt, and the error rate only fell to 27%. The fix must add no extra model call and no new component. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a retry loop that reformats the arguments with a second model call whenever the API reports a validation error.",
+          "correct": false,
+          "explanation": "The loop adds a model call and a component, and it repairs failures after the fact. The subagent would still build wrong arguments each time because nothing tells it the accepted format.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "b",
+          "text": "Copy the format guide into every delegation prompt the coordinator sends and add the full list of series slugs to it.",
+          "correct": false,
+          "explanation": "A subagent has isolated context, so the coordinator's prompt guide only reaches it when passed explicitly, which is why the rate barely moved. Copying a longer guide into prompts still leaves the tool itself undocumented.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Put the slug source, the `YYYY-MM` format, a sample call and the fiscal-year edge case into the parameter descriptions, so all calls are built with them in view.",
+          "correct": true,
+          "explanation": "The model reads the tool and parameter descriptions when it fills in arguments. Stating the formats, an example and the edge case there fixes the cause at the layer that matters, with nothing new to maintain.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Replace `fetch_dataset` with a free-text `ask_data` tool that takes plain-language requests and works out the series and period itself before calling the API.",
+          "correct": false,
+          "explanation": "A free-text tool moves the translation into a hidden step and adds a model call. A plain description of the existing arguments is smaller; a natural-language front end would suit callers who cannot know the catalogue.",
+          "trap": "TOOL_OVERLOAD"
+        }
+      ],
+      "keyConcept": "Document input formats, examples and edge cases in the tool's own description, where the model reads when it builds a call.",
+      "studyRef": "§3 Task 2.1 (input formats, example queries, edge cases)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S3-D2-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "2.2",
+      "secondaryTasks": ["5.3"],
+      "stem": "The Northgate dataset subagent sends every failed `fetch_dataset` call straight to the coordinator as \"fetch failed\". Over a week, 61 of the 70 failures were timeouts that succeeded when tried again a few seconds later, but each one made the coordinator re-delegate the whole series, adding about 40 seconds. The other 9 were 400 responses for region codes not in the catalogue. The report has a 10-minute budget. What is the most effective change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Pass every failure to the coordinator with an `errorCategory` and an `isRetryable` flag, so the coordinator decides which series to re-delegate.",
+          "correct": false,
+          "explanation": "The coordinator would get better information, but it would still handle 61 timeouts that the subagent could have settled in seconds. Passing everything up suits failures the subagent cannot recover from, not transient ones.",
+          "trap": "PREMATURE_ESCALATION"
+        },
+        {
+          "id": "b",
+          "text": "Retry every failure inside the subagent up to five times with a ten-second pause, including the 400 responses for unknown region codes.",
+          "correct": false,
+          "explanation": "Timeouts would be absorbed, but a 400 for a region code that is not in the catalogue can never succeed, so each such call would burn all five tries and about four minutes. Local retry should apply only to transient errors.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Have the subagent retry a timed-out call itself, up to two times with a short pause, and pass up only failures that survive, noting the attempts made.",
+          "correct": true,
+          "explanation": "Transient failures are recovered where they happen, so the coordinator sees only what the subagent cannot resolve, together with what was tried. That saves the re-delegation time without hiding anything.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Return an empty dataset for any failed call, so the coordinator carries on with the series it already has.",
+          "correct": false,
+          "explanation": "An empty dataset reads as a successful search with no data, so the briefing would show a gap as a finding. Failures must be visible to the coordinator, even when local recovery handles the easy ones.",
+          "trap": "SILENT_FAILURE"
+        }
+      ],
+      "keyConcept": "Recover from transient errors locally inside the subagent, and pass up only failures it cannot resolve, with what was attempted.",
+      "studyRef": "§3 Task 2.2 (retryable vs non-retryable)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S3-D2-003",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "2.2",
+      "secondaryTasks": ["5.3"],
+      "stem": "A restricted dataset returns a 403 to the dataset subagent, which passes the coordinator only the text \"Dataset unavailable\". The coordinator can't tell whether to retry, try another source or record a gap, and one briefing to a minister left the series out without a note. Which two fields should the error response carry so the coordinator can decide without calling the subagent again? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "An error category, here permission, together with an `isRetryable` flag set to false for this 403.",
+          "correct": true,
+          "explanation": "A permission failure will not clear on retry, and the coordinator needs to know that. The category and the flag let it move to another source or record a gap instead of retrying.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "An `isRetryable` flag set to true with a 60-second wait hint, so the coordinator retries the fetch after the pause.",
+          "correct": false,
+          "explanation": "A wait hint fits a timeout or a rate limit. A 403 on a restricted dataset is a permission failure, so retrying after a pause would fail the same way and delay the briefing.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "A self-rated number between 0 and 1 for how likely the dataset is to become available later.",
+          "correct": false,
+          "explanation": "A model's own estimate is poorly calibrated, and the coordinator cannot check it. It should decide from explicit facts such as the failure type and what was requested.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "d",
+          "text": "The series and period requested, plus any partial results already retrieved from other series in the same call.",
+          "correct": true,
+          "explanation": "Knowing what was attempted lets the coordinator write an honest gap note, and the partial results mean work already done is not thrown away. The two fields complement the category.",
+          "trap": null
+        },
+        {
+          "id": "e",
+          "text": "A single `message` string reading \"Dataset unavailable\", short enough for the coordinator to log.",
+          "correct": false,
+          "explanation": "A generic message is what caused the problem: it hides the failure type and the scope. Logging it would record the gap but give the coordinator nothing to act on.",
+          "trap": "SILENT_FAILURE"
+        }
+      ],
+      "keyConcept": "Error responses carry category, retryability, what was attempted and partial results, so the coordinator can recover.",
+      "studyRef": "§3 Task 2.2; §3 Task 5.3",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S3-D2-004",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "2.3",
+      "secondaryTasks": [],
+      "stem": "The Northgate dataset subagent has a general `fetch_url` tool. Over the past month it has fetched blog posts and social-media pages as if they were datasets, and it twice tried an intranet admin address. Government datasets are listed in the institute's catalogue, each with a series ID. A request to the intranet must be impossible, not just unlikely. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a rule listing the approved domains and forbidding every other address, with the intranet range named as off limits.",
+          "correct": false,
+          "explanation": "A prompt rule lowers the rate but cannot guarantee the intranet is never requested, and the tool would still accept any address. A written rule suits judgment calls, not a boundary that must hold.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "b",
+          "text": "Have the coordinator check each fetched page against the approved list of datasets and discard the ones that are not on it.",
+          "correct": false,
+          "explanation": "The check happens after the fetch, so the intranet request has already been made and pages are discarded one by one. The subagent could still reach any address.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Give the subagent a `web_search` tool as well, so it can find official datasets before it fetches them.",
+          "correct": false,
+          "explanation": "A search tool adds another broad capability to a role that needs a narrow one. The subagent could still call `fetch_url` on anything the search returns.",
+          "trap": "TOOL_OVERLOAD"
+        },
+        {
+          "id": "d",
+          "text": "Replace `fetch_url` with `fetch_dataset(series_id)`, which rejects any ID not in the catalogue, so every fetch stays inside the approved list.",
+          "correct": true,
+          "explanation": "A constrained tool gives the subagent only what its role needs, and the validation sits in code where it cannot be talked around. Blog pages and intranet addresses are not reachable.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Replace a generic tool with a constrained one that validates its inputs when the role needs only a narrow capability.",
+      "studyRef": "§3 Task 2.3 (fetch_url replaced by load_document)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S3-D2-005",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "2.3",
+      "secondaryTasks": ["1.1"],
+      "stem": "Each source in a Northgate briefing goes through the document analysis subagent: it calls `load_document`, then analyses the text. To make sure loading happens, the team set `tool_choice` to `{\"type\": \"tool\", \"name\": \"load_document\"}` on every request in the loop. For a briefing with 3 sources the logs show 14 `load_document` calls and no analysis output. Loading must still happen for each source, and the briefing has a 10-minute budget. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Force `load_document` on the first request for each source only, then set `tool_choice` to `\"auto\"` for the rest of that source's loop.",
+          "correct": true,
+          "explanation": "Forcing guarantees the load for each source, and `\"auto\"` afterwards lets the model analyse and end its turn. The loop stops being trapped on one tool without losing the guarantee.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Force `load_document` on the first request of the briefing only, then set `tool_choice` to `\"auto\"` for the rest of the loop.",
+          "correct": false,
+          "explanation": "This frees the loop but forces loading only for the first source, so the second and third are left to the model's judgment. Loading must hold for each source, so the forcing has to be repeated.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Add a rule to the subagent's system prompt asking it to call `load_document` exactly once for each source and then analyse.",
+          "correct": false,
+          "explanation": "While the forced setting stays on every request, the model cannot do anything but call `load_document`, whatever the prompt says. Even with it removed, a prompt can only make the order likely.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Stop the loop after six iterations per briefing and return whatever analysis has been produced by then, noting the sources not reached.",
+          "correct": false,
+          "explanation": "A cap would end the loop, but it would cut the work off with unfinished sources, and the real cause, a forced tool that never lets the model continue, would remain.",
+          "trap": "ITERATION_CAP"
+        }
+      ],
+      "keyConcept": "Force a tool only on the request where it must run first, then return to `\"auto\"` so the loop can end.",
+      "studyRef": "§3 Task 2.3 (forced tool selection to run first)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    }
+  ]
+}

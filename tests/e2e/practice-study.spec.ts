@@ -27,9 +27,9 @@ test('10-question study session on S1', async ({ page }) => {
     if (n === 1) await expect(page.getByTestId('scenario-setup')).toBeVisible();
     await page.getByRole('radio').first().check();
     await page.getByRole('radio', { name: 'Sure', exact: true }).check();
-    await page.getByRole('button', { name: 'Submit' }).click();
+    await page.getByRole('button', { name: 'Submit', exact: true }).click();
+    await expect(page.getByRole('status')).toBeVisible();
     const options = page.getByTestId('feedback-option');
-    await expect(options.first()).toBeVisible();
     const count = await options.count();
     expect(count === 4 || count === 5).toBe(true);
     for (const text of await options.locator('p:nth-of-type(2)').allTextContents()) {
@@ -63,9 +63,44 @@ test('10-question study session on S1', async ({ page }) => {
   ).toBe(true);
 });
 
+test('Next lands where Submit was and reasoning opens below it', async ({ page }) => {
+  await startSession(page, 'scenario=S1&size=5&mode=study&multi=no');
+  await page.getByRole('radio').first().check();
+  await page.getByRole('radio', { name: 'Sure', exact: true }).check();
+  const submit = page.getByRole('button', { name: 'Submit', exact: true });
+  await submit.scrollIntoViewIfNeeded();
+  const submitBox = await submit.boundingBox();
+  await submit.click();
+
+  const next = page.getByRole('button', { name: 'Next', exact: true });
+  const explanation = page.getByTestId('feedback-option').first().locator('p:nth-of-type(2)');
+  await expect(next).toBeInViewport();
+  const nextBox = await next.boundingBox();
+  expect(nextBox?.x).toBe(submitBox?.x);
+  expect(nextBox?.y).toBe(submitBox?.y);
+
+  await expect(page.getByRole('img', { name: 'Correct option' })).toBeVisible();
+  // The picked option is tagged whether it was right or wrong.
+  await expect(page.getByTestId('your-answer')).toHaveCount(1);
+  await expect(page.getByRole('radio').first()).toBeDisabled();
+  await expect(explanation).toBeHidden();
+  await expect(page.getByText('Key concept:')).toBeHidden();
+
+  const pageTop = () => next.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+  const collapsedTop = await pageTop();
+  await page.getByRole('button', { name: 'Show reasoning' }).click();
+  await expect(explanation).toBeVisible();
+  await expect(page.getByText('Key concept:')).toBeVisible();
+  // Measured against the page: clicking the toggle may scroll the window by a pixel.
+  expect(await pageTop()).toBe(collapsedTop);
+
+  await page.getByRole('button', { name: 'Hide reasoning' }).click();
+  await expect(explanation).toBeHidden();
+});
+
 test('multiple-response question needs two picks and shows partial credit', async ({ page }) => {
   await startSession(page, 'scenario=S1&size=5&mode=study&multi=only');
-  const submit = page.getByRole('button', { name: 'Submit' });
+  const submit = page.getByRole('button', { name: 'Submit', exact: true });
   const boxes = page.getByRole('checkbox');
   await expect(page.locator('legend', { hasText: 'Select 2' })).toBeVisible();
   await boxes.first().check();

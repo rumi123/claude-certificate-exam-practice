@@ -4,7 +4,7 @@ Practise for the **Claude Certified Architect – Foundations (CCAR-F)** exam an
 
 The app has 150 exam-style, scenario-based questions. Every answer option comes with an explanation, and every wrong option is tagged with the *trap* it falls into. As you answer, it tracks your accuracy by exam domain and task statement, brings missed questions back on a spaced schedule, and produces a ranked "study these again" list.
 
-It runs on your own machine with a SQLite file. It needs no account, no login and no network at runtime. Your progress stays in `data/ccaf.db` and is never part of the repo, so each person who clones it starts fresh.
+It runs on your own machine with a SQLite file. It needs no account, no login and no network at runtime. Your progress stays in `data/aicert.db` and is never part of the repo, so each person who clones it starts fresh.
 
 > **Unofficial.** The questions were written by Claude from public study material and are not checked against the real exam. The score shown is an estimate. If an explanation looks wrong, flag it in the app.
 
@@ -31,7 +31,7 @@ npm install
 npm run dev
 ```
 
-Open <http://localhost:3000>. The first start creates `data/ccaf.db` and loads the questions into it. The dashboard shows "Low data" until you have answered about 60 questions.
+Open <http://localhost:3000>. The first start creates `data/aicert.db` and loads the questions into it. The dashboard shows "Low data" until you have answered about 60 questions.
 
 To use the production build instead: `npm run build && npm start`.
 
@@ -42,11 +42,12 @@ For development you also need `npx playwright install chromium` once, but only t
 |---|---|
 | **Dashboard** (`/`) | See your readiness estimate, domain bars, what is due today, the unfinished session to continue, and your top 3 topics to study again |
 | **Practice** (`/practice`) | Set up a session: source, size, mode, timer, order and focus preset |
+| **Exams** (`/exams`) | Look back at every finished session (test or study) and open its results |
 | **Review** (`/review`) | Clear the questions that are due for repeat, with a count for each Leitner box |
 | **Report** (`/report`) | Find your weak areas: priority list, domains, all 30 task statements, trap profile, calibration, timing and scenarios |
 | **Flashcards** (`/flashcards`) | Memorise concepts and anti-patterns with spaced repetition |
 | **Decision sheet** (`/cheatsheet`) | Read or print the quick-reference sheet |
-| **Questions** (`/questions`) | Browse, search and flag questions, and read any explanation |
+| **Questions** (`/questions`) | Browse, search (including the Marked filter) and flag questions, and read any explanation |
 | **Research** (`/research`) | Read the study notes that the report and explanations link to |
 | **Settings** (`/settings`) | Set preferences, back up, restore or reset progress, review flagged questions, and check content versions |
 
@@ -101,7 +102,7 @@ Everything on the report is calculated from your answers when you open the page.
 After each session the **summary** shows your score, time, accuracy per domain and task, the traps you picked and your calibration. "Review mistakes now" starts a session of only the questions you got wrong.
 
 ## Back up your progress
-`Settings → Backup & restore` downloads `ccaf-backup-YYYYMMDD.json` with all your progress: sessions, answers, review state, flags, flashcard state and settings. Restore from the same tab, where a preview shows row counts before you confirm. Reset clears progress only, never the questions. You can also copy `data/ccaf.db` while the app is stopped.
+`Settings → Backup & restore` downloads `ccaf-backup-YYYYMMDD.json` with all your progress: sessions, answers, review state, flags, flashcard state and settings. Restore from the same tab, where a preview shows row counts before you confirm. Reset clears progress only, never the questions. You can also copy `data/aicert.db` while the app is stopped.
 
 ## Commands
 | Command | What it does |
@@ -117,13 +118,13 @@ After each session the **summary** shows your score, time, accuracy per domain a
 | `tsx scripts/seed-perf.ts` | Builds `/tmp/ccaf-perf.db` (450 questions, 5,000 answers) for the performance check |
 | `tsx scripts/measure-pages.ts <url>` | Prints the median load time of each main page from a running server |
 
-`npm run dev` and `npm run build` run `content:import` first. Set `CONTENT_DIR=tests/fixtures/content` for the small e2e content set.
+`npm run dev` and `npm run build` run `content:import` first. Set `CONTENT_DIR=tests/fixtures/content` for the small e2e content set. Content folders may hold optional `lessons/dN.json` files; `content:validate` checks them, `content:import` loads them into `question_lesson`, and `content:quality` reports questions without a lesson.
 
 ## Environment
 | Variable | Default | Use |
 |---|---|---|
-| `DATABASE_PATH` | `data/ccaf.db` | Location of the SQLite file |
-| `CONTENT_DIR` | `content` | Folder the content files are read from |
+| `DATABASE_PATH` | `data/aicert.db` | Location of the SQLite file |
+| `CONTENT_DIR` | `content-aicert` | Folder the content files are read from (the older `content/` bank is kept for tests) |
 | `RESEARCH_PATH` | `docs/ccaf-exam-research.md` | Markdown file shown at `/research` |
 | `TEST_CLOCK` | (unset) | `1` lets e2e tests move the clock through a stored offset |
 | `AI_FEATURES` | `off` | `on` turns on "Ask Claude" (phase 3) |

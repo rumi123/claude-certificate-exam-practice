@@ -1,0 +1,181 @@
+{
+  "scenario": "S6",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S6-D2-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "2.1",
+      "secondaryTasks": [],
+      "stem": "Harlow Mutual's extraction agent has `get_claim`, described as \"Gets a claim\", and `get_claim_details`, described as \"Gets details of a claim\". The first returns the header record (status, policy, adjuster); the second returns the line items from repair invoices and medical bills. The agent calls `get_claim` when it needs line items in about 25% of documents, and then extracts blank amounts. What is the most effective fix, without changing what either tool returns?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Set `tool_choice` to force `get_claim_details` on every request, including header lookups that need `get_claim`, as line items are what most documents need.",
+          "correct": false,
+          "explanation": "Forcing one tool locks every request to it, so header lookups would return line items or fail. Forcing suits a step that must run first, not a choice between two tools that both have a use.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "b",
+          "text": "Rename them `get_claim_header` and `get_claim_line_items`, and keep the descriptions \"Gets a claim\" and \"Gets details of a claim\" as written.",
+          "correct": false,
+          "explanation": "The names show the split, but the descriptions are the main thing the model reads when it chooses, and they stay minimal. Nothing in them says what each tool returns or which requests it serves. Names alone would be enough only if the model chose tools by name rather than by description.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Rename them `get_claim_header` and `get_claim_line_items`, and rewrite each description to state what it returns, which requests it serves and which it does not.",
+          "correct": true,
+          "explanation": "Clear names and descriptions give the model the outputs and the boundary it was missing. The cause is two near-identical descriptions, and fixing them needs no new component.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Add a third tool, `get_claim_everything`, that returns the header and the line items together, and keep the other two as they are.",
+          "correct": false,
+          "explanation": "A third tool adds a new overlap and leaves the two vague descriptions in place, so the agent has one more tool to confuse. Better descriptions come before new layers.",
+          "trap": "TOOL_OVERLOAD"
+        }
+      ],
+      "keyConcept": "Rename and re-describe overlapping tools by purpose, with their outputs and boundaries, instead of forcing or adding tools.",
+      "studyRef": "§3 Task 2.1 (renaming to remove overlap)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S6-D2-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "2.2",
+      "secondaryTasks": ["4.4"],
+      "stem": "The `submit_extraction` tool at Harlow Mutual rejects a payload that fails the claims schema, and returns `{\"isError\": true, \"message\": \"Invalid payload\"}`. In 22% of documents the agent resubmits the same payload three or four times before it gives up, and each retry costs a model call on a 30-second per-document budget. The usual cause is a single field, such as a date written as `03/04` or an amount sent as text. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Name the failing field in the error message with the type expected and the value received, for example `claim.loss_date: expected YYYY-MM-DD, got \"03/04\"`.",
+          "correct": true,
+          "explanation": "The agent resubmits because the message never says what is wrong. Naming the field, the expected form and the value received lets it correct the one bad field in the next attempt.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add `errorCategory: \"validation\"` and `isRetryable: true` to the response and keep the message \"Invalid payload\", so the agent knows a retry can succeed.",
+          "correct": false,
+          "explanation": "The category and flag confirm that retrying is allowed, which the agent already assumes, but it still cannot see which field to change. The missing detail, not the category, drives the repeats.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Mark the error `isRetryable: false` and stop the agent from calling `submit_extraction` again for that document, passing it to the review team.",
+          "correct": false,
+          "explanation": "A one-field problem is fixable by the agent, so sending the whole document to reviewers throws away a recoverable case. Escalation suits errors the agent cannot resolve.",
+          "trap": "TOTAL_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Coerce a bad `claim.loss_date` to the schema type inside the tool and report success, so no error is returned and the agent never sees the failing value.",
+          "correct": false,
+          "explanation": "A date such as `03/04` is ambiguous, and coercing it would store a guess as if it were extracted data while the agent sees success. A failure should be visible, with the detail needed to fix it.",
+          "trap": "SILENT_FAILURE"
+        }
+      ],
+      "keyConcept": "A validation error should say which field failed and what was expected, so the agent can correct it instead of resubmitting blind.",
+      "studyRef": "§3 Task 2.2 (errorCategory, isRetryable, readable description)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S6-D2-003",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "2.3",
+      "secondaryTasks": ["4.3"],
+      "stem": "Harlow Mutual's extraction agent reads claim files with a general `read_file(path)` tool. The system prompt already says to open only files in the current claim's folder, yet last month's audit found 2 of 1,400 runs that opened another claimant's file while looking for a missing police report. Documents are stored as `claims/<claim_id>/<doc_id>`, and privacy rules say crossing claims must be impossible, not rare. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add three further examples to the system prompt showing the agent opening only `claims/<claim_id>/<doc_id>` paths for the current claim_id, never another claim's folder.",
+          "correct": false,
+          "explanation": "The prompt already carries the rule and 2 runs still crossed over, so extra examples would lower the rate at best. A written rule cannot make crossing impossible, which is what the privacy rules ask.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "b",
+          "text": "Add a `PostToolUse` hook on `read_file` that removes other claimants' data from each result before the model sees it, and logs the doc_id and path of each attempt.",
+          "correct": false,
+          "explanation": "The other claimant's file is still opened, and a filter has to recognise every kind of personal data in every document to work. It treats the symptom after the access happens; blocking the access removes it.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Give the agent a second tool, `search_all_claims(query)`, so it can find the missing report in other claim_id folders without guessing at `claims/<claim_id>/<doc_id>` paths.",
+          "correct": false,
+          "explanation": "A cross-claim search adds a broad capability to an agent that should see one claim. It makes access to other claimants' documents routine, which is the opposite of the goal.",
+          "trap": "TOOL_OVERLOAD"
+        },
+        {
+          "id": "d",
+          "text": "Replace `read_file` with `load_claim_document(claim_id, doc_id)`, which checks in code that the document belongs to the claim being processed.",
+          "correct": true,
+          "explanation": "A narrow tool whose inputs are checked in code makes cross-claim reads impossible, whatever the model decides. A prompt rule only makes them unlikely.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "When a prompt rule leaves occasional misuse of a generic tool, replace it with a constrained tool that validates its inputs.",
+      "studyRef": "§3 Task 2.3 (constrained alternatives to generic tools)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S6-D2-004",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "2.5",
+      "secondaryTasks": ["5.4"],
+      "stem": "A new Harlow engineer must learn where the pipeline decides to send a claim to the 12-person human review queue. The repository has about 400 files, nobody has written down the flow, and the assistant's context cannot hold the whole codebase. The engineer remembers only that a field called `field_confidence` is involved. Which two steps should the assistant take? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Grep for `field_confidence` across the repository to find the files that set or read it, which gives the entry points.",
+          "correct": true,
+          "explanation": "A content search turns one remembered name into a short list of starting files. It narrows 400 files to a handful without reading them all.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Glob for `**/*.py`, then Read every file in order and write a summary of each before moving to the next.",
+          "correct": false,
+          "explanation": "Reading 400 files would fill the context long before the review path appears. Exploring should be targeted, starting from a search hit rather than a full sweep.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "c",
+          "text": "Glob for `**/*confidence*` and treat the matching file names as the complete list of code involved in review routing.",
+          "correct": false,
+          "explanation": "Glob matches file names, not contents, so it would miss the code that reads `field_confidence` inside files with unrelated names. It suits finding files by name, not following a field.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Guess that the review queue's client class is the place to start, and ask the engineer to confirm each file.",
+          "correct": false,
+          "explanation": "The engineer knows less about the code than the search results would show, so asking at each step hands back work the assistant can do itself. Search first, ask only for what code cannot tell.",
+          "trap": "PREMATURE_ESCALATION"
+        },
+        {
+          "id": "e",
+          "text": "Read the file where the threshold is applied, then follow its imports one at a time to see how a claim reaches the queue.",
+          "correct": true,
+          "explanation": "Following imports from a known entry point traces the path with only the files that matter. It complements the search by turning a hit into a flow.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Build codebase understanding incrementally: Grep for an entry point, then Read and follow imports rather than reading everything.",
+      "studyRef": "§3 Task 2.5 (incremental understanding)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    }
+  ]
+}

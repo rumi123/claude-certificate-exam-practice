@@ -1,0 +1,952 @@
+{
+  "scenario": "S3",
+  "version": 2,
+  "questions": [
+    {
+      "id": "S3-D1-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.1",
+      "secondaryTasks": [
+        "1.2"
+      ],
+      "stem": "The Northgate coordinator's loop stops after 10 iterations, a limit added after an early bug made it loop forever. Requests that touch 200 to 400 documents routinely need 20 to 30 tool calls, and 18% of runs now end in the middle of document analysis with a half-written briefing. The team must keep protection against a runaway loop, but not at the cost of cutting off normal work. What should you change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Read `stop_reason` after every response: continue on `\"tool_use\"`, stop on `\"end_turn\"`, and keep a cap of 60 for a run that goes wrong.",
+          "correct": true,
+          "explanation": "The model signals when it has finished through `stop_reason`, so runs of 5 or 30 calls both end at the right place. A generous cap still protects against the early infinite-loop bug without cutting normal work short.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Read `stop_reason` after every response and continue on \"tool_use\", but also stop when the coordinator's text contains \"briefing complete\", and drop the cap.",
+          "correct": false,
+          "explanation": "Reading `stop_reason` is right, but the extra text check can fire when the model writes that phrase while still calling tools, and dropping the cap removes the protection against a runaway loop. The text adds nothing `stop_reason` does not already give.",
+          "trap": "NL_TERMINATION"
+        },
+        {
+          "id": "c",
+          "text": "Read `stop_reason` and continue on \"tool_use\", but also stop after three consecutive iterations add no new documents to the evidence list, keeping the cap of 10 as a safety net against loops.",
+          "correct": false,
+          "explanation": "Some useful iterations add no new documents, for example a dataset lookup or a check of a figure, so this would end valid runs early. It is a progress heuristic layered on the signal the API already gives, and the cap of 10 would still cut off normal runs.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Read `stop_reason` after every response only to log it, and end every run after a fixed 40 iterations, which covers the longest runs seen so far.",
+          "correct": false,
+          "explanation": "A fixed count is still the stopping rule: a run that finishes after 5 calls keeps going to 40, and a later request that needs 45 calls is cut off again. A cap belongs behind `stop_reason` as a backstop, not in its place.",
+          "trap": "ITERATION_CAP"
+        }
+      ],
+      "keyConcept": "Let `stop_reason` end the loop; a cap is only a safety net set well above what normal work needs.",
+      "studyRef": "§3 Task 1.1; §5 The 10 critical anti-patterns (1 and 2)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.1",
+      "secondaryTasks": [
+        "1.2"
+      ],
+      "stem": "To cut cost, the team replaced the coordinator's model-driven loop with a keyword router: requests containing \"dataset\" go to the dataset subagent, \"paper\" to literature search, anything else to document analysis. Since then 22% of ministerial requests, such as \"compare the 2030 target with the latest national figures and the studies behind it\", reach only one subagent and the briefing is incomplete. How should the design change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Extend the keyword router with the terms \"figures\" and \"studies\", and send any request that matches several keywords to all three subagents.",
+          "correct": false,
+          "explanation": "Every new keyword rule handles one more phrasing, but requests are worded in endless ways, so the router would keep missing cases. The cause is the fixed decision tree itself, not the number of keywords.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Let each subagent hand the request on to another subagent whenever it sees something outside its own source type, without telling the coordinator.",
+          "correct": false,
+          "explanation": "Handing work sideways sends control around the coordinator, which loses track of what has been covered and who has failed. Routing decisions belong in one place.",
+          "trap": "BYPASS_COORDINATOR"
+        },
+        {
+          "id": "c",
+          "text": "Return to a model-driven loop: expose each subagent as a tool, let Claude choose each next call from earlier results, and end on `\"end_turn\"`.",
+          "correct": true,
+          "explanation": "Claude can read a mixed request, decide that both figures and studies are needed, and adapt to what comes back. The loop needs no keyword rules, and it ends on `stop_reason`. The cost saving can be kept by limiting what each subagent returns.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Send every request to all three subagents, describe each one as a tool, and let the synthesis subagent discard whatever is not needed for the briefing.",
+          "correct": false,
+          "explanation": "This covers mixed requests but costs a full pipeline run for the simple ones and makes the synthesis subagent filter material it never needed. It trades one weakness for a bigger cost, the very cost the team was trying to cut.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Let the model choose each next tool from what earlier results show, rather than a fixed keyword decision tree.",
+      "studyRef": "§3 Task 1.1 (model-driven decisions vs decision trees); §3 Task 1.2",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-003",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.2",
+      "secondaryTasks": [
+        "1.6"
+      ],
+      "stem": "A request on carbon border adjustments goes to the coordinator, which gives the literature subagent and the document analysis subagent the same instruction: \"cover the topic\". About 35% of the documents they retrieve are the same, and the 48-hour deadline is tight. The team added a dedupe step before synthesis; it removes the duplicates, but both subagents still spend about the same time and tokens. What should you change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Have the coordinator divide the sources before delegating, such as peer-reviewed studies for literature search and agency reports for document analysis.",
+          "correct": true,
+          "explanation": "Distinct scopes stop the duplicate work from happening, saving the time and tokens the dedupe step cannot save. The coordinator's job includes partitioning the task so subagents do not overlap.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Have the coordinator set an explicit scope for each subagent by topic angle, such as \"policy impact\" for literature search and \"measured evidence\" for document analysis, with the dedupe step kept.",
+          "correct": false,
+          "explanation": "Topic angles overlap, so both subagents still retrieve much of the same material and the overlap in time and tokens remains. Dividing by source type gives each one a set of documents the other will not retrieve.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Let the two subagents write the URLs they open to a common store and skip any URL already listed there, checking the store before every search.",
+          "correct": false,
+          "explanation": "Subagents would coordinate through shared storage and bypass the coordinator, which then can't see what is covered or explain a gap. Concurrent writes would also leave some overlap in place. Scope should be set by the coordinator.",
+          "trap": "BYPASS_COORDINATOR"
+        },
+        {
+          "id": "d",
+          "text": "Run the two subagents one after the other so that the second can skip all the documents the first has already found and retrieved.",
+          "correct": false,
+          "explanation": "Running them in sequence removes most duplication but turns one wait into two, a heavy cost when the deadline is 48 hours and a request can touch 400 documents. Scope partitioning gets the same effect without losing the parallel run.",
+          "trap": "WRONG_LATENCY_MODE"
+        }
+      ],
+      "keyConcept": "Partition research scope across subagents before delegating, instead of removing overlap after the work has been done.",
+      "studyRef": "§3 Task 1.2 (partitioning scope to minimize duplication)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-004",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "1.2",
+      "secondaryTasks": [
+        "5.3"
+      ],
+      "stem": "During a run for a minister's briefing, the dataset subagent timed out on 2 of 9 datasets. The coordinator did not notice, and the synthesis subagent wrote a briefing built from 7 sources without saying so. You are redesigning how the coordinator manages the subagents while keeping the 48-hour deadline. Which two changes help most? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Route every subagent result and failure through the coordinator, which records the status of each sub-task, such as complete, timed out or partial.",
+          "correct": true,
+          "explanation": "With all communication through the hub, the coordinator can see that 2 of 9 datasets are missing and record it. This gives the error handling and observability that the silent timeout lacked.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Let the synthesis subagent contact the dataset subagent directly whenever it notices a missing figure, and report the outcome in its draft.",
+          "correct": false,
+          "explanation": "Direct subagent-to-subagent messages bypass the coordinator, which then has no record of the gap or the follow-up. The synthesis subagent also cannot notice what it was never told about.",
+          "trap": "BYPASS_COORDINATOR"
+        },
+        {
+          "id": "c",
+          "text": "After synthesis, have the coordinator check the draft against coverage criteria and re-delegate only the sub-tasks that are missing or incomplete.",
+          "correct": true,
+          "explanation": "An evaluate-and-re-delegate loop catches the 2 missing datasets and re-runs only that part. It complements the status tracking: one knows what failed, the other makes the coordinator act on it.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Tell each subagent in its prompt to report \"all sources retrieved\" only when it is certain that nothing is missing from its search.",
+          "correct": false,
+          "explanation": "A prompt instruction about honest reporting is a nudge, and a subagent that timed out has no way to be certain about what it did not see. Structured status handled by the coordinator is more dependable.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "e",
+          "text": "Re-run all four subagents from the start whenever a single sub-task is incomplete, so that every result comes from the same run.",
+          "correct": false,
+          "explanation": "Redoing the work of three healthy subagents wastes time inside a 48-hour window and throws away good results. Only the incomplete sub-tasks need to be re-delegated.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "A hub-and-spoke coordinator sees every result and failure, and checks the draft against coverage criteria before it ships.",
+      "studyRef": "§3 Task 1.2 (hub-and-spoke; iterative refinement loops)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-005",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.2",
+      "secondaryTasks": [
+        "1.3"
+      ],
+      "stem": "The coordinator forwards the literature subagent's results to document analysis, then to synthesis, adding about 30,000 tokens of text each time, and it accounts for 28% of run cost. An engineer proposes letting each subagent pass its results directly to the next one to save the coordinator's tokens. Error handling and the audit log must still show every hand-off. What is the best response?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Accept the proposal, and have each subagent send the coordinator a structured copy of its hand-off, with excerpt and source ID, after the next subagent has started on it.",
+          "correct": false,
+          "explanation": "The coordinator would see hand-offs only after the next subagent had acted, so it cannot catch or correct a failure on the way. Copying afterwards recreates the cost it was meant to avoid and loses routing control.",
+          "trap": "BYPASS_COORDINATOR"
+        },
+        {
+          "id": "b",
+          "text": "Have the coordinator replace each subagent result with a two-sentence summary before it forwards that hand-off to the next subagent, so it carries what the next step needs.",
+          "correct": false,
+          "explanation": "A two-sentence summary drops the per-claim excerpt and source ID every briefing needs for its citations. It saves tokens but removes the content downstream agents rely on.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Switch the coordinator to a smaller model to cut the price per token, and keep forwarding each hand-off with its excerpt and source ID unchanged.",
+          "correct": false,
+          "explanation": "A smaller model lowers the price per token but keeps the 30,000-token forwarding and may reduce routing quality. It treats the cost, not the oversized payloads causing it.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Keep every hand-off through the coordinator and have subagents return compact records of claim, excerpt and source ID, so it forwards only the fields the next step reads.",
+          "correct": true,
+          "explanation": "Hub-and-spoke routing is kept, so errors and the audit log stay in one place, while the coordinator forwards only what the next step needs. Source IDs stay attached to each claim, so citations survive.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Keep inter-agent communication in the hub and cut cost by making what flows through it compact and structured.",
+      "studyRef": "§3 Task 1.2 (hub-and-spoke); §3 Task 1.3 (structured data for attribution)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-006",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "1.3",
+      "secondaryTasks": [
+        "1.2"
+      ],
+      "stem": "The synthesis subagent writes briefings in which 15% of claims have no usable citation. The coordinator spawns it with \"Write the briefing\" and the other subagents' findings pasted as paragraphs of prose, so URLs and page numbers sit in free text. Every claim in a ministerial briefing must cite its source. Which two changes help? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Tell the synthesis subagent to look up citations itself with `load_document` after it has drafted the briefing.",
+          "correct": false,
+          "explanation": "The subagent would repeat work the others already did, and it can only re-find sources it can guess from the prose. Provenance should travel with the findings from the start.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "b",
+          "text": "Pass the findings as structured records, each with claim, supporting excerpt, source URL, document title and page number as separate fields.",
+          "correct": true,
+          "explanation": "Separate fields keep every claim tied to its source, so the synthesis subagent can cite without reading metadata out of prose. This fixes how provenance is carried.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Run a second synthesis pass over the finished briefing that checks each sentence for a citation and removes any claim without one.",
+          "correct": false,
+          "explanation": "Removing uncited claims hides the gap instead of closing it, and a second pass still has no source URLs or page numbers to add. Provenance should travel with the findings from the start.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Include the complete findings from each earlier subagent in the synthesis subagent's own prompt.",
+          "correct": true,
+          "explanation": "A subagent does not see the coordinator's conversation or the other subagents' work, so anything missing from its prompt does not exist for it. Giving it the full findings is the other half of the fix.",
+          "trap": null
+        },
+        {
+          "id": "e",
+          "text": "Refer in the synthesis prompt to the \"sources discussed above\" and rely on the subagent to find them.",
+          "correct": false,
+          "explanation": "The subagent starts with only its own prompt, so there is no earlier discussion for it to read. It would invent or omit citations for material it was never given.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        }
+      ],
+      "keyConcept": "Pass prior findings explicitly in the subagent's prompt, in a structured form that keeps content and source metadata separate.",
+      "studyRef": "§3 Task 1.3 (explicit context; structured data for attribution)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-007",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.3",
+      "secondaryTasks": [
+        "1.2"
+      ],
+      "stem": "For a request on grid-storage subsidies, the coordinator needs six independent searches (three literature, three dataset, about 25 minutes each). A synthesis step that needs all six sets of findings takes about 15 minutes. Run one after another, the searches would take 150 minutes, and the briefing must be ready in under an hour. Which pattern should the coordinator use?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Emit the six `Task` calls in one response to run in parallel, wait for all six, then start synthesis with their findings in its prompt.",
+          "correct": true,
+          "explanation": "Parallel spawning brings the searches down to about 25 minutes, and synthesis takes about 15 more, so the total is about 40 minutes. Synthesis gets the findings it needs because the coordinator passes them in its prompt.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Emit all seven `Task` calls in one response and tell synthesis to start from whatever the searches have produced so far while they run.",
+          "correct": false,
+          "explanation": "Synthesis would start with no findings, because subagents do not share memory and the searches' results reach the coordinator only when they finish. It would write from nothing or from guesses.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "c",
+          "text": "Spawn the searches one at a time, passing each completed finding into the next subagent's prompt so that later searches avoid repeating earlier ones.",
+          "correct": false,
+          "explanation": "Running in sequence takes 150 minutes before synthesis even starts, far outside the hour. The six searches are independent, so nothing needs to wait for anything else.",
+          "trap": "WRONG_LATENCY_MODE"
+        },
+        {
+          "id": "d",
+          "text": "Emit the six searches in parallel and have synthesis poll a shared scratch file for each search's results as they land.",
+          "correct": false,
+          "explanation": "Polling a shared file lets subagents exchange data around the coordinator, which then can't handle a failed search or confirm what synthesis has received. The coordinator should pass the findings explicitly.",
+          "trap": "BYPASS_COORDINATOR"
+        }
+      ],
+      "keyConcept": "Emit independent `Task` calls together so they run in parallel, and start a dependent step only after its inputs are returned.",
+      "studyRef": "§3 Task 1.3 (parallel Task calls; explicit context)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-008",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.3",
+      "secondaryTasks": [
+        "1.6"
+      ],
+      "stem": "The coordinator delegates document analysis with the prompt \"Open each of the 300 files in the folder in alphabetical order, extract every table, then summarise them\". For a request on adaptation finance in small island states, most of the files are not relevant, and the run spends 3 of its 6 hours extracting tables nobody needs. The run must still finish within 6 hours. The subagent can use `load_document` and a keyword search. What should change in the delegation prompt?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a `PreToolUse` hook that blocks `load_document` for any file not on a relevance list the coordinator generates before reading begins.",
+          "correct": false,
+          "explanation": "The relevance list would be built by guesswork before any reading, so the hook blocks files on a guess and adds a stage to maintain. Nothing here requires a guarantee, only better direction.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "b",
+          "text": "Lower the subagent's temperature so that it follows the alphabetical procedure consistently on every file in the folder, from the first to the last.",
+          "correct": false,
+          "explanation": "Temperature does not make a procedure fit the task. A consistent run of the wrong procedure wastes the same hours, and temperature has no effect on which files are relevant.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "State the research goal and quality criteria, but keep the fixed procedure: open the 300 files alphabetically, extracting tables only where they meet the criteria.",
+          "correct": false,
+          "explanation": "The goal and criteria are right, but the prompt still prescribes opening every file in order, so the run loads all 300 files, most of them irrelevant, and the keyword search goes unused. The subagent needs the freedom to search first and open only relevant files. A fixed procedure would suit a task where every file must be read.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "State the research goal and quality criteria, such as which funding claims to support, and let the subagent choose which files to open.",
+          "correct": true,
+          "explanation": "With the goal and the criteria the subagent can search first and open only relevant files. How to find the material is a judgment the model makes well, so a prompt change is the right and smallest fix.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Give subagents the research goal and quality criteria, and leave the method to them, rather than a fixed procedure.",
+      "studyRef": "§3 Task 1.3 (coordinator prompts with goals and quality criteria, not step-by-step procedures)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-009",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.6",
+      "secondaryTasks": [
+        "1.2"
+      ],
+      "stem": "A single-pass analysis of 300 documents on national emission figures gives detailed notes on the first 40 documents and thinner notes after that. The briefing cites two documents with conflicting 2022 totals as if they agreed. Each document is under 20 pages, and the team wants a design that still works at 400 documents while keeping the cost of each request in check. What should it change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Move to a model with a larger context window, analyse all 300 documents in one request, and compare the figures and citations to flag conflicts, with equal attention paid to each document.",
+          "correct": false,
+          "explanation": "A bigger window lets more text in but doesn't promise equal attention across it, and cost grows with the input. The fix is to give each document its own focused pass.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "b",
+          "text": "Read each document in its own pass for figures and sources, then run one integration pass over all the extracted records to surface the conflicts.",
+          "correct": true,
+          "explanation": "Per-document passes give every document the same depth, and the integration pass sees the conflicting 2022 totals side by side. It scales to 400 documents by adding passes, not by lengthening one.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Analyse each document in its own pass, then run the integration pass over the full text of all 300 documents in one request to compare the figures and flag conflicts.",
+          "correct": false,
+          "explanation": "Per-document passes are right, but an integration pass over the full text brings back the attention problem and its cost, and it would not scale to 400 documents. The integration pass should read only the extracted records.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Run the same single analysis twice, compare the figures and citations from the two runs, and flag any disagreement as a point for a person to check by hand.",
+          "correct": false,
+          "explanation": "Two runs of the same design share the same attention pattern and the thin coverage of late documents. Agreement between them does not show that conflicts between documents were caught.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Split big multi-source reviews into per-document analysis passes plus one separate integration pass across documents.",
+      "studyRef": "§3 Task 1.6 (prompt chaining; per-item pass plus cross-item pass)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-010",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.7",
+      "secondaryTasks": [
+        "5.1"
+      ],
+      "stem": "A session named `ets-review` analysed 220 documents and 14 datasets for a briefing 36 hours ago. The statistics office has since revised 9 of the 14 datasets, and the briefing is due in 6 hours. The team plans to `--resume ets-review` and tell the agent which datasets changed, even though most of the draft's claims rest on those 9 datasets. What is the best approach?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Resume as planned, give the agent a structured list of the 9 revised datasets, and have it re-fetch them and redo only the claims that depend on them, keeping the claims that still hold.",
+          "correct": false,
+          "explanation": "Resuming and naming the changes is right when most results stay valid, but here most claims depend on the 9 revised datasets. The agent would carry a large history of stale tool results, and a note listing changes cannot cleanly separate the old from the new.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Start a new session seeded with a summary of the claims, their sources and which still hold, then pull the 9 revised datasets again.",
+          "correct": true,
+          "explanation": "A compact summary keeps what is still valid, including the 220 documents' findings, while leaving the stale tool results behind. Fresh retrieval of the revised datasets gives current figures within the 6 hours.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Use `fork_session` to branch the old session, then re-fetch the 9 revised datasets in the branch and update the claims that depend on them, keeping those that still hold.",
+          "correct": false,
+          "explanation": "A fork starts from the same history, so it inherits every stale tool result. Forking is meant for comparing divergent approaches, not for refreshing outdated evidence.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Start a new session seeded with only the original request and its sources, re-fetch all 14 datasets, and run the whole analysis again from scratch.",
+          "correct": false,
+          "explanation": "This throws away the findings from the 220 documents, which are still sound, and re-fetching everything for a full re-run does not fit in 6 hours. A summary keeps what is valid without the stale results.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "When most prior tool results are stale, start a fresh session with a structured summary instead of resuming.",
+      "studyRef": "§3 Task 1.7 (fresh start with injected summaries vs resuming with stale results)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-011",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.2",
+      "secondaryTasks": [
+        "1.6"
+      ],
+      "stem": "A minister asks how extreme heat will affect labour productivity across the whole economy by 2040. The coordinator delegates two parts, construction and agriculture, one to the literature subagent and one to the dataset subagent. Both sections are thorough, with over 40 sources each, and logs show every tool call succeeded. Reviewers note that manufacturing, logistics and services, most of the workforce, are absent, although the synthesis subagent used everything it received. What is the root cause, and what should change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "The literature subagent's search queries were too narrow for an economy-wide question, so studies about the other sectors were missed; broaden them to cover the whole economy.",
+          "correct": false,
+          "explanation": "It tempts because the sources look narrow, but the literature subagent was asked about one sector and covered it with over 40 sources. A subagent works to the scope it is given; widening the scope is the coordinator's job, so broader queries stretch one subagent while the split still leaves the other sectors unassigned. Broader queries would be the fix if the assigned sector itself were thinly covered.",
+          "trap": "WRONG_COMPONENT"
+        },
+        {
+          "id": "b",
+          "text": "The dataset subagent's tables for manufacturing and services timed out and came back as empty results; retry timeouts and treat an empty result as an error, not as no data.",
+          "correct": false,
+          "explanation": "It tempts because these databases do time out, and a timeout returned as an empty success would log as a success too. But the dataset subagent was given one sector, so it never asked for manufacturing or services tables, and a silent timeout can hide only data that was asked for. Retries and an error rule patch the retrieval step and leave the split that never assigned those sectors; they would be the fix if those sectors had been assigned and came back empty.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "The coordinator's decomposition turned an economy-wide question into two sectors, so no subagent was asked about the rest; divide the whole economy into parts before delegating the work.",
+          "correct": true,
+          "explanation": "Each subagent covered what it was given, and the missing sectors were never assigned, so no retrieval problem, reported or silent, could have dropped them. The coordinator owns decomposition, so a split narrower than the question leaves gaps no subagent can fill. Dividing the whole economy into parts before delegating closes the gap where it starts.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "The synthesis subagent cut the other sectors to keep the briefing short enough for a minister; increase the briefing's length limit so each sector's findings fit in it.",
+          "correct": false,
+          "explanation": "It tempts because briefings for ministers are short, but the stem says synthesis used everything it received, so nothing was cut and a longer briefing would add no missing sector. Allowing more length is the fix when synthesis leaves out material it was given.",
+          "trap": "WRONG_COMPONENT"
+        }
+      ],
+      "keyConcept": "When every subagent did its part and the output is still incomplete, check the coordinator's decomposition for topics nobody was given.",
+      "studyRef": "§3 Task 1.2 (risk of overly narrow task decomposition); §6a Q7",
+      "sources": [
+        "exam-guide",
+        "research-6a-q7"
+      ]
+    },
+    {
+      "id": "S3-D1-012",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.2",
+      "secondaryTasks": [
+        "1.3"
+      ],
+      "stem": "For large requests, document analysis subagents, one per batch of documents, return full extracts for up to 400 documents, about 350,000 tokens in total, and the coordinator forwards them to synthesis. The coordinator now runs out of context on 1 in 6 large requests. Its tokens are already 30% of run cost, and that share must come down. Every hand-off must go through the coordinator's audit log and retry handling, and synthesis must quote each extract with its page number. Which design meets these requirements?",
+      "options": [
+        {
+          "id": "a",
+          "text": "The coordinator moves to a model with a larger context window, so the 350,000 tokens of extracts fit with room to spare.",
+          "correct": false,
+          "explanation": "A bigger window may fit today's payload, but every one of the 350,000 tokens still passes through the coordinator, so its token cost stays where it is instead of coming down. It treats the size of the payload, not the design that routes raw content through the hub.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "The analysis subagents each send their extracts straight to the synthesis subagent, then report the hand-off's extract IDs to the coordinator as a one-line entry for the audit log.",
+          "correct": false,
+          "explanation": "It keeps tokens out of the coordinator, but each subagent's hand-off happens before the coordinator knows about it, so a failed or partial extract can't be retried on the way. Logging afterwards records the hand-off but gives up control. Direct passing suits a system with no central error handling to keep.",
+          "trap": "BYPASS_COORDINATOR"
+        },
+        {
+          "id": "c",
+          "text": "Each analysis subagent writes its extracts to an evidence store and returns extract IDs and status to the coordinator, which passes the IDs to synthesis.",
+          "correct": true,
+          "explanation": "Large outputs can be stored outside the coordinator and passed back as lightweight references, as Anthropic's research system does. The coordinator still sees every subagent's hand-off and its status, so the audit log and retries stay in the hub, while its token cost comes down because the 350,000 tokens of extracts never pass through it. Synthesis reads the full extracts, page numbers included.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "The coordinator condenses the extracts into a 20-page digest before forwarding them, so that its own context stays well within limits on large requests.",
+          "correct": false,
+          "explanation": "To write the digest the coordinator must first take in all 350,000 tokens, so it still runs out of context and its token cost does not come down; the digest also drops the extract text and page numbers synthesis must quote. Condensing suits working notes, not evidence that has to be cited exactly.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Keep the coordinator in charge of every hand-off, but pass large outputs as references to stored results rather than raw content.",
+      "studyRef": "§3 Task 1.2 (hub-and-spoke routing through the coordinator)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-013",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.2",
+      "secondaryTasks": [
+        "1.1"
+      ],
+      "stem": "Northgate's quick-figures desk uses a single agent with `fetch_dataset` to answer questions such as \"What were Scotland's 2022 transport emissions?\" It takes about 3 tool calls and 30 seconds; analysts check each figure, find 97% correct and catch the rest in that check. A teammate proposes sending these questions through the full coordinator with all four subagents, without changing the analysts' check, so that every answer comes from the same pipeline. How should the architect respond to the proposal?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep the single agent for quick figures: several subagents use far more tokens and pay off on complex research, not on three-call lookups.",
+          "correct": true,
+          "explanation": "Start with the simplest design that works and add agents only when they clearly improve results. Multi-agent systems use many times the tokens of a single agent and earn that on complex research. A 3-call lookup that is already 97% correct, with analysts catching the rest, gains nothing from four subagents.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Route quick figures through the coordinator but let it spawn only the dataset subagent for them, so the pipeline that pays off on complex research stays uniform.",
+          "correct": false,
+          "explanation": "Spawning only the dataset subagent is the right instinct for choosing by need, but it still adds a coordinator layer, its tokens and its latency to a task one agent already does well. Selecting subagents per request pays off when requests vary in what they need.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "c",
+          "text": "Keep the single agent, but have it review its own answer in a second pass before replying, to lift the 97% further.",
+          "correct": false,
+          "explanation": "A second pass by the same agent adds a model call to every question, and it reviews with the same reasoning that produced the answer, so it tends to miss the same mistakes. The analysts' check already catches the other 3%, so the pass adds cost to every question while its blind spots overlap with the author's. An independent check is worth adding when a pattern of errors starts getting past the analysts.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "d",
+          "text": "Accept the proposal and let the four subagents share one scratch store of fetched figures, so they do not fetch the same dataset twice for research.",
+          "correct": false,
+          "explanation": "A shared store routes data around the coordinator, and it solves a duplication problem that exists only because the proposal adds subagents. Partitioning work through the coordinator is the fix when duplication is real.",
+          "trap": "BYPASS_COORDINATOR"
+        }
+      ],
+      "keyConcept": "Match the architecture to the task: one agent for simple lookups, and multi-agent orchestration only for complex research.",
+      "studyRef": "§3 Task 1.2 (coordinator chooses subagents by query complexity)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-014",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.3",
+      "secondaryTasks": [
+        "1.2"
+      ],
+      "stem": "Northgate's coordinator is configured with `allowedTools: [\"Read\", \"fetch_dataset\", \"load_document\"]`, and its `agents` option defines the four subagents with clear descriptions. Since a config cleanup it no longer delegates: it fetches datasets and reads documents itself, and runs take about 9 hours instead of 2, although the briefings are still accurate. What change lets the coordinator delegate to its subagents again?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add an instruction to the coordinator's system prompt that every dataset and literature step must be delegated to the matching subagent.",
+          "correct": false,
+          "explanation": "An instruction can't let the coordinator call a tool it isn't allowed to use; it would be told to delegate with no permitted way to do so. Prompt guidance helps decide when to delegate once spawning is allowed.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "b",
+          "text": "Add `\"Task\"` to the `tools` list inside each subagent's `AgentDefinition`, so that the coordinator can start those subagents when it needs them.",
+          "correct": false,
+          "explanation": "It is the right tool name in the wrong place: a subagent's `tools` list controls what that subagent can do, not whether the coordinator can spawn it. The coordinator's own tool list is what is missing it.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "c",
+          "text": "Rewrite each subagent's `AgentDefinition` description to say \"use proactively for this kind of work\", so the coordinator chooses to delegate.",
+          "correct": false,
+          "explanation": "Descriptions decide when the coordinator delegates, so they matter, but the stem says they are already clear and the coordinator has no permitted way to delegate. Better descriptions fix a coordinator that can delegate but picks the wrong subagent.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Add `\"Task\"` to the coordinator's `allowedTools`, so it can call the tool that spawns all four subagents defined in its `agents` option.",
+          "correct": true,
+          "explanation": "Subagents are spawned through the `Task` tool, and a coordinator can use it only if `\"Task\"` is in its `allowedTools`. The cleanup removed it, so the coordinator does every step itself. Adding it back restores delegation and the 2-hour runs.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "A coordinator spawns subagents through the `Task` tool, so `\"Task\"` must be in the coordinator's `allowedTools`.",
+      "studyRef": "§3 Task 1.3 (the Task tool; allowedTools must include \"Task\")",
+      "sources": [
+        "exam-guide"
+      ],
+      "authorNote": "Exam guide wording. Current Claude Code and Agent SDK docs call the tool `Agent` (`Task` still works as an alias), and SDK examples list \"Agent\" in the parent query's allowedTools."
+    },
+    {
+      "id": "S3-D1-015",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.3",
+      "secondaryTasks": [
+        "1.2"
+      ],
+      "stem": "The dataset subagent posts figures as it works (\"Found 2019 series: 41.2 Mt\"). Logs show all 14 datasets fetched, but in 30% of runs it ends with only \"All figures are listed above.\", and in those runs the coordinator's figure table is empty. The coordinator's delegation prompt already names the 14 series and their IDs. The fix must not add anything to the coordinator's context beyond the figures and their citations. Why is the table empty, and what fixes it?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Only the subagent's final message returns to the coordinator; require all 14 figures, each with its series ID and source, in that final message.",
+          "correct": true,
+          "explanation": "Only a subagent's final message comes back to its parent; its earlier messages stay in its own context. In the failing runs the final message says only \"All figures are listed above\", which points to nothing the coordinator can see. Putting the figures, with IDs and sources, in the final message fixes it and adds only the figures and what is needed to cite them.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "The delegation was too vague about what to fetch; list each of the 14 series with its period and unit in the coordinator's prompt to the subagent.",
+          "correct": false,
+          "explanation": "Clear delegation matters, but the prompt already names the series, and the logs show all 14 were fetched. The figures were found; they just never travelled back.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "The coordinator reads the subagent's messages only after the run ends; have it wait for the run to finish and then collect the figures listed above.",
+          "correct": false,
+          "explanation": "It assumes the coordinator can see the subagent's working messages once the run ends. It can't: the subagent's intermediate work stays in its own context, so waiting longer returns the same one-line message.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "d",
+          "text": "The final message is being cut off by `max_tokens`; raise the subagent's `max_tokens` so the full set of 14 figures fits in its reply.",
+          "correct": false,
+          "explanation": "\"All figures are listed above\" is a short, complete sentence, so nothing was truncated. Raising `max_tokens` helps when a reply stops mid-output, which is not what the logs show.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Only a subagent's final message reaches the coordinator, so require the complete results in that message, not in progress updates.",
+      "studyRef": "§3 Task 1.3 (context passing between coordinator and subagents)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-016",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "1.6",
+      "secondaryTasks": [],
+      "stem": "The synthesis subagent's prompt lists 14 requirements, including a citation with page number on every claim, a conflicts table, an uncertainty statement, a plain-language summary and a two-page limit. Each briefing misses two or three of them, and which ones changes from run to run. Moving the five most-missed requirements to the top of the prompt in bold only changed which ones were missed. The team would rather keep one synthesis call per briefing, but ministers keep getting incomplete ones. Which two changes should the team make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep the single synthesis prompt and have the subagent end each briefing with a checklist in which it confirms all 14 requirements before submitting.",
+          "correct": false,
+          "explanation": "The checklist is written by the same overloaded prompt that misses the requirements, so it adds a fifteenth task instead of removing load. It keeps one call, which is why it tempts. A checklist helps a reviewer who did not write the work.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "b",
+          "text": "Split synthesis into a chain of focused steps, such as drafting the cited content first and then building the conflicts table and uncertainty statement from that draft.",
+          "correct": true,
+          "explanation": "Claude does better on one focused task than on many requirements at once, which is why the misses move around from run to run. A chain gives each step a few requirements to meet, which is the decomposition these symptoms call for.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Add a reviewer subagent that checks each finished briefing against all 14 requirements and rewrites the whole briefing from scratch when any is missing.",
+          "correct": false,
+          "explanation": "A full rewrite throws away the parts that were right and repeats the overloaded prompt's job, so the new draft can miss different requirements. A reviewer is useful for judgment calls once the structure is fixed.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Run code checks on the countable requirements, such as a page number on every citation and the two-page limit, and send any failing briefing back for correction before it goes out.",
+          "correct": true,
+          "explanation": "Countable requirements can be checked by code, which catches a missing page number or an overlong draft every time at almost no cost, so a failing briefing is corrected before it reaches ministers. The checks work with one synthesis call or several, and they catch what the prompt still lets slip.",
+          "trap": null
+        },
+        {
+          "id": "e",
+          "text": "Write all 14 requirements in capitals and repeat the five most-missed ones at the end of the prompt as well as at the top.",
+          "correct": false,
+          "explanation": "The stem shows emphasis has already failed: moving five requirements to the top in bold only shifted the misses. More emphasis keeps all 14 in one prompt, which is the cause. Emphasis helps when one key instruction is being overlooked.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        }
+      ],
+      "keyConcept": "When one prompt carries too many requirements, chain focused steps and add code checks for the requirements that can be counted.",
+      "studyRef": "§3 Task 1.6 (prompt chaining into sequential steps)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-017",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.6",
+      "secondaryTasks": [
+        "1.2"
+      ],
+      "stem": "A minister asks about blue-carbon credits in Pacific fisheries, a topic new to Northgate. The coordinator writes 40 specific search queries up front from its own assumptions and hands them to the literature subagent. Thirty-one return nothing, and the briefing rests on 6 papers. When the team reran the request with the list doubled to 80 specific queries, it found only 8 papers and doubled the search cost. What should the coordinator do instead?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Start with a few short, broad queries to see what literature exists, then run the original 40 specific queries unchanged as the narrower follow-up and add the sources those results reveal.",
+          "correct": false,
+          "explanation": "The broad first step is right, but the plan stays fixed: the 40 queries built on the coordinator's assumptions still run unchanged, and 31 of them still find nothing. What the broad searches reveal has to shape the next queries.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Split the 40 specific queries across four literature subagents running in parallel, so additional databases are searched within the 48-hour window.",
+          "correct": false,
+          "explanation": "The 40 queries were written from the coordinator's own assumptions on a topic new to Northgate, so they use the wrong terms, and running wrong-term queries on more databases still misses. Parallel subagents add cost without improving the queries, and the 80-query run already showed that more of the same barely moved the count. Parallelism suits independent searches that are already well aimed.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "c",
+          "text": "Start with a few short, broad queries to see what literature exists, then replace the original list with narrower follow-up queries built from what those results reveal.",
+          "correct": true,
+          "explanation": "On an unfamiliar topic the coordinator can't know the right terms in advance, so its 40 guesses miss. Research agents do better starting broad to see what is available and then narrowing, with the follow-up queries generated from what the first results show.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Ask the minister's office to restate the request in the terms the research literature uses before any searching starts, then run the 40 queries.",
+          "correct": false,
+          "explanation": "The request's goal is already clear. The vocabulary gap sits in the coordinator's queries, guessed from its own assumptions, and a broad search finds the literature's terms without a round trip to the office that eats into the 48-hour window. Asking for clarification fits a request whose goal is unclear, not one whose wording is unfamiliar.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "For open-ended research on an unfamiliar topic, search broadly first and let each step's findings shape the next queries.",
+      "studyRef": "§3 Task 1.6 (adaptive investigation plans)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-018",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "1.1",
+      "secondaryTasks": [
+        "5.3"
+      ],
+      "stem": "Northgate's coordinator loop runs the requested tools while `stop_reason` is `\"tool_use\"` and treats any other value as the finished briefing, which it sends on. In 6% of 400-document requests the briefing ends mid-sentence with no conclusion, and the logs show `stop_reason: \"max_tokens\"` on each of them. Briefings must cover every topic the minister asked about, so they cannot simply be made shorter. Which two changes should the team make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Treat a `\"max_tokens\"` response as unfinished and hold that briefing back, so a cut-off draft is never sent on as if it were complete.",
+          "correct": true,
+          "explanation": "`end_turn` is the normal finish; `max_tokens` means the output hit the token limit and was cut off. A loop that treats every value other than `tool_use` as done ships truncated briefings, so each stop reason needs its own handling.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Keep sending any non-`\"tool_use\"` response, but first check that the text ends with the \"Conclusion\" heading and rerun synthesis when it does not.",
+          "correct": false,
+          "explanation": "Checking the text for a heading is natural-language parsing for completion, while the API already says why the response stopped. A briefing could also end with that heading and still miss topics. The stop reason is the reliable signal.",
+          "trap": "NL_TERMINATION"
+        },
+        {
+          "id": "c",
+          "text": "Raise the token limit on the call that writes the briefing, so that a complete briefing for a 400-document request fits within one response.",
+          "correct": true,
+          "explanation": "The responses stop because the limit on the call that writes the briefing is too small for a full 400-document briefing. Giving that call enough room removes the cause. It complements holding truncated drafts back: one prevents truncation, the other stops any that still happen from shipping.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Keep sending any non-`\"tool_use\"` response, and add a line to the synthesis prompt asking for briefings of under 1,500 words.",
+          "correct": false,
+          "explanation": "Shorter briefings would drop topics the minister asked for, which the stem rules out, and a prompt line can't guarantee the length anyway. Asking for brevity suits output that is padded, not output that must be complete.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "e",
+          "text": "Treat a `\"max_tokens\"` response as a failed run, discard it, and restart the whole request from the coordinator's first delegation step.",
+          "correct": false,
+          "explanation": "The subagents' work for the request is still valid; only the final synthesis was cut off. Restarting from the first delegation repeats hours of work for a problem in one call.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "Handle each stop reason on its own: `max_tokens` means truncated output, so give the call room and hold the draft back.",
+      "studyRef": "§3 Task 1.1 (loop lifecycle: inspect stop_reason)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-019",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.5",
+      "secondaryTasks": [],
+      "stem": "`fetch_dataset` returns each release date as a Unix timestamp such as `1709251200`, while `load_document` gives publication dates in ISO 8601, such as `2024-03-01`. Briefings must cite the most recent figure for each indicator, but in 9% of them the synthesis subagent cites an older release as the newer one. Both tools are third-party MCP servers with fixed output formats. Where should the dates be made consistent?",
+      "options": [
+        {
+          "id": "a",
+          "text": "In a `PreToolUse` hook on both tools that adds a parameter asking each server to return its dates in ISO 8601.",
+          "correct": false,
+          "explanation": "It treats a rewrite of the outgoing call as if it could set the reply format, but a `PreToolUse` hook changes only what is sent, and these third-party servers' output format is fixed. Normalising belongs on the result path. A pre-call rewrite suits fixing what the agent sends.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "b",
+          "text": "In the synthesis subagent's prompt, with a short guide to reading Unix timestamps and a reminder to compare dates carefully.",
+          "correct": false,
+          "explanation": "A guide in the prompt leaves each conversion to the model, which is where the 9% comes from. Prompt guidance suits judgment; a format conversion is mechanical and can be done in code every time.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "In a `PostToolUse` hook on both tools that converts every date to ISO 8601 before the result reaches the model.",
+          "correct": true,
+          "explanation": "`PostToolUse` hooks transform tool results before the model processes them, which is the place to normalise mixed formats from different MCP servers. With every date in one format, \"most recent\" becomes a simple comparison, and the third-party servers stay untouched.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "In a new date-checking subagent that reviews every \"most recent\" claim in a briefing before it goes to the minister.",
+          "correct": false,
+          "explanation": "A reviewer subagent adds cost and delay to catch errors that a simple conversion would prevent. Extra review fits judgment-heavy claims, not a date-format mismatch.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Normalise mismatched formats from different tools in a `PostToolUse` hook, so the model compares like with like.",
+      "studyRef": "§3 Task 1.5 (PostToolUse normalization of heterogeneous formats)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-020",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.7",
+      "secondaryTasks": [
+        "1.3"
+      ],
+      "stem": "A session named `cbam-baseline` holds 5 hours of analysis across 310 documents. The minister's office wants two draft briefings to compare, one recommending a phased levy and one an immediate levy, and each must be written without being shaped by the other. On a previous request, the team resumed that request's own baseline session and asked for both drafts in turn; reviewers found the second draft reused the first one's framing. The deadline is 30 hours away. Which approach should the team use?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Resume `cbam-baseline` and ask for both drafts in a single reply, with an instruction to keep the two framings fully independent.",
+          "correct": false,
+          "explanation": "Both drafts would sit in one context, which is how the first draft shaped the second on the previous request; an instruction can't remove what the model has already written. Resuming suits one continued line of work.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Start two new sessions, each seeded with a two-page summary of the baseline's findings, and write one draft in each session so that neither sees the other.",
+          "correct": false,
+          "explanation": "Separate sessions do keep the drafts independent, but a two-page summary drops most of the per-document detail both drafts need to cite. A fresh start with a summary is right when the old tool results are stale, and these are not.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Fork the baseline twice with `fork_session` and write one draft in each branch, so both start from the full analysis and neither sees the other draft.",
+          "correct": true,
+          "explanation": "`fork_session` creates a new session with a copy of the history and leaves the original unchanged, so each draft starts from the same 5-hour baseline and neither branch contains the other draft. This is the shared-baseline, divergent-approach case forking exists for.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Rerun the full 310-document analysis in two separate fresh sessions, one per draft, so each draft has its own complete evidence base.",
+          "correct": false,
+          "explanation": "Two fresh analyses would be independent and complete, but they repeat 10 hours of valid work to get what a fork gives at once. Rerunning is right only when the baseline itself is wrong or stale.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "To compare divergent approaches from one valid baseline, fork the session so each branch starts from the same history on its own.",
+      "studyRef": "§3 Task 1.7 (fork_session for parallel exploration branches)",
+      "sources": [
+        "exam-guide"
+      ]
+    }
+  ]
+}

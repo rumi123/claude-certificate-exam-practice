@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       {/* Browser extensions (e.g. ColorZilla's cz-shortcut-listen) add attributes to <body>. */}
       <body className="min-h-screen bg-bg text-fg" suppressHydrationWarning>
         <Nav dueCount={getDueCount(now())} />
-        <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+        <main className="mx-auto max-w-[96rem] px-4 py-6 lg:px-6">{children}</main>
       </body>
     </html>
   );

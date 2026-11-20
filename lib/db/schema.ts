@@ -159,6 +159,15 @@ export const questionFlag = sqliteTable('question_flag', {
   resolved: integer('resolved').notNull().default(0),
 });
 
+// Catalog table (not progress): backup and reset leave it alone.
+export const questionLesson = sqliteTable('question_lesson', {
+  questionId: text('question_id')
+    .primaryKey()
+    .references(() => question.id),
+  lessonJson: text('lesson_json').notNull(),
+  contentHash: text('content_hash').notNull(),
+});
+
 export const flashcard = sqliteTable('flashcard', {
   id: text('id').primaryKey(),
   deck: text('deck').notNull(),

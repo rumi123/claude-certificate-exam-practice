@@ -15,6 +15,7 @@ export type QuestionFilters = {
   seen?: 'seen' | 'unseen';
   last?: 'right' | 'wrong';
   flagged?: boolean;
+  marked?: boolean;
   q?: string;
   page: number;
 };
@@ -28,6 +29,7 @@ export type QuestionRow = {
   stem: string;
   lastResult: 'right' | 'wrong' | null;
   flagged: boolean;
+  marked: boolean;
 };
 
 function likePattern(q: string): string {
@@ -81,17 +83,28 @@ export function searchQuestions(filters: QuestionFilters): { rows: QuestionRow[]
       .map((r) => r.id),
   );
 
+  const markedIds = new Set(
+    db
+      .selectDistinct({ id: t.sessionItem.questionId })
+      .from(t.sessionItem)
+      .where(eq(t.sessionItem.marked, 1))
+      .all()
+      .map((r) => r.id),
+  );
+
   const all = base
     .map((r): QuestionRow => ({
       ...r,
       lastResult: lastResult.get(r.id) ?? null,
       flagged: flaggedIds.has(r.id),
+      marked: markedIds.has(r.id),
     }))
     .filter((r) => {
       if (filters.seen === 'seen' && r.lastResult === null) return false;
       if (filters.seen === 'unseen' && r.lastResult !== null) return false;
       if (filters.last && r.lastResult !== filters.last) return false;
       if (filters.flagged && !r.flagged) return false;
+      if (filters.marked && !r.marked) return false;
       return true;
     });
   const start = (Math.max(1, filters.page) - 1) * PAGE_SIZE;
@@ -101,6 +114,8 @@ export function searchQuestions(filters: QuestionFilters): { rows: QuestionRow[]
 export type HistoryRow = {
   answeredAt: number;
   kind: SessionKind;
+  optionOrder: string[];
+  selected: string[];
   letters: string[];
   isCorrect: boolean;
   confidence: Confidence | null;
@@ -130,6 +145,8 @@ export function getQuestionHistory(id: string): HistoryRow[] {
     return {
       answeredAt: r.answeredAt ?? 0,
       kind: r.kind as SessionKind,
+      optionOrder: order,
+      selected,
       letters: selected
         .map((k) => order.indexOf(k))
         .filter((i) => i >= 0)
@@ -143,6 +160,26 @@ export function getQuestionHistory(id: string): HistoryRow[] {
 }
 
 // False when the question does not exist.
+export function isMarked(questionId: string): boolean {
+  return !!getDb()
+    .select({ id: t.sessionItem.questionId })
+    .from(t.sessionItem)
+    .where(and(eq(t.sessionItem.questionId, questionId), eq(t.sessionItem.marked, 1)))
+    .limit(1)
+    .get();
+}
+
+// Unmarks the question in every session; returns the number of rows changed.
+export function clearMarks(questionId: string): number {
+  return getDb().transaction((tx) =>
+    tx
+      .update(t.sessionItem)
+      .set({ marked: 0 })
+      .where(and(eq(t.sessionItem.questionId, questionId), eq(t.sessionItem.marked, 1)))
+      .run().changes,
+  );
+}
+
 export function addFlag(questionId: string, note: string, at: number): boolean {
   return getDb().transaction((tx) => {
     const q = tx

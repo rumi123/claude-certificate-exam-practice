@@ -1,0 +1,2003 @@
+{
+  "domain": "D4",
+  "lessons": [
+    {
+      "questionId": "S5-D4-001",
+      "explanation": "The reviewer was told to make sure error handling is \"robust\", which leaves it to decide what matters, so it comments on logging, `catch` width and retries. Naming what to report (swallowed exceptions, failed charges recorded as successful) and what to skip gives it explicit criteria, so the comments that remain are ones developers act on.",
+      "options": {
+        "a": {
+          "reasoning": "Explicit categories to report and to skip replace the vague word that caused the noise. The reviewer no longer has to guess which error-handling problems matter, so precision rises without losing the real defects."
+        },
+        "b": {
+          "reasoning": "Explicit criteria are the right kind of fix, but this list names the very nitpicks developers are muting: logging, wide `catch` blocks and retry wrappers. Criteria that include them keep the noise and give it structure.",
+          "tempting": "It is explicit and categorical, which is exactly what the guide recommends."
+        },
+        "c": {
+          "reasoning": "A stronger model still has no definition of the team's standard, so it would still guess. Fixing the prompt comes before paying for a bigger model, and the switch adds cost while the ambiguity stays.",
+          "tempting": "A smarter model should judge better what counts as robust error handling."
+        },
+        "d": {
+          "reasoning": "A keyword filter hides the noise but also drops a genuine finding that happens to mention logging, such as a swallowed payment exception. The instruction still asks for the wrong thing, so new kinds of nitpick keep arriving.",
+          "tempting": "It is quick and needs no change to the prompt."
+        }
+      },
+      "concept": [
+        "Explicit criteria beat vague instructions. State exactly which categories to report and which to skip, rather than leaving the model to infer what \"robust\" or \"accurate\" means. A high false-positive rate in one category also undermines trust in the accurate ones.",
+        "Claude follows explicit instructions, so say what to do and, where it helps, what to skip. Explaining why a rule exists helps Claude generalise it."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "\"Make sure error handling is robust.\"",
+          "meaning": "The instruction is vague and leaves the judgment to the model."
+        },
+        {
+          "phrase": "40 to 60 error-handling comments a day",
+          "meaning": "The noise is a symptom of a missing definition of what to report."
+        },
+        {
+          "phrase": "fewer comments without losing the real defects",
+          "meaning": "Both precision and recall matter, so the fix is criteria that narrow the scope, not a filter."
+        }
+      ],
+      "lookFor": [
+        "Categories to report and to skip, named in the instruction.",
+        "A fix at the prompt, where the cause is, not downstream.",
+        "Criteria narrow enough that the nitpicks fall outside them."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It lists the nitpicks as things to report, which keeps the noise."
+        },
+        {
+          "option": "c",
+          "reason": "A stronger model still lacks a definition of the standard, and costs more."
+        },
+        {
+          "option": "d",
+          "reason": "A keyword filter hides real findings that mention logging and leaves the instruction unchanged."
+        }
+      ],
+      "rule": "Replace a vague review instruction with explicit categories to report and to skip, so the comments that remain are the ones worth acting on.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Being clear and direct",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/being-clear-and-direct"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D4-002",
+      "explanation": "The written rule does not tell the reviewer where acceptable `float` use ends and a genuine money bug begins. A few varied examples with their reasoning show that line: a display-only chart is skipped, settlement arithmetic is reported, and a test fixture is skipped. The reviewer then applies the distinction to code it has not seen, inside the one prompt the team must keep.",
+      "options": {
+        "a": {
+          "reasoning": "Several examples that mix cases to skip and a case to report show where the line falls, and the reasoning lets the reviewer carry it to new code. This covers the ambiguity the written rule could not express."
+        },
+        "b": {
+          "reasoning": "A single example is copied closely and shows nothing about what to leave alone, so the reviewer may flag the charts again. Examples that include acceptable cases are what carry the distinction.",
+          "tempting": "The settlement bug is the case that matters, so one clear example looks enough."
+        },
+        "c": {
+          "reasoning": "A path filter removes the chart noise but cannot judge the code. A later money calculation under that path would be dropped silently, and the reviewer stays inconsistent elsewhere.",
+          "tempting": "It stops the chart comments at once and keeps the written rule."
+        },
+        "d": {
+          "reasoning": "A classifier and a separate prompt per file class add parts to maintain for a problem that examples in one prompt can settle. Separate prompts would be warranted only if the classes needed different review styles.",
+          "tempting": "Specialised prompts per kind of file sound more precise."
+        }
+      },
+      "concept": [
+        "Few-shot examples show how to handle ambiguous cases and let the model generalise to new patterns instead of only matching the listed ones. Include examples that separate acceptable patterns from genuine issues, each with the reasoning for the chosen action.",
+        "The exam guide suggests 2 to 4 targeted examples; the docs suggest 3 to 5. Examples should be relevant and varied enough to cover edge cases without teaching unintended patterns."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "flags every `float` ... or after a prompt tweak flags none",
+          "meaning": "The model is swinging between extremes, so it lacks a boundary."
+        },
+        {
+          "phrase": "The written rule alone doesn't help",
+          "meaning": "Prose has been tried, so the next layer is examples."
+        },
+        {
+          "phrase": "must keep one review prompt",
+          "meaning": "The fix has to fit inside the existing prompt, not a new pipeline."
+        }
+      ],
+      "lookFor": [
+        "A few examples that mix acceptable and genuine cases.",
+        "The reasoning shown for each example.",
+        "A change inside the existing prompt."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "One example shows only what to report, never what to leave alone."
+        },
+        {
+          "option": "c",
+          "reason": "A path filter cannot judge code and silently drops later real bugs there."
+        },
+        {
+          "option": "d",
+          "reason": "A classifier and several prompts are more machinery than examples in one prompt need."
+        }
+      ],
+      "rule": "When a written rule cannot separate acceptable from genuine cases, add a few varied examples with their reasoning, including cases to skip.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Providing examples",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/providing-examples"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D4-003",
+      "explanation": "Two noisy categories are damaging trust in two accurate ones, and the team needs both quick relief and a lasting fix. Pausing the performance and comment-accuracy categories removes most of the noise now while security and bug findings keep their value. Rewriting their criteria to say what to report and what to skip fixes the cause, and each category comes back once its false positives drop.",
+      "options": {
+        "a": {
+          "reasoning": "Self-reported confidence is poorly calibrated unless it is checked against labelled data, so a threshold would not separate wrong findings from right ones. It could also hide real security findings, and no criteria would change.",
+          "tempting": "A confidence cut-off is a cheap way to trade volume for accuracy."
+        },
+        "b": {
+          "reasoning": "A category with a high false-positive rate undermines trust in the accurate ones. Switching the two noisy categories off for now restores trust this sprint and leaves security and bug findings running."
+        },
+        "c": {
+          "reasoning": "Rewriting the criteria is the right fix, but leaving the categories live keeps a 55% to 62% false-positive rate in front of developers this sprint. Trust returns when they are paused first and re-enabled once they are accurate.",
+          "tempting": "Developers would see the improved wording working in live reviews."
+        },
+        "d": {
+          "reasoning": "The noise comes from vague criteria, so the lasting fix is explicit report-and-skip rules. Re-enabling each category only after it proves accurate keeps developers from losing trust again."
+        },
+        "e": {
+          "reasoning": "The reviewer rereading its own comments keeps the reasoning that produced them and rarely questions it. It adds a stage without addressing the unclear criteria.",
+          "tempting": "A self-check step looks like a cheap way to remove doubtful comments."
+        }
+      },
+      "concept": [
+        "When one category has a high false-positive rate, temporarily disable it so the accurate categories keep developers' trust, and rewrite its criteria to state what to report and what to skip. Turn it back on once it proves accurate.",
+        "Self-reported confidence is an unreliable proxy unless calibrated against labelled data, so it cannot replace explicit criteria.",
+        "State exactly what you want instead of leaving it to inference: say what to report and what to skip. After rewriting the criteria, check every category, not only the one you fixed, before turning a paused category back on."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "performance findings are wrong 55% of the time and comment-accuracy findings 62%",
+          "meaning": "The noise is concentrated in two categories, so those can be isolated."
+        },
+        {
+          "phrase": "Developers now skim past the whole review",
+          "meaning": "The noisy categories are undermining the accurate ones."
+        },
+        {
+          "phrase": "restore trust this sprint and also fix the cause",
+          "meaning": "The answer needs a short-term and a lasting change, which makes it a pair."
+        }
+      ],
+      "lookFor": [
+        "One change that removes the noise now.",
+        "One change that fixes the criteria for the noisy categories.",
+        "Accurate categories left running."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Confidence is poorly calibrated, so a threshold would not separate right from wrong and could hide real findings."
+        },
+        {
+          "option": "c",
+          "reason": "It leaves the noisy categories in front of developers this sprint."
+        },
+        {
+          "option": "e",
+          "reason": "The author reviewing itself rarely questions its own reasoning, and the criteria stay vague."
+        }
+      ],
+      "rule": "Pause a high false-positive category to restore trust, rewrite its criteria with explicit report-and-skip rules, and re-enable it once it is accurate.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to evals: Iterate the prompt before you upgrade the model",
+          "url": "https://academy.claude.com/courses/introduction-to-evals/iterate-the-prompt-before-you-upgrade-the-model"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D4-004",
+      "explanation": "The audit has a 36-hour deadline, and a batch can take up to 24 hours with no promised completion time. The worst case is the wait for the next submission plus the full 24-hour window, and both must fit inside the deadline. Submitting every 6 hours gives 6 + 24 = 30 hours, which fits, and the job keeps the batch discount because nothing waits on it interactively.",
+      "options": {
+        "a": {
+          "reasoning": "A change merged just after 02:00 waits almost 24 hours and then up to 24 more, about 48 hours in the worst case. That breaks the 36-hour rule, however non-interactive the audit is.",
+          "tempting": "The audit is not interactive, so the cheapest option should do."
+        },
+        "b": {
+          "reasoning": "Batching more often is the right idea, but 18 hours of waiting plus up to 24 hours of batch time is 42 hours, over the limit. The submission interval must be short enough for wait plus processing to fit.",
+          "tempting": "It still batches more often and keeps the discount."
+        },
+        "c": {
+          "reasoning": "The Message Batches API has no priority setting and no latency guarantee. It trades a discount for a window of up to 24 hours, so the submission frequency must be planned around that.",
+          "tempting": "A priority setting would make the nightly plan meet the deadline."
+        },
+        "d": {
+          "reasoning": "Worst-case wait plus worst-case processing is 6 + 24 = 30 hours, inside the 36-hour limit. The work stays on the batch discount."
+        }
+      },
+      "concept": [
+        "The Message Batches API charges 50% of standard prices in exchange for a processing window of up to 24 hours and no guaranteed latency. Most batches finish within an hour, but a batch not done in 24 hours expires.",
+        "To plan a deadline, add the wait until the next submission to up to 24 hours of processing. Both worst cases must fit the deadline, so the submission interval is what you tune."
+      ],
+      "conceptTable": {
+        "headers": ["Part of the time", "Worst case"],
+        "rows": [
+          ["Wait for the next batch submission", "The submission interval"],
+          ["Batch processing", "Up to 24 hours, no guaranteed completion"],
+          ["Total from arrival to result", "Interval plus 24 hours, which must fit the deadline"]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "within 36 hours of the merge",
+          "meaning": "The deadline is the constraint the schedule has to meet."
+        },
+        {
+          "phrase": "one Message Batches API job each night at 02:00",
+          "meaning": "The wait before submission can reach almost a day."
+        },
+        {
+          "phrase": "Each batch is allowed up to 24 hours",
+          "meaning": "The processing time must be counted at its worst case."
+        }
+      ],
+      "lookFor": [
+        "Wait plus 24 hours compared with the deadline.",
+        "A shorter submission interval, not a faster promise.",
+        "No invented priority or latency setting."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A nightly wait plus 24 hours reaches about 48 hours, over the 36-hour limit."
+        },
+        {
+          "option": "b",
+          "reason": "18 hours of waiting plus 24 hours of processing is 42 hours, still too long."
+        },
+        {
+          "option": "c",
+          "reason": "The Batches API has no priority setting and no latency guarantee."
+        }
+      ],
+      "rule": "For a batch deadline, add the wait for the next submission to the 24-hour processing window, and choose a submission interval so the total fits.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Batch processing (Message Batches API)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/batch-processing"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to evals: Evals in production (CI, batch, drift)",
+          "url": "https://academy.claude.com/courses/introduction-to-evals/evals-in-production"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D4-005",
+      "explanation": "The session that wrote a fix is not the best judge of it, because it keeps the reasoning that produced the code and is less likely to question it. A separate `claude -p` instance that receives the diff and the review criteria but none of that reasoning reads the change critically and catches subtler issues. It still runs before the merge and adds no human step.",
+      "options": {
+        "a": {
+          "reasoning": "Extra thinking in the same session still starts from the reasoning that wrote the fix, so the model tends to confirm its own choices. A longer chain of thought does not replace a fresh perspective.",
+          "tempting": "More reasoning time should make the self-review more thorough."
+        },
+        "b": {
+          "reasoning": "A separate instance without the author's reasoning is not anchored to the choices that produced the code. The diff and criteria give it enough context for a pre-merge review."
+        },
+        "c": {
+          "reasoning": "A separate instance is the right shape, but handing it the transcript passes on the author's reasoning and anchors the reviewer to the same choices. Independence comes from not seeing that reasoning.",
+          "tempting": "The transcript explains why each change was made, which looks useful context."
+        },
+        "d": {
+          "reasoning": "A generic instruction to write correct code and test it is a nudge, not a review, and the generator would still judge its own work. It adds no independent check.",
+          "tempting": "Better code from the generator means fewer flawed fixes."
+        }
+      },
+      "concept": [
+        "A model reviewing its own output keeps the reasoning from generation and is less likely to question its decisions. Review from a clean context, with none of the session's history, using an independent instance.",
+        "Independent review instances without the generator's reasoning catch subtler issues than self-review. Give the reviewer the diff and the criteria, not the author's reasoning."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "asks the same Claude Code session that wrote a fix to \"review the changes you just made\"",
+          "meaning": "Self-review is the root cause."
+        },
+        {
+          "phrase": "nearly always says the change looks correct",
+          "meaning": "The reviewer shares the author's assumptions."
+        },
+        {
+          "phrase": "without adding a human approval step",
+          "meaning": "The stronger check must be automated, so a separate instance fits."
+        }
+      ],
+      "lookFor": [
+        "A separate instance, not the same session.",
+        "The diff and criteria without the generator's reasoning.",
+        "No human step added."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "More thinking in the same session still starts from the author's reasoning."
+        },
+        {
+          "option": "c",
+          "reason": "The transcript hands over the author's reasoning and anchors the reviewer."
+        },
+        {
+          "option": "d",
+          "reason": "A generic instruction to the generator adds no independent check."
+        }
+      ],
+      "rule": "Review generated code with a separate Claude instance that gets the diff and criteria but not the generator's reasoning.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Code review",
+          "url": "https://academy.claude.com/courses/claude-code-101/code-review"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D4-006",
+      "explanation": "The pipeline needs fields it can act on, and free text parsed by a regular expression fails when the layout changes. In Claude Code CI, `--output-format json` together with `--json-schema` returns validated output in `structured_output`, so the pipeline reads each field directly. It stays a single `claude -p` command.",
+      "options": {
+        "a": {
+          "reasoning": "A schema enforces the structure, so there is nothing to guess at with a regex. The 4% of unparseable layouts disappear and the pipeline reads fields directly."
+        },
+        "b": {
+          "reasoning": "`--output-format json` alone wraps free text in `result`, so the findings inside are still free text. The layout the regex cannot parse still appears, and those runs fail as before.",
+          "tempting": "The JSON envelope looks like structure and makes the result easier to locate."
+        },
+        "c": {
+          "reasoning": "A format request in the prompt improves the odds but does not enforce structure. Some runs would still produce output that breaks the parser, where the pipeline depends on the structure.",
+          "tempting": "Asking for exact JSON in the prompt seems enough."
+        },
+        "d": {
+          "reasoning": "Each new layout needs another pattern, and unparsed runs keep appearing. This patches individual failures instead of removing the free-text format that causes them.",
+          "tempting": "It is a small change that covers the layouts seen so far."
+        }
+      },
+      "concept": [
+        "A format request in the prompt improves the odds but does not enforce structure; schemas do. In Claude Code CI, `--output-format json` with `--json-schema` returns validated output in `structured_output`.",
+        "`--output-format json` alone wraps free text in `result`, so it does not make the findings machine-readable."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "parses the reviewer's free-text output with regular expressions",
+          "meaning": "The fragile step is parsing free text."
+        },
+        {
+          "phrase": "About 4% of runs produce a layout the regex can't parse",
+          "meaning": "Format drift is built into free text."
+        },
+        {
+          "phrase": "must stay a single `claude -p` command",
+          "meaning": "The answer must be a flag combination, not new tooling."
+        }
+      ],
+      "lookFor": [
+        "A schema, not just a JSON wrapper.",
+        "Fields read directly by the pipeline.",
+        "Still one `claude -p` command."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The JSON wrapper alone leaves the findings as free text inside `result`."
+        },
+        {
+          "option": "c",
+          "reason": "A format request in the prompt improves the odds but does not enforce structure."
+        },
+        {
+          "option": "d",
+          "reason": "More patterns chase individual layouts and leave the cause in place."
+        }
+      ],
+      "rule": "When a pipeline needs machine-readable findings, use `--output-format json` with `--json-schema` so the structure is enforced, not requested.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: run Claude Code programmatically",
+          "url": "https://code.claude.com/docs/en/headless"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Scheduled tasks and headless",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/routines-and-headless"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Structured outputs",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D4-007",
+      "explanation": "The Batches API fits work nothing waits on and that is a single request each. A weekly audit and a nightly test-generation job both tolerate a window of up to 24 hours and save up to 50%. A blocking merge check and an interactive assistant need quick replies, and a job that needs a tool result partway through a request cannot run inside one batch request.",
+      "options": {
+        "a": {
+          "reasoning": "Nobody waits on a weekly audit, so a processing window of up to 24 hours costs nothing and the discount is pure saving. It is the kind of latency-tolerant work the Batches API is for."
+        },
+        "b": {
+          "reasoning": "A blocking check cannot wait up to 24 hours for a result with no latency guarantee. A pre-merge check needs synchronous calls even though they cost more.",
+          "tempting": "The scan is high volume, so the discount looks valuable."
+        },
+        "c": {
+          "reasoning": "The timing suits a batch, but each batch request is an independent call and cannot make a mid-request tool round trip. The ticket text would need to be fetched and included beforehand.",
+          "tempting": "The nightly timing is ideal for a batch."
+        },
+        "d": {
+          "reasoning": "An interactive assistant needs a reply in seconds and a batch may take hours. The saving does not justify breaking a live conversation.",
+          "tempting": "Interactive traffic is the largest volume, so it saves the most."
+        },
+        "e": {
+          "reasoning": "Overnight generation has a built-in gap before anyone needs the output, so batch latency is acceptable. Each request is a single prompt, and `custom_id` can carry the file path to match results."
+        }
+      },
+      "concept": [
+        "Batch the requests no one waits on, such as overnight reports, weekly audits and nightly test generation. Keep a check that a merge waits on on standard, synchronous calls.",
+        "Each batch request is an independent Messages call that returns one response. A client tool result needs a new request, so a mid-request tool round trip cannot happen inside one batch request."
+      ],
+      "conceptTable": {
+        "headers": ["Job", "Mode"],
+        "rows": [
+          ["Weekly audit, nightly test generation", "Batch"],
+          ["Pre-merge check, in-IDE assistant", "Synchronous"],
+          ["Request needing a tool result mid-request", "Not inside one batch request"]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "developers wait on",
+          "meaning": "Blocking checks need synchronous calls."
+        },
+        {
+          "phrase": "reports that people read later",
+          "meaning": "Latency-tolerant reports suit a batch."
+        },
+        {
+          "phrase": "needs a tool result in the middle of a request",
+          "meaning": "A batch request cannot do a tool round trip inside one request."
+        }
+      ],
+      "lookFor": [
+        "Work nobody waits on.",
+        "A single prompt per request.",
+        "No blocking or interactive use."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A check the merge waits on cannot take up to 24 hours."
+        },
+        {
+          "option": "c",
+          "reason": "A mid-request tool lookup cannot happen inside one batch request."
+        },
+        {
+          "option": "d",
+          "reason": "An interactive reply needs seconds, not a batch window."
+        }
+      ],
+      "rule": "Use the Batches API for latency-tolerant, single-request work and synchronous calls for blocking, interactive or multi-turn tool work.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Batch processing (Message Batches API)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/batch-processing"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to evals: Evals in production (CI, batch, drift)",
+          "url": "https://academy.claude.com/courses/introduction-to-evals/evals-in-production"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D4-008",
+      "explanation": "An exclusion list is always one step behind, because nitpicks come in unlimited kinds, which is why the dismissed share fell only from 41% to 34%. Defining the review by what to report gives a closed scope: security flaws and bugs that fail on a stated input, each with an example, and everything else is out of scope. New kinds of nitpick are then excluded without a new rule.",
+      "options": {
+        "a": {
+          "reasoning": "Extending the exclusion list is chasing an unbounded set, so it stays one step behind. Headings make the list tidier without changing that.",
+          "tempting": "Grouping the list makes it manageable and keeps the approach the team already uses."
+        },
+        "b": {
+          "reasoning": "Stating what to report is the right approach, but readability, performance and security improvements are so broad that every nitpick still qualifies. The criteria must be narrow enough that style and naming fall outside them.",
+          "tempting": "It uses positive criteria with examples, as recommended."
+        },
+        "c": {
+          "reasoning": "Naming narrow categories to report gives a closed scope, so new nitpicks are excluded without a new rule. Concrete examples for each category show what meets the bar."
+        },
+        "d": {
+          "reasoning": "A second pass doubles the review work to filter noise that tighter criteria would stop at the source. Without a definition of a nitpick, the second pass is as inconsistent as the first.",
+          "tempting": "A second pass can classify and delete the nitpicks automatically."
+        }
+      },
+      "concept": [
+        "State positively which categories to report, with concrete examples, and define what is out of scope. Specific categorical criteria beat both vague instructions and an ever-growing list of exclusions.",
+        "A high false-positive rate in a category undermines confidence in the accurate ones, so the criteria must be narrow enough to keep the noise out."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "a growing list of things not to report",
+          "meaning": "An exclusion list is open-ended and cannot keep up."
+        },
+        {
+          "phrase": "38 items so far",
+          "meaning": "The approach has stopped scaling."
+        },
+        {
+          "phrase": "without doubling the review cost",
+          "meaning": "A second pass or extra stage is ruled out."
+        }
+      ],
+      "lookFor": [
+        "Categories to report, not exclusions to list.",
+        "Categories narrow enough that nitpicks fall outside them.",
+        "Concrete examples for each category."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "An exclusion list is endless; headings do not change that."
+        },
+        {
+          "option": "b",
+          "reason": "The categories are so broad that every nitpick still qualifies."
+        },
+        {
+          "option": "d",
+          "reason": "A second pass doubles the work and has no definition of a nitpick either."
+        }
+      ],
+      "rule": "Define a review by the narrow categories to report, with examples, and treat everything else as out of scope, instead of listing exclusions forever.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Being clear and direct",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/being-clear-and-direct"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D4-009",
+      "explanation": "All three examples came from the Java service, so the improvement stayed inside Java. Varied examples across the stack, including one safe pattern and the reasoning for each, let the reviewer generalise to Python and TypeScript. The prompt must stay near four examples, so the fix is to change which examples are used, not to add many more.",
+      "options": {
+        "a": {
+          "reasoning": "More examples of the same kind deepen the Java behaviour but teach nothing about the other languages. The prompt must also stay near four examples, and variety matters more than count.",
+          "tempting": "A larger set of ledger cases should make the reviewer more consistent."
+        },
+        "b": {
+          "reasoning": "The technique was right but the examples were all one kind. Varied examples across the stack, including an acceptable pattern, let the reviewer generalise."
+        },
+        "c": {
+          "reasoning": "Covering the other languages helps, but six examples overshoot the stated budget and none shows a safe pattern, which is what the reviewer keeps flagging as a bug. The examples must include acceptable cases within the limit.",
+          "tempting": "Real bugs from the other languages look like the missing cases."
+        },
+        "d": {
+          "reasoning": "Prose rules were the weak point that examples solve: they are read inconsistently and do not show format or borderline decisions. This returns to the approach that left the other languages inconsistent.",
+          "tempting": "Rules per language are explicit and cheap."
+        }
+      },
+      "concept": [
+        "Few-shot examples let the model generalise only as far as the variety they show. Use varied, relevant examples that cover each kind of input and include acceptable patterns beside genuine issues, with the reasoning for each.",
+        "The exam guide suggests 2 to 4 targeted examples and the docs suggest 3 to 5. Where the stem sets its own budget, such as about four, keep to it and spend it on variety."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "all taken from the Java ledger service",
+          "meaning": "The examples cover one kind of input."
+        },
+        {
+          "phrase": "still vary in format and severity",
+          "meaning": "The reviewer has not generalised beyond Java."
+        },
+        {
+          "phrase": "must stay at about four examples",
+          "meaning": "Variety within the budget, not more examples."
+        }
+      ],
+      "lookFor": [
+        "Examples from each language, not one.",
+        "One safe pattern among them, with reasoning.",
+        "A count that stays inside the stated budget."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "More Java examples add nothing about the other languages and break the budget."
+        },
+        {
+          "option": "c",
+          "reason": "Six examples exceed the budget and none shows a safe pattern."
+        },
+        {
+          "option": "d",
+          "reason": "Prose rules were the weak approach that examples are meant to replace."
+        }
+      ],
+      "rule": "When examples fix only one case, replace them with a few varied ones that cover each kind of input and include an acceptable pattern.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Providing examples",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/providing-examples"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D4-010",
+      "explanation": "The reviewer is independent and its criteria are sound, but it runs after the merge, so flawed fixes are already live in the card-handling services. Moving the same reviewer into the pipeline as a `claude -p` step on each diff, and blocking the merge on critical findings, catches the flaw before it ships. A synchronous call is right because the merge waits on the result.",
+      "options": {
+        "a": {
+          "reasoning": "Batching suits work nothing waits on and would make the review cheaper without making it earlier. The flaws still merge first, and a check that gates a merge needs synchronous calls.",
+          "tempting": "Batching cuts the cost and keeps the schedule the team has."
+        },
+        "b": {
+          "reasoning": "The timing is better but the reviewer is now the author, which keeps its reasoning and rarely questions it. The independent instance works and only needs to move earlier.",
+          "tempting": "It runs before the merge and costs nothing extra."
+        },
+        "c": {
+          "reasoning": "The reviewer is right and the schedule is faster, but it still runs after the merge, so a flawed fix is live until the next run catches it. The check has to sit before the merge to stop the flaw.",
+          "tempting": "Hourly runs shorten the exposure a great deal."
+        },
+        "d": {
+          "reasoning": "The reviewer is the right tool at the wrong point in the lifecycle. A blocking pre-merge step catches the flaw before it ships, and a synchronous call fits because the merge waits on the result."
+        }
+      },
+      "concept": [
+        "Independent review is only protective if it sits before the merge as a blocking step. A check the merge waits on belongs on standard, synchronous calls, and batch is for work nobody waits on.",
+        "Keep the reviewer independent: a separate instance without the generator's reasoning, not the author reviewing its own fix."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "runs as a nightly job over everything merged that day",
+          "meaning": "The review happens after the merge."
+        },
+        {
+          "phrase": "a flawed fix must not reach the card-handling services",
+          "meaning": "The check has to block the merge."
+        },
+        {
+          "phrase": "The reviewer instance is catching real problems and its criteria are sound",
+          "meaning": "The reviewer is fine; its position in the pipeline is the problem."
+        }
+      ],
+      "lookFor": [
+        "The same reviewer moved before the merge.",
+        "A blocking synchronous step.",
+        "Independence kept, not the author reviewing itself."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A cheaper nightly batch is still after the merge."
+        },
+        {
+          "option": "b",
+          "reason": "The author reviewing itself loses the independence that works."
+        },
+        {
+          "option": "c",
+          "reason": "An hourly run still lets a flawed fix go live before it is caught."
+        }
+      ],
+      "rule": "Put the independent review before the merge as a blocking synchronous step, not after the merge as a scheduled job.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Code review",
+          "url": "https://academy.claude.com/courses/claude-code-101/code-review"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Batch processing (Message Batches API)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/batch-processing"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D4-011",
+      "explanation": "Attention dilutes across a large multi-file review, so the reviewer is detailed on the first files and thin on the rest, and a bigger context window holds more text without splitting the review. Per-file passes give each file full attention against the criteria. A separate integration pass then checks how the files exchange data, which is where a cents-versus-dollars mismatch between two modules lives.",
+      "options": {
+        "a": {
+          "reasoning": "Smaller groups reduce the dilution somewhat, but nothing in them checks how a ledger file and a receipt file interact. The cross-module bug would still go through.",
+          "tempting": "Three smaller requests look like a middle way between one request and per-file reads."
+        },
+        "b": {
+          "reasoning": "An instruction cannot force attention to spread evenly across 18 files in one request. The units check needs the receipt and ledger code examined together in a pass built for it.",
+          "tempting": "It asks directly for even depth and a check of units."
+        },
+        "c": {
+          "reasoning": "Per-file passes avoid the diluted attention that makes a single 18-file read thin on later files. Each file is checked against the criteria on its own."
+        },
+        "d": {
+          "reasoning": "The cents-versus-dollars bug lives between two files, so no per-file pass can see it. A pass dedicated to cross-file data flow is where interface mismatches are caught."
+        },
+        "e": {
+          "reasoning": "An integration pass finds the interface bug but on its own repeats the single-read problem: attention thins across 18 files. It belongs beside per-file passes, not instead of them.",
+          "tempting": "One pass over everything sees how the files fit together."
+        }
+      },
+      "concept": [
+        "Split a large review into per-file local passes plus cross-file integration passes. Per-file passes avoid attention dilution; integration passes catch data-flow problems between files.",
+        "A larger context window holds more text but does not split the review, so it does not fix dilution. The two kinds of pass work together, and neither replaces the other.",
+        "The Anthropic docs say splitting a task into sequential API calls is still useful when you need to inspect each step's output or enforce a pipeline structure, and each call can be logged and evaluated on its own. Separate per-file and integration passes are that kind of split."
+      ],
+      "conceptTable": {
+        "headers": ["Pass", "What it catches"],
+        "rows": [
+          ["Per-file", "Local problems, with full attention on each file"],
+          ["Integration", "Cross-file data flow, such as mismatched units"]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "gives detailed notes on the first few files and little on the rest",
+          "meaning": "Attention is diluted across a large single request."
+        },
+        {
+          "phrase": "stores in cents but the receipt module reads as dollars",
+          "meaning": "The defect lives between two files."
+        },
+        {
+          "phrase": "a larger context window changed nothing",
+          "meaning": "Window size is not the cause or the cure."
+        }
+      ],
+      "lookFor": [
+        "A pass for each file.",
+        "A separate pass for data flow between files.",
+        "Both passes together, not either alone."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Smaller groups still contain no check of how files interact."
+        },
+        {
+          "option": "b",
+          "reason": "An instruction cannot spread attention evenly or check units across files unaided."
+        },
+        {
+          "option": "e",
+          "reason": "One integration pass alone repeats the dilution across 18 files."
+        }
+      ],
+      "rule": "Review a large change with per-file passes for local detail and an integration pass for data flow between the files.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D4-012",
+      "explanation": "The reviewer does not know that `SafeLogger` and `Money` are the team's intended wrappers, so it calls them non-standard. Criteria that name the wrappers as approved and say to report a bypass, such as a `print` of card data, remove the noise and keep the real findings. That separates accepted local patterns from genuine violations.",
+      "options": {
+        "a": {
+          "reasoning": "Naming the approved wrappers removes the noise, and reporting a bypass keeps the rare real misuse that matters for PCI. The criteria separate the accepted pattern from the violation."
+        },
+        "b": {
+          "reasoning": "Naming the wrappers is right, but skipping all logging comments in files that import them also hides a raw `print` of card data sitting next to a `SafeLogger` call. The criteria must still report the bypass.",
+          "tempting": "It silences the noise in exactly the files that use the wrappers."
+        },
+        "c": {
+          "reasoning": "Vague caution does not tell the model that these wrappers are intentional. It would stay unsure and still comment, or go quiet on a real raw-card-number log.",
+          "tempting": "Being conservative about style sounds like it removes the nitpicks."
+        },
+        "d": {
+          "reasoning": "Source code does not say that the pattern is approved, and it adds prompt length on every run. A short criterion naming the wrappers and what counts as bypassing them says what is needed.",
+          "tempting": "Showing the wrapper source should teach the reviewer what to accept."
+        }
+      },
+      "concept": [
+        "Put the team's accepted local patterns and the violations to report into the review criteria. The reviewer then skips the first and flags the second, instead of guessing from general conventions.",
+        "General instructions such as \"be conservative\" or \"only report high-confidence findings\" fail compared with specific categorical criteria."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "keeps commenting that both are \"non-standard\"",
+          "meaning": "The reviewer does not know the local patterns are intended."
+        },
+        {
+          "phrase": "about 20 comments a week",
+          "meaning": "Most of the noise comes from approved patterns."
+        },
+        {
+          "phrase": "those findings must not be lost",
+          "meaning": "The criteria must still report a bypass of the wrappers."
+        }
+      ],
+      "lookFor": [
+        "The approved patterns named in the criteria.",
+        "A bypass of them still reported.",
+        "A short criterion, not pasted source."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Skipping every logging comment in those files also hides a raw `print` of card data."
+        },
+        {
+          "option": "c",
+          "reason": "Vague caution gives no definition and can hide real findings."
+        },
+        {
+          "option": "d",
+          "reason": "Pasted source does not say the pattern is approved and lengthens every run."
+        }
+      ],
+      "rule": "State the team's approved patterns and the violations to report in the criteria, so approved use is skipped and a bypass is still flagged.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Being clear and direct",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/being-clear-and-direct"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D4-001",
+      "explanation": "The four document types share almost no fields and each has its own extraction rules, so one wide schema and prompt invites values to leak between them. A short classification call that routes each document to a prompt and schema written for its type removes the cross-type fields by construction. The extra call is small next to a long combined prompt, so it also suits 30,000 documents a night.",
+      "options": {
+        "a": {
+          "reasoning": "Separating the types gives each its own schema and rules, so a repair invoice can no longer receive a `billing_code` from a part number. Each type-specific prompt stays small and testable."
+        },
+        "b": {
+          "reasoning": "Examples help with ambiguous formats, but this prompt already holds 12 and the wide schema still offers every field on every document. The types need separate schemas and rules, not another layer in one prompt.",
+          "tempting": "More examples with null fields would show the model the right pattern for each type."
+        },
+        "c": {
+          "reasoning": "`any` guarantees that some tool is called, not that the right fields are filled. The leakage comes from one schema covering four document types, so forcing a call changes nothing.",
+          "tempting": "Making the tool call certain should make the extraction tidy."
+        },
+        "d": {
+          "reasoning": "Both runs share the same prompt and schema, so they leak the same fields and agree with each other. It doubles the cost on 30,000 documents without separating the types.",
+          "tempting": "Agreement between two runs looks like a reliability check."
+        }
+      },
+      "concept": [
+        "When document types need different schemas and extraction rules, classify first and route to a type-specific prompt and schema. A schema that offers every field on every document invites values in the wrong place.",
+        "A tool definition has a name, a description and an input schema. `tool_choice` set to `auto` is the default, `any` must use one of the tools and `tool` forces a named tool; none of these separates document types. Model caveat: on Opus 5.5, Sonnet 5.5 and the Fable/Mythos 5.x models, `any` and forced `tool` return a 400 error, so there `tool_choice` stays on `auto`. The exam guide still teaches `any` and forced selection, so this lesson keeps the exam's answer."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "one prompt and one wide extraction schema",
+          "meaning": "Everything is forced through one shape."
+        },
+        {
+          "phrase": "share almost no fields",
+          "meaning": "Separate schemas fit better than one."
+        },
+        {
+          "phrase": "The prompt already holds 12 examples",
+          "meaning": "More prompt changes are not the fix."
+        },
+        {
+          "phrase": "30,000 documents a night, so cost matters",
+          "meaning": "A cheap routing step beats repeated extraction."
+        }
+      ],
+      "lookFor": [
+        "A classification step before extraction.",
+        "A schema and prompt for each document type.",
+        "No repeated or forced extraction."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Another layer of examples in one prompt leaves the wide schema in place."
+        },
+        {
+          "option": "c",
+          "reason": "`any` makes a tool call certain but does not separate the types."
+        },
+        {
+          "option": "d",
+          "reason": "Two runs on the same prompt and schema leak the same fields at double the cost."
+        }
+      ],
+      "rule": "When document types need different schemas and rules, classify first and route each document to a prompt and schema written for its type.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools (`tool_choice`)",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Structured outputs",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Tool schemas",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/tool-schemas"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D4-002",
+      "explanation": "\"Flag claims that look suspicious\" leaves the model to judge by impression, so it flags ordinary claims with a late filing or a high repair bill. Specific categories say what counts as fraud-relevant (an invoice dated before the loss, one VIN on two open claims) and what to skip (a late filing or a high repair cost alone). That shrinks the queue and catches the patterns the fraud team cares about.",
+      "options": {
+        "a": {
+          "reasoning": "Self-reported confidence is poorly calibrated, and \"very sure\" gives the model no definition of fraud to be sure about. Concrete criteria work where a confidence rating cannot.",
+          "tempting": "Sorting by confidence lets the fraud team start with the surest cases."
+        },
+        "b": {
+          "reasoning": "Listing indicators is the right kind of change, but these three are exactly what the fraud team calls ordinary. The criteria must name patterns that mark fraud and say which common features to skip.",
+          "tempting": "It adds explicit criteria, as the guide recommends."
+        },
+        "c": {
+          "reasoning": "A fixed cap protects the reviewers' workload but selects by arrival order, not by risk. It would drop genuine cases and keep ordinary ones.",
+          "tempting": "A cap guarantees the queue fits what 12 reviewers can handle."
+        },
+        "d": {
+          "reasoning": "Specific categories tell the model what counts and what to ignore, cutting vague flags while catching the patterns the fraud team wants. \"Looks suspicious\" left each claim to the model's impression."
+        }
+      },
+      "concept": [
+        "Explicit categorical criteria beat general instructions such as \"look suspicious\", \"be conservative\" or \"only report high-confidence findings\". Define what to report and what to skip.",
+        "Self-reported confidence is an unreliable proxy unless it is calibrated against labelled data, so it cannot stand in for criteria."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "flag claims that look suspicious",
+          "meaning": "A vague instruction leaves the judgment to the model."
+        },
+        {
+          "phrase": "flags about 30% of nightly claims",
+          "meaning": "The vague wording produces too many flags."
+        },
+        {
+          "phrase": "some claims they care about are missed",
+          "meaning": "Precision and recall both fail, so the fix is better categories, not a cap."
+        }
+      ],
+      "lookFor": [
+        "Named patterns that mark fraud.",
+        "Common features listed as ones to skip.",
+        "No confidence score or arbitrary cap."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Confidence is poorly calibrated and gives no definition of fraud."
+        },
+        {
+          "option": "b",
+          "reason": "It lists the ordinary features the fraud team wants skipped."
+        },
+        {
+          "option": "c",
+          "reason": "A cap picks by arrival order and drops genuine cases."
+        }
+      ],
+      "rule": "Replace \"looks suspicious\" with explicit categories to flag and to skip, so the queue shrinks without losing real cases.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Being clear and direct",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/being-clear-and-direct"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D4-003",
+      "explanation": "A strict schema removes syntax errors, not semantic ones, so a total that differs from the sum of the line items still gets through. Extracting the printed figure as `stated_total`, adding a model-summed `calculated_total` and a `conflict_detected` boolean makes the disagreement visible and attributable. The pipeline can then route each conflict to review with both figures.",
+      "options": {
+        "a": {
+          "reasoning": "Schema validity covers structure and types, not arithmetic between fields, and a schema cannot compare two values. A rule that rejected mismatches would also hide printed-total errors instead of exposing them.",
+          "tempting": "A schema rule would enforce the arithmetic automatically."
+        },
+        "b": {
+          "reasoning": "A calculated total is part of the fix, but dropping the printed figure hides the conflict. If a line item was misread the wrong sum becomes the total, and an error on the invoice goes unnoticed.",
+          "tempting": "One field cannot disagree with itself."
+        },
+        "c": {
+          "reasoning": "Capturing both figures makes the disagreement visible, so a reviewer starts with the numbers instead of the scan. The boolean lets the pipeline route conflicts automatically."
+        },
+        "d": {
+          "reasoning": "Retrying until two numbers agree rewards agreement, not accuracy, and if the printed total is wrong no retry will change it. It adds calls for a problem that needs surfacing.",
+          "tempting": "Retrying should eventually give an extraction where the totals agree."
+        }
+      },
+      "concept": [
+        "Strict schemas remove syntax errors but not semantic errors such as line items that do not sum or values in the wrong field. A validator checks what the schema cannot, such as arithmetic across fields.",
+        "Self-correction fields, such as `calculated_total` beside `stated_total` and a `conflict_detected` boolean, expose semantic conflicts so the pipeline can act on them."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "uses a strict schema, so every output parses",
+          "meaning": "Structure is already valid, so the remaining errors are semantic."
+        },
+        {
+          "phrase": "differs from the sum of the line items",
+          "meaning": "Arithmetic across fields is beyond what a schema checks."
+        },
+        {
+          "phrase": "can't tell whether the invoice printed a wrong total or the model misread a figure",
+          "meaning": "Both figures must be kept to attribute the cause."
+        }
+      ],
+      "lookFor": [
+        "Both the printed and the calculated figure kept.",
+        "A conflict flag the pipeline can route on.",
+        "Review that receives both numbers."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A schema cannot compare two values, and rejecting hides printed-total errors."
+        },
+        {
+          "option": "b",
+          "reason": "Dropping the printed figure hides the conflict."
+        },
+        {
+          "option": "d",
+          "reason": "Retrying rewards agreement, not accuracy."
+        }
+      ],
+      "rule": "To expose semantic errors a schema cannot catch, capture `stated_total` and `calculated_total` with a `conflict_detected` flag and route conflicts to review.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Strict tool use",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Strict tool use",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/strict-tool-use"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D4-004",
+      "explanation": "The field is null on 18% of invoices where the information is present in one of several layouts, and the prompt only says to extract a number. Examples across the real formats show how to convert each one and when null is correct: \"2h30\" gives 2.5, a 180 charge at a 60 rate gives 3.0, and an invoice with no labour gives null. That fixes empty fields caused by varied layouts without inviting invented values, and needs no second call.",
+      "options": {
+        "a": {
+          "reasoning": "Varied examples show the model how to convert each format and when null is right. They fix empty fields caused by layout differences without risking invented values."
+        },
+        "b": {
+          "reasoning": "A few examples is the right size, but they all use one layout, so the model learns nothing about hours-and-minutes, minutes or a charge at a rate. Varied formats are what teach it to generalise.",
+          "tempting": "The \"hrs\" layout is the most common one, so it covers most invoices."
+        },
+        "c": {
+          "reasoning": "A free string moves the inconsistency downstream, where adjudication expects consistent fields. The null cases remain and nothing signals that the model missed information it could have read.",
+          "tempting": "The model can return whatever the garage wrote and code can clean it up."
+        },
+        "d": {
+          "reasoning": "A firmer instruction is still prose, and the prompt already says to extract a number. Showing the conversions is what teaches the model the formats it has been missing.",
+          "tempting": "A stricter rule should stop it returning null when labour appears."
+        }
+      },
+      "concept": [
+        "Few-shot examples showing correct extraction from varied formats fix empty or null fields, and reduce hallucination in extraction with informal or varied formats. Include a case where null is the right answer.",
+        "Examples show instead of tell, and are most useful for corner cases, exact output formats and ambiguous inputs. Explain why an example output is ideal, not only what it is."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "\"2.5 hrs\", \"2h30\", \"150 min\", \"labour: 2 1/2\"",
+          "meaning": "The same fact appears in many layouts."
+        },
+        {
+          "phrase": "null on 18% of invoices where the information is present",
+          "meaning": "The model is missing formats it could read."
+        },
+        {
+          "phrase": "can't afford a second extraction call",
+          "meaning": "The fix must be inside the existing prompt."
+        }
+      ],
+      "lookFor": [
+        "Examples across the different layouts.",
+        "A null example for when the fact is absent.",
+        "No second call."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "All the examples use one layout, so the other formats stay unlearned."
+        },
+        {
+          "option": "c",
+          "reason": "A free string moves the inconsistency downstream and hides the misses."
+        },
+        {
+          "option": "d",
+          "reason": "A firmer instruction is still prose and does not show the conversions."
+        }
+      ],
+      "rule": "Fix null fields caused by varied layouts with a few examples across the real formats, including one where null is correct.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Providing examples",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/providing-examples"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D4-005",
+      "explanation": "Required fields push the model to invent a value when the document has none, which is where `\"UNKNOWN\"` and `1970-01-01` come from. Making the fields nullable gives it an honest way to report absence, and routing documents with no service data to reviewers handles the gap without a retry. A validator rule that rejects placeholders catches slips.",
+      "options": {
+        "a": {
+          "reasoning": "Required fields push the model to invent a value when the document has none. A nullable field gives it a truthful way to report absence, which is the root of the placeholders."
+        },
+        "b": {
+          "reasoning": "A retry with feedback helps with format errors but cannot recover information that is not in the document. The model would only invent a plausible code to satisfy the retry.",
+          "tempting": "Appending the error should push the model to look harder."
+        },
+        "c": {
+          "reasoning": "Forcing a tool makes the model call it, but it does not create information, so the required fields would still be filled with something. Model caveat: on Opus 5.5, Sonnet 5.5 and the Fable/Mythos 5.x models, `any` and forced `tool` return a 400 error, so there `tool_choice` stays on `auto`. The exam guide still teaches `any` and forced selection, so this lesson keeps the exam's answer.",
+          "tempting": "Making the tool call certain should force a real value."
+        },
+        "d": {
+          "reasoning": "The information is not in these documents, so a retry would only pressure the model to guess again. Routing them to reviewers deals with the gap, and a rule against placeholders catches slips."
+        },
+        "e": {
+          "reasoning": "Disguising the placeholder as a plausible blank hides the missing data from adjudication, so nobody knows the document had no services.",
+          "tempting": "Blank and zero values look less suspicious than the placeholders."
+        }
+      },
+      "concept": [
+        "Nullable fields prevent fabrication: when a required field has no value in the document, the model invents one. A nullable field, or an `\"unclear\"` or `\"other\"` value with a detail string, lets it say so honestly.",
+        "Retries help with format errors and do not help when the information is absent from the source. Documents that lack the information belong with reviewers. With a nullable field, requests that lack the fact came back null."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "requires `billing_code` and `service_date`",
+          "meaning": "Required fields force an answer even when none exists."
+        },
+        {
+          "phrase": "the model returns `\"UNKNOWN\"` and `1970-01-01` to satisfy the schema",
+          "meaning": "The schema is pressuring the model to fabricate."
+        },
+        {
+          "phrase": "without dropping those documents from the pipeline",
+          "meaning": "The documents must be represented and routed, not rejected."
+        }
+      ],
+      "lookFor": [
+        "Nullable fields so absence can be reported.",
+        "Missing information routed to review, not retried.",
+        "A check that catches placeholder values."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A retry cannot find information that is not in the source."
+        },
+        {
+          "option": "c",
+          "reason": "Forcing a tool does not create information, so the fields would still be filled."
+        },
+        {
+          "option": "e",
+          "reason": "Plausible blanks hide the missing data from adjudication."
+        }
+      ],
+      "rule": "Make fields nullable so absence is reported honestly, and route documents that lack the information to review instead of retrying.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Strict tool use",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Strict tool use",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/strict-tool-use"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools (`tool_choice`)",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D4-006",
+      "explanation": "The Batches API trades a discount for a processing window of up to 24 hours and no latency guarantee. The nightly bulk of 30,000 documents is work nobody waits on, so it goes to batch for the saving. Customers waiting on screen need a reply in seconds, so the app uploads stay on synchronous calls.",
+      "options": {
+        "a": {
+          "reasoning": "The discount comes with a window of up to 24 hours and no latency guarantee. A customer waiting on screen cannot be kept waiting that long, however small the volume.",
+          "tempting": "The app volume is small, so the saving looks free."
+        },
+        "b": {
+          "reasoning": "Splitting the uploads into their own batches does not shorten the window. There is no promised completion time other than the 24-hour limit, so a customer on screen could still wait hours.",
+          "tempting": "Small separate batches should finish ahead of the bulk."
+        },
+        "c": {
+          "reasoning": "A nightly bulk job of 30,000 documents is exactly the work that tolerates a batch window. Staying synchronous leaves the largest cost saving unused.",
+          "tempting": "Keeping everything synchronous is simpler and nothing is lost."
+        },
+        "d": {
+          "reasoning": "Batch fits work nothing waits on and saves 50%, which is the nightly bulk. Customers waiting on screen need a reply in seconds, so those uploads stay synchronous."
+        }
+      },
+      "concept": [
+        "Batch the requests no one waits on, such as the nightly bulk, and keep anything a user or process waits on on synchronous calls. Batch usage is charged at 50% of standard prices.",
+        "Most batches finish within an hour, but a batch not done within 24 hours expires and there is no promised completion time."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "30,000 claim documents a night in bulk",
+          "meaning": "Nobody waits on the bulk, so batch suits it."
+        },
+        {
+          "phrase": "customers ... wait on screen",
+          "meaning": "A waiting user needs a synchronous reply."
+        },
+        {
+          "phrase": "lower extraction costs without making customers wait",
+          "meaning": "Use batch only where latency does not matter."
+        }
+      ],
+      "lookFor": [
+        "Batch for the bulk nobody waits on.",
+        "Synchronous calls for the waiting customers.",
+        "No promised completion time for batches."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Customers on screen cannot wait up to 24 hours."
+        },
+        {
+          "option": "b",
+          "reason": "Small batches do not shorten the window or promise a time."
+        },
+        {
+          "option": "c",
+          "reason": "It leaves the bulk saving unused."
+        }
+      ],
+      "rule": "Use the Batches API for the bulk nobody waits on and keep user-facing requests on synchronous calls.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Batch processing (Message Batches API)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/batch-processing"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to evals: Evals in production (CI, batch, drift)",
+          "url": "https://academy.claude.com/courses/introduction-to-evals/evals-in-production"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D4-007",
+      "explanation": "On retry the model got the failed JSON and the validator message but not the bill, so it can only make the numbers agree, not check them against the source. The retried records pass validation because a line item or the total is quietly changed. Sending the original document, the failed extraction and the specific errors lets it correct the real misreading.",
+      "options": {
+        "a": {
+          "reasoning": "A longer validator message still does not give the model the missing evidence, and a reminder to be careful adds no information. The cause is the absent source.",
+          "tempting": "A richer error message should guide a better correction."
+        },
+        "b": {
+          "reasoning": "Without the document the model can only make the numbers agree. A retry prompt with the source, the failed output and the exact errors lets it correct the actual misreading."
+        },
+        "c": {
+          "reasoning": "Attaching the scan is right, but fixing the line items in place is not: the stem says a line item or the total was changed, so the misread may be in either. Locking the line items would force the total to match a wrong sum.",
+          "tempting": "Changing only the total keeps the line items safe."
+        },
+        "d": {
+          "reasoning": "Dropping the failed output and the errors throws away the feedback that guides a correction. An unchanged prompt can repeat its error, and a pass is no proof of accuracy.",
+          "tempting": "Rerunning until validation passes avoids having to engineer the retry."
+        }
+      },
+      "concept": [
+        "Retry with error feedback: the follow-up request includes the original document, the failed extraction and the specific validation errors. Retries help with format mismatches and not when the information is absent from the source.",
+        "Passing validation does not prove accuracy: a validator checks what the schema cannot, such as arithmetic across fields, and a model without the source can satisfy it by editing figures."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "sends the failed JSON and the validator message, ... but not the scanned bill",
+          "meaning": "The retry has no source to check against."
+        },
+        {
+          "phrase": "always pass validation, yet adjudicators find the retried totals wrong about 40%",
+          "meaning": "The check passes while the values are wrong."
+        },
+        {
+          "phrase": "a line item or the total was quietly changed",
+          "meaning": "The model is editing numbers to satisfy the validator."
+        }
+      ],
+      "lookFor": [
+        "The original document in the retry.",
+        "The failed extraction and the specific errors.",
+        "A fix for the missing evidence, not a longer message."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A longer message adds no source evidence."
+        },
+        {
+          "option": "c",
+          "reason": "Locking the line items could force the total to match a wrong sum."
+        },
+        {
+          "option": "d",
+          "reason": "Discarding the failed output and errors loses the feedback that guides a fix."
+        }
+      ],
+      "rule": "On retry, send the original document, the failed extraction and the specific validation errors, not the error message alone.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Reduce hallucinations",
+          "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Strict tool use",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/strict-tool-use"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D4-008",
+      "explanation": "A `stop_reason` of `max_tokens` means the output was cut at the cap, and the 150-line-item array does not fit in 4096 tokens, so the JSON stops mid-array and will not parse. `max_tokens` caps the length of the response, not the context window. The fix is a higher cap for these requests, and treating any response that stops at `max_tokens` as a failure so a truncated one is never parsed.",
+      "options": {
+        "a": {
+          "reasoning": "`max_tokens` caps the length of the response, and a stop reason of `max_tokens` means the output was cut at that cap. The long array needs more output room, and the pipeline should reject a truncated response."
+        },
+        "b": {
+          "reasoning": "A shorter answer would fit, but adjudication needs every line item, so required data would be lost. The documents genuinely need a long output, so the limit has to change.",
+          "tempting": "Returning only the total and top items keeps the JSON small and valid."
+        },
+        "c": {
+          "reasoning": "The invoice fits in the context window with room to spare, so the window is not what stopped the response. It stopped because of `max_tokens`, which caps the length of the output.",
+          "tempting": "A bigger window looks like more room for long documents."
+        },
+        "d": {
+          "reasoning": "Retrying with feedback helps with format errors, but the same 4096-token cap cuts the same output on every attempt. The retries add cost and still produce unparseable JSON.",
+          "tempting": "A parse error is a validation failure that a retry can fix."
+        }
+      },
+      "concept": [
+        "`max_tokens` caps the length of the response. A `stop_reason` of `max_tokens` means the output was cut at that cap, so it may not match the schema even when a strict schema is used.",
+        "Structured output can still fail to match the schema after a refusal or when the response is cut off at `max_tokens`. Treat a cut-off response as a failure, not as data."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "come back cut off mid-array",
+          "meaning": "The output ends before the JSON closes."
+        },
+        {
+          "phrase": "`stop_reason` set to `\"max_tokens\"`",
+          "meaning": "The response hit its output cap."
+        },
+        {
+          "phrase": "the whole invoice fits easily in the model's context window",
+          "meaning": "The input window is not the limit."
+        }
+      ],
+      "lookFor": [
+        "A higher `max_tokens` for the long outputs.",
+        "A truncated response treated as a failure.",
+        "Every line item still returned."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It drops line items that adjudication needs."
+        },
+        {
+          "option": "c",
+          "reason": "The context window is not the limit; the output cap is."
+        },
+        {
+          "option": "d",
+          "reason": "The same cap truncates the same output on every retry."
+        }
+      ],
+      "rule": "A `stop_reason` of `max_tokens` means the output hit its cap: raise `max_tokens` when the full output is needed, and never parse a truncated response.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Structured outputs",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Strict tool use",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Strict tool use",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/strict-tool-use"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D4-009",
+      "explanation": "Prose rules were already tried and moved the error rate only from 12% to 10%, so the model needs to see the decision made. A few examples from multi-vehicle reports, each showing why the driver matching the policy box is the policyholder, with the reasoning and one blank-box case, teach the choice. Examples are most useful for ambiguous cases.",
+      "options": {
+        "a": {
+          "reasoning": "Ambiguous cases are where examples work best, because they show the decision and its reasoning. The prose rules were tried, so examples including a blank-box case add the next layer of guidance."
+        },
+        "b": {
+          "reasoning": "Examples are the right tool, but without the reasoning the model sees an answer and not the rule that produced it. The decision to match the policy box rather than the driver number is the part to show.",
+          "tempting": "Short answer-only examples keep the prompt short."
+        },
+        "c": {
+          "reasoning": "More prose has already moved the rate only two points, and 14 layout descriptions make the prompt harder to follow. The model needs to see decisions made, not layouts described.",
+          "tempting": "A rule for each police force covers every layout."
+        },
+        "d": {
+          "reasoning": "Model confidence is poorly calibrated, so wrong choices would often score high and skip review. It routes errors to people without fixing why they happen.",
+          "tempting": "Low-confidence choices could be caught for review."
+        }
+      },
+      "concept": [
+        "Few-shot examples are most effective for ambiguous cases: include the reasoning for the chosen action so the model can generalise to new reports. Explain why an example output is ideal, not only what it is.",
+        "Self-reported confidence is an unreliable proxy unless it is calibrated against labelled data, so it does not fix a systematic error."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "sometimes records the other driver as the policyholder",
+          "meaning": "The model mislabels an ambiguous case."
+        },
+        {
+          "phrase": "the error rate only fell from 12% to 10%",
+          "meaning": "Prose rules and descriptions have limited effect."
+        },
+        {
+          "phrase": "the prompt must stay short",
+          "meaning": "A few examples fit; long layout descriptions do not."
+        }
+      ],
+      "lookFor": [
+        "A few examples of the ambiguous case.",
+        "The reasoning shown for each.",
+        "A blank-box example."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Examples without the reasoning show an answer, not the rule."
+        },
+        {
+          "option": "c",
+          "reason": "More prose has already failed and lengthens the prompt."
+        },
+        {
+          "option": "d",
+          "reason": "Confidence is poorly calibrated and fixes nothing at the source."
+        }
+      ],
+      "rule": "When written rules have not fixed an ambiguous-case error, add a few examples with the reasoning shown, including an edge case.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Providing examples",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/providing-examples"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D4-010",
+      "explanation": "A retry helps when the source holds the information and the error message says what to change. A date in the wrong format with the date clearly printed, and a total that differs from legible line items, both qualify. A null field for something the report never mentions, and an unreadable smudge, will not be fixed by retrying and may prompt invention.",
+      "options": {
+        "a": {
+          "reasoning": "The information is not in the source, so a retry cannot find it and may prompt an invented company name. A null here can be a correct answer.",
+          "tempting": "Emphasising the field name should make the model look more carefully."
+        },
+        "b": {
+          "reasoning": "This is a format mismatch with the information present in the source. The error message says exactly what to change, and the model has the evidence to fix it."
+        },
+        "c": {
+          "reasoning": "Temperature changes randomness, not the legibility of the scan. A different reading would be a guess, and unreadable fields belong with human reviewers.",
+          "tempting": "Sampling other readings might produce the right number."
+        },
+        "d": {
+          "reasoning": "Format and arithmetic errors can usually be fixed automatically at low cost, and 12 reviewers cannot absorb about 1,800 documents a night. Escalate what a retry cannot resolve.",
+          "tempting": "Human review is the safest response to any failure."
+        },
+        "e": {
+          "reasoning": "The correct values are on the page, so a retry with the document, the failed extraction and the arithmetic error gives the model what it needs to find the misread figure."
+        }
+      },
+      "concept": [
+        "Retry with the specific errors appended when the information is in the source and the failure is a format or arithmetic mismatch. Retries do not help when the information is absent or unreadable, so route those to a human.",
+        "Do not escalate everything: a human queue is for what a retry cannot resolve."
+      ],
+      "conceptTable": {
+        "headers": ["Failure", "Handling"],
+        "rows": [
+          ["Format mismatch, value present in source", "Retry with the specific error appended"],
+          ["Arithmetic conflict, values legible", "Retry with the document and the error"],
+          ["Information absent or unreadable", "Route to a human, do not retry"]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "which failures deserve an automatic retry",
+          "meaning": "Decide by whether the source holds the information."
+        },
+        {
+          "phrase": "`tow_company` is null because the report does not mention a tow",
+          "meaning": "Absent information cannot be retried into existence."
+        },
+        {
+          "phrase": "with the date clearly printed on the page",
+          "meaning": "The information is present, so a retry can succeed."
+        }
+      ],
+      "lookFor": [
+        "Information present in the source.",
+        "A specific error message to append.",
+        "No retry for absent or unreadable information."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "The information is absent, and null may be correct."
+        },
+        {
+          "option": "c",
+          "reason": "Temperature does not make a smudge legible."
+        },
+        {
+          "option": "d",
+          "reason": "It floods the reviewers with errors a retry can fix."
+        }
+      ],
+      "rule": "Retry format and arithmetic failures when the source holds the answer, and route absent or unreadable information to a human.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Reduce hallucinations",
+          "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Strict tool use",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/strict-tool-use"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D4-011",
+      "explanation": "A first batch can take up to 24 hours with no promised completion time, which leaves 6 hours of a 30-hour deadline. A second batch could take another 24, so two rounds can reach 48 hours. About 1,800 failures are a small enough set to retry synchronously, with the validation errors appended, so the deadline holds.",
+      "options": {
+        "a": {
+          "reasoning": "A first batch can use 24 hours, leaving 6, which a second batch cannot be trusted to meet. The failed set is small enough to retry synchronously at full price."
+        },
+        "b": {
+          "reasoning": "There is no latency guarantee, only a limit of 24 hours, so two rounds can take up to 48 hours. That breaks the 30-hour requirement.",
+          "tempting": "Batches usually finish well inside their limit."
+        },
+        "c": {
+          "reasoning": "Reprocessing all 30,000 documents repeats the 94% that passed, adds cost, and keeps a 24-hour window. Only the failed items, identified by `custom_id`, need another attempt.",
+          "tempting": "Rerunning everything keeps all records consistent."
+        },
+        "d": {
+          "reasoning": "That is about 150 documents per reviewer, and most have errors a retry can fix. Human review is for cases where the information is missing or unclear.",
+          "tempting": "Reviewers can absorb the failures and avoid another round of processing."
+        }
+      },
+      "concept": [
+        "Resend only what failed, matched by `custom_id`, and check that each retry round fits the deadline. A batch can take up to 24 hours with no guaranteed completion, so a second batch may not fit what is left.",
+        "Batch the work no one waits on, and use synchronous calls for a small failed set when time is short."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "within 30 hours of receipt",
+          "meaning": "The deadline must cover every round."
+        },
+        {
+          "phrase": "Each batch may take up to 24 hours",
+          "meaning": "Worst-case time must be counted for each round."
+        },
+        {
+          "phrase": "about 6% of results ... fail validation",
+          "meaning": "The failed set is small, so a synchronous retry is feasible."
+        }
+      ],
+      "lookFor": [
+        "A retry of only the failed documents.",
+        "A deadline check across both rounds.",
+        "Synchronous calls when a second batch cannot fit."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Two batches can take up to 48 hours, over the 30-hour limit."
+        },
+        {
+          "option": "c",
+          "reason": "It reprocesses documents that already passed and keeps the window."
+        },
+        {
+          "option": "d",
+          "reason": "Most failures can be fixed by a retry, so humans are overloaded for no reason."
+        }
+      ],
+      "rule": "Plan each retry round against the deadline: resend only the failed `custom_id`s, and use synchronous calls when a second batch cannot fit.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Batch processing (Message Batches API)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/batch-processing"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to evals: Evals in production (CI, batch, drift)",
+          "url": "https://academy.claude.com/courses/introduction-to-evals/evals-in-production"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D4-012",
+      "explanation": "The form states the loss date twice and the two sometimes disagree, but one `loss_date` field makes the model quietly pick one. Extracting both values into separate fields and adding a `conflict_detected` boolean turns the hidden disagreement into something the pipeline can act on. Flagged forms go to the review queue, so the claim is not bounced to the customer.",
+      "options": {
+        "a": {
+          "reasoning": "Rejecting the whole claim over a recoverable inconsistency delays a customer for a problem a reviewer can resolve. The other extracted fields are still good.",
+          "tempting": "Resubmission guarantees one consistent date."
+        },
+        "b": {
+          "reasoning": "Capturing both values is right, but choosing the earlier date in code resolves the conflict silently. The earlier date is not always the correct one, and nobody learns the form disagreed with itself.",
+          "tempting": "Keeping the earlier date is a simple, predictable rule."
+        },
+        "c": {
+          "reasoning": "Capturing both values with an explicit conflict flag turns a hidden disagreement into a field the pipeline can act on. Reviewers receive the forms that need a decision."
+        },
+        "d": {
+          "reasoning": "Three runs triple the cost and still resolve the conflict silently. The disagreement is in the document, so every run sees both dates.",
+          "tempting": "A majority vote among runs picks the most likely date."
+        }
+      },
+      "concept": [
+        "Contradictions in a source should surface, not be picked silently. Capture both conflicting values and add a `conflict_detected` boolean so the pipeline can route the form to review.",
+        "Semantic conflicts are different from schema syntax errors: a strict schema removes syntax errors but cannot tell that two fields disagree, so the schema needs fields that expose the conflict."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "state the loss date twice",
+          "meaning": "The source itself contains two values."
+        },
+        {
+          "phrase": "the model quietly takes one of them",
+          "meaning": "A single field hides the conflict."
+        },
+        {
+          "phrase": "without bouncing the claim back to the customer",
+          "meaning": "The conflict should go to a reviewer, not be rejected."
+        }
+      ],
+      "lookFor": [
+        "Both values captured in separate fields.",
+        "A conflict flag the pipeline can route on.",
+        "Review for flagged forms, no silent choice."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Rejecting the whole claim delays a customer for a recoverable problem."
+        },
+        {
+          "option": "b",
+          "reason": "Picking the earlier date resolves the conflict silently."
+        },
+        {
+          "option": "d",
+          "reason": "Three runs triple the cost and still choose silently."
+        }
+      ],
+      "rule": "When a source contains conflicting values, capture both with a `conflict_detected` flag and route the form to review instead of choosing silently.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Structured outputs",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Strict tool use",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/strict-tool-use"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D4-013",
+      "explanation": "The checker receives the first instance's JSON and is asked to confirm it, so it is anchored to that answer and confirms 99% of fields. An independent instance that extracts the fields on its own, without seeing the first result, has no stake in it. Comparing the two outputs sends only the disagreements to the reviewers, so their workload does not grow.",
+      "options": {
+        "a": {
+          "reasoning": "Passing the generator's reasoning makes the checker adopt the same assumptions, which weakens its independence further. An independent view needs less of the author's context.",
+          "tempting": "Knowing why each value was chosen should help the checker judge it."
+        },
+        "b": {
+          "reasoning": "A clean instance removes history, but it still reads the first instance's JSON and is asked to confirm it. The anchoring comes from seeing the first answer, so the checker stays biased toward approving it.",
+          "tempting": "A fresh instance per claim avoids carrying over any bias."
+        },
+        "c": {
+          "reasoning": "An anchored checker's confidence is poorly calibrated, since it already agreed with 99% of fields. It would approve the same errors with less visibility than now.",
+          "tempting": "A high threshold should pass only the surest fields."
+        },
+        "d": {
+          "reasoning": "Seeing the first answer anchors the checker toward confirming it. An independent extraction has no stake in the first result, and the disagreements are the only items the reviewers need to see."
+        }
+      },
+      "concept": [
+        "An independent second instance catches subtler issues than a reviewer that sees the first result. A model that sees the first answer is less likely to question it, so have the second instance work without it and compare the outputs.",
+        "Self-reported confidence alongside a finding is a verification aid, not a threshold to filter by. Raw confidence is unreliable unless calibrated.",
+        "A reviewer works best from a clean context, with none of the author's history. A checker shown the first instance's answer is anchored to that answer in the same way a session reviewing its own change is."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "receives the scanned documents and the first instance's extracted JSON",
+          "meaning": "The checker sees the answer it is asked to confirm."
+        },
+        {
+          "phrase": "It confirms about 99% of fields, yet audits find errors",
+          "meaning": "The checker is agreeing out of anchoring."
+        },
+        {
+          "phrase": "must not add work for the 12 reviewers",
+          "meaning": "Only disagreements should reach people."
+        }
+      ],
+      "lookFor": [
+        "A checker that does not see the first result.",
+        "Outputs compared, not confirmed.",
+        "Only disagreements sent to reviewers."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "The generator's reasoning makes the checker less independent."
+        },
+        {
+          "option": "b",
+          "reason": "A fresh instance still reads the first JSON and stays anchored."
+        },
+        {
+          "option": "c",
+          "reason": "Confidence from an anchored checker is poorly calibrated."
+        }
+      ],
+      "rule": "Check extractions with an independent second instance that does not see the first result, then compare outputs and review only the disagreements.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Code review",
+          "url": "https://academy.claude.com/courses/claude-code-101/code-review"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    }
+  ]
+}

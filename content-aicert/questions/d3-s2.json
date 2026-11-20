@@ -1,0 +1,657 @@
+{
+  "scenario": "S2",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S2-D3-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "3.1",
+      "secondaryTasks": [],
+      "stem": "Ironpine's engine team prefers `Result<T>` return values over C++ exceptions in `engine/`. It is a style convention: a stray `throw` is a nuisance that review catches in minutes, not a certification failure. The convention sits on a wiki page, and new hires are told to paste it into their own `~/.claude/CLAUDE.md`. Of the last 9 hires, 6 skipped that step, and Claude then generated `throw` statements in their `engine/` changes. Six more engineers join next month, and the fix must work without any per-engineer setup. What is the best way to get Claude to follow the convention in every fresh clone?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a PreToolUse hook that scans `Write` and `Edit` calls under `engine/` for `throw` and blocks them before the file changes.",
+          "correct": false,
+          "explanation": "A hook guarantees the result, which suits a certification rule that can never be broken. For a style preference that review fixes in minutes it is over-built: someone must maintain the pattern scanner, and it will also block legitimate mentions such as comments or tests.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "b",
+          "text": "Add a setup script that copies the wiki page into each new hire's `~/.claude/CLAUDE.md` on their first day at the studio.",
+          "correct": false,
+          "explanation": "This automates the wrong layer. The user-level file is personal and unversioned, so it drifts from the wiki when the convention changes and cannot be reviewed in a pull request. It suits personal preferences, not team conventions.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "c",
+          "text": "Add the convention and a short `Result<T>` example to `engine/CLAUDE.md` in the repository, so every clone loads it for engine work.",
+          "correct": true,
+          "explanation": "The need is guidance, and nothing has to be enforced. A committed directory-level CLAUDE.md reaches every clone with no setup, loads when Claude works under `engine/`, and goes through review like any other change.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Add a line to the onboarding checklist and the PR template asking authors to check engine changes for exceptions before review.",
+          "correct": false,
+          "explanation": "A reminder to people does not change what Claude generates. The stray `throw` statements keep appearing, and the cost moves to reviewers. It would only help if the convention were also loaded for Claude.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "A style convention Claude should follow, with nothing to enforce, belongs as guidance in the committed CLAUDE.md nearest the code it covers.",
+      "studyRef": "§3 Task 3.1",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S2-D3-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.1",
+      "secondaryTasks": ["3.3"],
+      "stem": "Ironpine's root `CLAUDE.md` contains `@docs/standards/cpp.md`, `@docs/standards/lua.md`, `@docs/standards/python.md` and `@docs/standards/build.md`, each file about 3,000 tokens. Engineers working only in `tools/` see C++ and Lua rules in unrelated answers. Python sessions should carry the Python standards and the shared build standards, while the files stay in `docs/standards/` with no copies. Which change fits?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep `build.md` imported in the root file and move each language import into its directory's CLAUDE.md, such as `tools/CLAUDE.md`, since every directory needs only its own language.",
+          "correct": true,
+          "explanation": "Imports in a directory-level CLAUDE.md load only for work in that directory, while the shared build standards stay in the root where everyone needs them. The files remain in one place and nothing is copied.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Move only the Python import into `tools/CLAUDE.md` and leave the C++ and Lua imports in the root file, because most of the studio works in those languages.",
+          "correct": false,
+          "explanation": "This is the right mechanism applied half-way. The `tools/` sessions would still load the C++ and Lua standards from the root, which is the complaint. It would only be fine if every engineer needed those two languages.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Move the four `@import` lines out of the repository into each engineer's own `~/.claude/CLAUDE.md`, so every person chooses which standards load for their own work.",
+          "correct": false,
+          "explanation": "Team standards then depend on each engineer's setup and drift between people, so new hires would get nothing by default. The user-level file is for personal preferences, not for standards the whole team must share.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "Replace the `@` imports with plain Markdown links to the standards files, so Claude opens a file only when it decides one is relevant.",
+          "correct": false,
+          "explanation": "A plain link is just text; it does not load the file. Claude would rarely open the standards, so the Python work loses the rules it needs. The `@` import is what pulls a file into the context.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Import each standards file from the CLAUDE.md of the directory that needs it, and keep shared files imported at the level they are shared.",
+      "studyRef": "§3 Task 3.1; §5 Patterns in the correct answers",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S2-D3-003",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "3.1",
+      "secondaryTasks": ["3.3"],
+      "stem": "Ironpine's root `CLAUDE.md` has reached 450 lines. It holds certification rules that matter only under `engine/`, build-tool tips that matter only under `tools/`, and three engineers' personal habits, such as answering in short bullets. Engineers in `gameplay/` receive guidance that does not apply to them, and the habits affect everyone, but the studio-wide guidance must stay in the root file. Which two changes fix the structure? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Move the engine-only rules into `engine/CLAUDE.md` and the build-tool tips into `tools/CLAUDE.md`, leaving only studio-wide guidance in the root file.",
+          "correct": true,
+          "explanation": "Directory-level files load when Claude works in that directory, so `gameplay/` sessions stop receiving engine and tool guidance. The root file keeps only what applies to all 45 engineers.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Move each engineer's personal habits into that engineer's own `~/.claude/CLAUDE.md`, so they stop affecting teammates who never asked for them.",
+          "correct": true,
+          "explanation": "Personal preferences belong in the user-level file, which applies only to that engineer and is not shared through version control. Each person keeps their habits and nobody else inherits them.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Move the engine rules and tool tips into `.claude/rules/engine.md` and `.claude/rules/tools.md` with no `paths` frontmatter, so each topic has its own file.",
+          "correct": false,
+          "explanation": "Rule files without a `paths` field load at the start of every session, like the root file. The split looks tidier, but `gameplay/` engineers would still receive all of it. A `paths` field would make it conditional.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "Shorten the root file by trimming examples and merging sentences until it fits in under 200 lines, keeping every rule in the one file.",
+          "correct": false,
+          "explanation": "Trimming makes the file shorter but leaves the engine rules, tool tips and personal habits mixed together. The irrelevant guidance still loads for every session and for every engineer.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "e",
+          "text": "Generate a CLAUDE.md in every directory from templates with a script that runs at the start of each session.",
+          "correct": false,
+          "explanation": "A generator adds a moving part and writes files nobody asked for, including in directories with nothing to say. Moving the few relevant sections by hand into the directories that need them is enough.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Scope guidance to where it applies: directory-level CLAUDE.md for area rules, the user-level file for personal habits.",
+      "studyRef": "§3 Task 3.1",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S2-D3-004",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.1",
+      "secondaryTasks": [],
+      "stem": "Four Ironpine teams (engine, gameplay, tools and QA) all edit the root `CLAUDE.md`, which has grown to 520 lines. Last quarter 31 pull requests touching it hit merge conflicts, and one bad merge dropped the certification section. Each team already keeps its own conventions doc in its own tree, such as `engine/docs/conventions.md`, under its own CODEOWNERS entry, and the root file holds pasted copies that drift. Teams must own their conventions without a second copy. Which change fits?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Replace the pasted copies with `@engine/docs/conventions.md`, `@gameplay/docs/conventions.md` and similar imports, keeping in the root file only guidance that applies to all four teams.",
+          "correct": true,
+          "explanation": "Each team edits only its own doc under its own CODEOWNERS, and the root file just imports them, so merge conflicts and drifting copies both disappear. Claude still sees all four through the `@import` lines.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Copy each team's conventions doc into its own file in `.claude/rules/`, such as `engine.md` and `qa.md`, and delete the pasted text from the root file.",
+          "correct": false,
+          "explanation": "Rule files are a fine way to split guidance, but copying the docs creates a second source of truth that drifts from the team's own tree. Teams would have to edit two places, which is the duplication the stem wants removed.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "c",
+          "text": "Add a CI job that builds the root `CLAUDE.md` from the teams' docs, so no imports are needed, and commits the generated file back to the main branch.",
+          "correct": false,
+          "explanation": "A generator and an automated commit duplicate what `@import` does natively. The generated root file still changes on every team edit, so conflicts move to the bot and a bad build can overwrite the file.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Require approval from one designated owner for every change to the root file, and freeze edits outside a weekly window.",
+          "correct": false,
+          "explanation": "An approval queue and a freeze window reduce simultaneous edits but keep four teams inside one file. The pasted copies still drift, and the teams lose ownership of their own conventions.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Keep a shared CLAUDE.md as a short index that imports owned files, instead of pasting copies of them.",
+      "studyRef": "§3 Task 3.1",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S2-D3-005",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "3.2",
+      "secondaryTasks": [],
+      "stem": "Ironpine's skill `.claude/skills/shader-test/SKILL.md` generates a regression test for one shader file. Its frontmatter reads `name: shader-test` and `allowed-tools: Read, Grep, Write`. Engineers often type `/shader-test` with nothing after it, and Claude then guesses which shader to test. The team wants the invocation itself to show which parameter is expected, without adding guard code. What should they add?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a rule to the root `CLAUDE.md` saying engineers should provide a shader file path whenever they run the shader-test skill.",
+          "correct": false,
+          "explanation": "The root file is read by Claude, not shown to the engineer typing the command. The engineer still sees no hint at invocation, and Claude may still guess when no path is given.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "b",
+          "text": "Add `argument-hint: <path-to-shader-file>` to the SKILL.md frontmatter, so the expected path appears every time someone types the command.",
+          "correct": true,
+          "explanation": "`argument-hint` is the frontmatter field made for this: it prompts for the parameter when the skill is typed without arguments. One line in the skill file solves it, with no extra code to maintain.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Register a `UserPromptSubmit` hook in `.claude/settings.json` that rejects any `/shader-test` call invoked without a parameter.",
+          "correct": false,
+          "explanation": "A hook can block the call, but it shows no hint of the expected parameter and adds a script to maintain. Blocking suits a rule that must hold; this team only wants the parameter to be visible.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Add a `context: fork` entry to the SKILL.md frontmatter, so the skill runs separately from the main conversation.",
+          "correct": false,
+          "explanation": "`context: fork` runs the skill in an isolated sub-agent to keep output out of the conversation. It says nothing about parameters, so engineers would still type the bare command and Claude would still guess.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "`argument-hint` in SKILL.md frontmatter shows the expected parameter at invocation; hooks and CLAUDE.md lines do not.",
+      "studyRef": "§3 Task 3.2",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S2-D3-006",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "3.2",
+      "secondaryTasks": [],
+      "stem": "Ironpine's `.claude/commands/crash-report.md` scans about 900 crash dumps with Read and Grep and prints a 40-line summary. Each run also leaves roughly 60,000 tokens of raw dump text in the engineer's conversation, and later answers get worse. The author added \"do not quote raw dumps\" to the command, yet raw text still appears. The summary must reach all 45 engineers and nothing else should stay behind. What is the best change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Recreate it as a project skill in `.claude/skills/crash-report/SKILL.md` with `context: fork`, so the scan runs forked and only the summary returns, for all engineers.",
+          "correct": true,
+          "explanation": "The fork keeps the 60,000 tokens in the sub-agent's own context and returns just the summary. Because the skill is committed in the project folder, all 45 engineers get it.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Recreate it as a personal skill in `~/.claude/skills/crash-report/SKILL.md` with `context: fork`, so the scan runs in a sub-agent and only the 40-line summary comes back to the author.",
+          "correct": false,
+          "explanation": "The fork would fix the context pollution, but a skill in the author's home folder is available only to that engineer. The other 44 would not get the command. A personal skill suits individual customization, not a team tool.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "c",
+          "text": "Keep the command and add a final step that asks each engineer to run `/compact` after every crash-report run, which clears the raw dump text.",
+          "correct": false,
+          "explanation": "`/compact` summarizes the whole conversation at a cost, and it depends on 45 people remembering to run it. The 60,000 tokens still land in the conversation first, so quality drops until someone compacts.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Limit the command to `allowed-tools: Grep` so that it cannot read full dump files into the conversation, which keeps the raw text out.",
+          "correct": false,
+          "explanation": "`allowed-tools` pre-approves the listed tools and removes none, so Read stays available. Even if Read were removed, Grep results from 900 dumps would still enter the conversation. Isolation needs a forked context.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Isolate verbose skill output with `context: fork`, and keep team skills in the project folder so everyone gets them.",
+      "studyRef": "§3 Task 3.2",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S2-D3-007",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "3.2",
+      "secondaryTasks": [],
+      "stem": "Ironpine's `/asset-audit` skill lives in `.claude/skills/asset-audit/SKILL.md`. It reads about 800 asset manifest files and must only report naming problems, but an engineer saw it edit a manifest once, and its intermediate tool output fills the engineer's conversation. The fix must be committed so the whole studio gets it. Which two changes address both issues? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a sentence to the skill body stating that the audit only reports and does not edit any manifest, then re-run it on a sample to check.",
+          "correct": false,
+          "explanation": "A sentence in the body makes edits less likely but does not remove the ability to edit. The engineer already saw one slip, and a restriction on the tools is the way to prevent it.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "b",
+          "text": "Add `context: fork` to the frontmatter so the 800-file scan runs in an isolated sub-agent and only its report returns to the conversation.",
+          "correct": true,
+          "explanation": "The fork keeps the intermediate tool output inside the sub-agent, so the engineer's conversation receives only the final report. This addresses the second issue.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Set `allowed-tools: Read, Grep, Glob, Write` in the frontmatter so the skill can still save its report file to disk.",
+          "correct": false,
+          "explanation": "`allowed-tools` only pre-approves tools and removes none. Listing `Write` makes things worse: the skill could then write files without even asking. The audit only reports, so it needs no file write.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Copy the skill into each engineer's `~/.claude/skills/` folder so every engineer can adjust its behavior locally if the default does not suit them.",
+          "correct": false,
+          "explanation": "Personal copies drift apart and do not carry a team-wide restriction. Each engineer would also need to apply the fix by hand, while the committed project skill is what all engineers already share.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "e",
+          "text": "Add `disallowed-tools: Write, Edit, Bash` to the frontmatter so those tools are removed while the skill runs and it cannot edit a manifest.",
+          "correct": true,
+          "explanation": "`disallowed-tools` removes the listed tools while the skill is active, so the skill has no way to modify a manifest. A removed tool is a guarantee rather than a request. This addresses the first issue and works independently of the fork.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Use `context: fork` to isolate a skill's verbose output and `disallowed-tools` to remove tools it must not use; `allowed-tools` only pre-approves.",
+      "studyRef": "§3 Task 3.2",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S2-D3-008",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "3.3",
+      "secondaryTasks": [],
+      "stem": "Ironpine's shader conventions (90 lines on naming, register use and precision) apply only to `.hlsl` files, which sit in `engine/render/`, `gameplay/fx/` and `tools/preview/`. Today the conventions sit in the root `CLAUDE.md`, so every Lua and Python session loads them. Lua and Python sessions must stay free of them. Which setup loads the conventions only when Claude edits shader files?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Create `.claude/rules/shaders.md` with frontmatter `paths: [\"**/*.hlsl\"]`, so the rules load when Claude touches a matching file in every directory.",
+          "correct": true,
+          "explanation": "A `paths` glob loads the rule only when Claude works on matching files, wherever they sit. That covers all three directories with one file and leaves Lua and Python sessions without the 90 lines.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Create `engine/render/CLAUDE.md` with the conventions, since most shader work happens in that directory and Claude loads it there.",
+          "correct": false,
+          "explanation": "A directory-level file covers only that directory. Shader edits in `gameplay/fx/` and `tools/preview/` would miss the conventions. This would suit rules that apply to one folder rather than a file type.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Move the conventions into a separate file and `@import` it from the root `CLAUDE.md`, which keeps the root file short and the shader text in one place.",
+          "correct": false,
+          "explanation": "An `@import` from the root loads the imported file in every session, so Lua and Python sessions still carry the shader text. It reorganizes the file without making the loading conditional.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "Create `.claude/rules/shaders.md` with the frontmatter key `applies-to: hlsl`, so that Claude recognises which file type the rule is for.",
+          "correct": false,
+          "explanation": "`applies-to` is not a recognised frontmatter key, so the file would be treated as an unconditional rule or ignore the filter. Conditional loading uses the `paths` field with glob patterns.",
+          "trap": "NONEXISTENT_FEATURE"
+        }
+      ],
+      "keyConcept": "Path-scoped rule files load conventions by file pattern, so they follow a file type across directories.",
+      "studyRef": "§3 Task 3.3",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S2-D3-009",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "3.3",
+      "secondaryTasks": [],
+      "stem": "Ironpine keeps 1,100 Lua files under `gameplay/`, including 140 specs named `*_spec.lua` in nested folders such as `gameplay/quests/`. Python tool tests are named `test_*.py` under `tools/`, and `vendor/` holds 300 third-party files with the same `test_*.py` names. A 60-line rule file, `.claude/rules/testing.md`, must load only when Claude edits the studio's own test files. Which `paths` frontmatter achieves that?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`paths: [\"gameplay/**/*_spec.lua\", \"tools/**/test_*.py\"]`, matching the spec and test files in every nested folder of each tree, and nothing under `vendor/`.",
+          "correct": true,
+          "explanation": "The directory prefixes limit the rule to the two studio trees, and `**` lets it reach nested folders. Third-party `test_*.py` files under `vendor/` do not match, so editing them does not load the 60 lines.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "`paths: [\"gameplay/*_spec.lua\", \"tools/test_*.py\"]`, matching the spec and test file names directly inside each tree, with `vendor/` left alone.",
+          "correct": false,
+          "explanation": "A single `*` does not cross folder boundaries, so specs in `gameplay/quests/` and other nested folders would not match. Most of the 140 specs would never load the rule.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "`paths: [\"**/*_spec.lua\", \"**/test_*.py\"]`, matching every spec and test file by name, wherever it sits in the repository.",
+          "correct": false,
+          "explanation": "Name-only patterns match every file with that name, including the 300 third-party files under `vendor/`. This would suit a repository with no vendored code, but here it loads studio rules for foreign tests.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "`paths: [\"gameplay/**/*\", \"tools/**/*\"]`, covering every file in both trees so that no nested test file can be missed.",
+          "correct": false,
+          "explanation": "Matching every file loads the 60 lines for all gameplay and tooling edits, not just tests. It guarantees no test is missed by loading the rule far too often, which defeats the point of conditional loading.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Glob patterns need the directory prefix and `**` for nested folders: scope by location and name together.",
+      "studyRef": "§3 Task 3.3",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S2-D3-010",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "3.3",
+      "secondaryTasks": ["3.1"],
+      "stem": "Ironpine's audio conventions (70 lines: bus naming, sample-rate limits) apply only inside `engine/audio/`, where the files are mixed: `.cpp`, `.h` and `.json` preset files in nested folders. The conventions sit in the root `CLAUDE.md`, so all 45 engineers load them in every session, including Lua and Python work. The team wants one committed copy that Claude carries only while working on audio files. What is the best fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Move the conventions into `engine/audio/CLAUDE.md`, which Claude loads when it works under that directory, and drop them from the root so every other session skips them.",
+          "correct": true,
+          "explanation": "The rules apply to a single directory regardless of file type, so a directory-level CLAUDE.md fits. It is committed once, loads for audio work and not for Lua or Python sessions, and covers headers and presets too.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Create `.claude/rules/audio.md` with `paths: [\"engine/audio/**/*.cpp\"]`, because the bus and sample-rate rules matter most when the C++ source files in that directory change.",
+          "correct": false,
+          "explanation": "Path scoping is the right idea, but this pattern matches only `.cpp` files. Edits to `.h` headers and `.json` presets in the same folder would not load the conventions, leaving gaps in the audio work.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Create `.claude/rules/audio.md` with the conventions and no `paths` frontmatter, so the audio rules sit in their own file instead of the root file.",
+          "correct": false,
+          "explanation": "A rule file without `paths` is unconditional and loads at the start of every session. The root file gets shorter, but Lua and Python engineers still carry the 70 lines.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "Keep the conventions in `docs/audio.md` and `@import` that file from the root `CLAUDE.md`, so the rules stay in a single file.",
+          "correct": false,
+          "explanation": "An import from the root loads the file in every session, so nothing changes for Lua and Python work. The conventions become easier to edit but are no more conditional than before.",
+          "trap": "WRONG_CONFIG_LAYER"
+        }
+      ],
+      "keyConcept": "Conventions for one directory belong in that directory's CLAUDE.md; a path-scoped rule is for patterns that span directories.",
+      "studyRef": "§3 Task 3.3; §3 Task 3.1",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S2-D3-011",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.4",
+      "secondaryTasks": [],
+      "stem": "An Ironpine tools engineer wants `tools/pack_assets.py` to reject manifests with duplicate asset IDs, but the build freeze starts in 30 minutes. She has already decided the behaviour: `load_manifest()` should raise `ValueError` listing every duplicate, and its two callers already handle `ValueError`. About 25 lines change in this one file. How should she approach the work with Claude Code?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Use plan mode: have Claude explore the repository and list alternatives for how `load_manifest()` and its callers should handle duplicates, then approve a plan before any edit.",
+          "correct": false,
+          "explanation": "Plan mode suits changes with several valid approaches or many files. Here the behaviour is decided and the scope is one function, so a planning round spends part of the 30 minutes without adding information.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "b",
+          "text": "Hand the change to an Explore subagent so that discovery and the edit both happen away from the main conversation.",
+          "correct": false,
+          "explanation": "An Explore subagent isolates verbose discovery and returns a summary. It is for reading, not for making an edit, and nothing here needs discovery because the file and function are already known.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Use direct execution: tell Claude the file, the function and the `ValueError` to raise, then review the diff before the freeze.",
+          "correct": true,
+          "explanation": "A small, well-understood change needs no exploration. Naming the file, the function and the behaviour is enough, and reviewing the diff checks the 25 lines before the freeze.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Run an interview first, with Claude questioning her about the exact `ValueError` behaviour and the edge cases for `load_manifest()` across several rounds before any code is written.",
+          "correct": false,
+          "explanation": "The interview pattern helps in unfamiliar domains where the developer may miss considerations. She has already decided the behaviour, so several rounds of questions would only delay a change with a clear scope.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "For a well-scoped change with known behaviour, use direct execution and review the diff; plan mode is for open design choices.",
+      "studyRef": "§3 Task 3.4",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S2-D3-012",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "3.4",
+      "secondaryTasks": ["3.5"],
+      "stem": "Ironpine is moving its particle system from callbacks to coroutines. The change spans 52 Lua files in `gameplay/` and 6 C++ binding files in `engine/script/`, and the release branch cuts in three days. An engineer started in direct execution. After 15 files, Claude's approach conflicted with how the C++ bindings yield, and 9 of those files must be redone. 43 files remain. What should the engineer do next?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Switch to plan mode, have Claude read the C++ bindings and fix one approach for all 43 other files, then go back to direct execution.",
+          "correct": true,
+          "explanation": "The conflict shows the approach was never settled. Exploring the binding contract in plan mode fixes it once, and the remaining 43 files plus the 9 redos can then run by direct execution without more surprises.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Stay in direct execution mode, but after every 15 files have Claude read the binding contract and redo the files that conflict.",
+          "correct": false,
+          "explanation": "Checkpoints catch conflicts after the work is done, so more files may need redoing. The approach is still unsettled, and the three-day deadline makes repeated redo rounds expensive.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Revert all 15 files and restart the original prompt in a new session, so that the 9 conflicting files and the other 6 are all redone.",
+          "correct": false,
+          "explanation": "Six of the 15 files are fine and the engineer has learned how the bindings yield. A restart throws that away and repeats the original prompt, which may pick the same conflicting approach.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "d",
+          "text": "Add a note to the prompt asking Claude to read the C++ bindings and fix one approach before it edits each remaining file.",
+          "correct": false,
+          "explanation": "The note asks for care but does not settle which approach to use across 58 files. Checking per file could produce a different choice each time, which is the inconsistency that caused the conflict.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        }
+      ],
+      "keyConcept": "When direct execution hits an unresolved design conflict mid-task, switch to plan mode to settle the approach, then execute.",
+      "studyRef": "§3 Task 3.4",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S2-D3-013",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.5",
+      "secondaryTasks": ["3.4"],
+      "stem": "An Ironpine engine engineer asked Claude for a fixed-timestep accumulator in `engine/time/`. The prose spec produced code that looks right, but review found four failures: a zero timestep, negative deltas, a 300 ms stall after a debugger pause and drift over 10 minutes. Each tick must stay under 2 microseconds, and the loop runs 60 times a second. What should she do to iterate effectively?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Rewrite the prose spec as a longer description of each edge case and the timing budget, then ask Claude to regenerate the accumulator.",
+          "correct": false,
+          "explanation": "The prose was already interpreted inconsistently, and longer prose has the same weakness. Executable cases leave less room for interpretation than a description of each edge case.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Write the test suite first for normal use and the four edge cases, iterate by sharing each failing test with Claude, then time the 2-microsecond limit by hand.",
+          "correct": false,
+          "explanation": "Test-first is right for the edge cases, but the timing limit is part of the expected behaviour. Left to a manual check at the end, a violation appears late, after Claude has built on a design that may be too slow. Putting the limit in the suite catches it on the first failing run.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Ask Claude to write the tests after the implementation, using the finished code as the reference for what the expected results should be.",
+          "correct": false,
+          "explanation": "Tests derived from the code encode its current behaviour, including the zero-step and drift bugs. They would pass while the accumulator stays wrong, because nothing independent defines the expected results.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "d",
+          "text": "Write the test suite first, covering normal use, the four edge cases and the 2-microsecond limit, then iterate by sharing each failing test with Claude.",
+          "correct": true,
+          "explanation": "Tests written before the code define the expected behaviour, including the timing limit. Each failure shared with Claude is a precise, verifiable target, so iteration converges instead of guessing.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Write the test suite first, covering edge cases and performance, then iterate by sharing failures with Claude.",
+      "studyRef": "§3 Task 3.5",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S2-D3-014",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "3.5",
+      "secondaryTasks": [],
+      "stem": "Claude wrote `parse_version()` in `tools/release.py`. It handles `1.2.3` but fails on `1.2.3-rc1` (expected `(1, 2, 3, 'rc1')`) and on `v1.2` (expected `(1, 2, 0, None)`). The engineer has asked three times, in prose, to \"handle all version formats robustly\", and each attempt fixed one input while breaking another. The fix must not break the `1.2.3` case that works today. What is the most effective next step?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Ask Claude to rewrite the whole function in a new session so that earlier failed attempts cannot influence the new version.",
+          "correct": false,
+          "explanation": "A restart discards what the conversation learned, and the same vague request would likely produce the same one-at-a-time fixes. The missing piece is a precise definition of correct, not a clean slate.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "b",
+          "text": "Give Claude the failing inputs with their exact expected outputs as test cases, then have it fix the function until they all pass.",
+          "correct": true,
+          "explanation": "Concrete input and output pairs remove the ambiguity that three prose attempts left. Including the working `1.2.3` case as a test also catches any attempt that breaks it.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Describe in one paragraph how an `-rc1` suffix and a leading `v` should be handled, with the expected tuple shapes, and ask Claude to apply it.",
+          "correct": false,
+          "explanation": "A longer description is still prose, so it can be read in several ways, and nothing checks the result. Exact examples as tests would show immediately whether each case passes.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Ask Claude to write a complete test suite for the entire `release.py` module before it changes `parse_version()`, then fix the function from the failures.",
+          "correct": false,
+          "explanation": "Tests are the right tool, but a suite for the whole module is far more than the problem needs. A handful of cases for `parse_version()` give the same feedback with far less work.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "When prose requests keep fixing one input and breaking another, supply exact failing inputs and expected outputs as test cases.",
+      "studyRef": "§3 Task 3.5",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S2-D3-015",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "3.5",
+      "secondaryTasks": [],
+      "stem": "After Claude rewrote `gameplay/loot/LootTable.lua`, an engineer found four problems. The rarity weights and the pity-counter reset interact: changing either shifts the other's results. A crash on an empty table and a typo in a log message are each independent of everything else. She wants to avoid a long back-and-forth, but each fix must be verified. How should she send these back to Claude? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Report all four problems one at a time in four separate messages, checking each fix before moving to the next.",
+          "correct": false,
+          "explanation": "Sequential fixes suit independent issues. For the weights and the pity counter, fixing one alone shifts the other, so the two would keep undoing each other across messages.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Start a new session for each of the four problems so that earlier fixes cannot influence the later ones.",
+          "correct": false,
+          "explanation": "Fresh sessions lose the context of what changed in the rewrite. The interacting problems especially need to be seen together, and each new session would have to relearn the file.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Describe the weight and pity-counter problems together in one message, with the expected result for each case.",
+          "correct": true,
+          "explanation": "The two problems interact, so Claude needs to see both at once to find a change that satisfies each case. A single message with expected results avoids fixing one and breaking the other.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Report the empty-table crash and the log typo in separate follow-up messages and confirm each before moving on.",
+          "correct": true,
+          "explanation": "Independent problems cannot affect each other, so separate sequential messages are simple and each fix can be verified on its own.",
+          "trap": null
+        },
+        {
+          "id": "e",
+          "text": "Have Claude write a design document for all four problems and wait for approval before changing any code.",
+          "correct": false,
+          "explanation": "A design document is heavy for a crash and a typo, and it delays the fixes. Two of the problems are plain, independent corrections that need no planning.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Report interacting problems together in one message; handle independent problems in separate, sequential messages.",
+      "studyRef": "§3 Task 3.5",
+      "sources": ["exam-guide"]
+    }
+  ]
+}

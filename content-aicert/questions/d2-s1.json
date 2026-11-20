@@ -1,0 +1,307 @@
+{
+  "scenario": "S1",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S1-D2-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "2.1",
+      "secondaryTasks": ["5.2"],
+      "stem": "Riverbend's account support agent has `get_account`, described as \"Gets account data\", and `get_meter_reads`, described as \"Gets meter data\". The same two tools also serve a billing assistant that has its own system prompt. Customers who ask why a bill was estimated get profile details instead of the last six readings in about 30% of conversations. The tools return different things: profile, tariff and balance from one, dated readings with their read type from the other. What is the most effective first fix, without changing either tool's code?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Set `tool_choice` to force `get_meter_reads` whenever the customer's message contains the word \"estimated\", so those conversations always start with the readings.",
+          "correct": false,
+          "explanation": "A forced tool choice applies to the whole request, so any message with that word is locked to `get_meter_reads`, while other phrasings such as a high bill are still misrouted. Forcing suits a step that must run first, and the vague descriptions stay.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "b",
+          "text": "Add a paragraph to the support agent's system prompt that states what `get_account` and `get_meter_reads` each return and which question each one answers.",
+          "correct": false,
+          "explanation": "The paragraph steers only the support agent. The billing assistant loads the same tools with its own prompt and still sees \"Gets account data\" and \"Gets meter data\", so the confusion stays there. The same wording in the descriptions travels with the tools to every agent; a prompt paragraph would suit guidance meant for one agent alone.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "c",
+          "text": "Give `get_account` and `get_meter_reads` new descriptions that spell out what each one returns and which question it answers, so the model can tell them apart.",
+          "correct": true,
+          "explanation": "The model picks tools mainly from their descriptions, and these two say almost nothing. Stating outputs, inputs and the boundary between them fixes the cause for every agent that loads the tools, without adding a component.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Merge the two into one `get_customer_data` tool with one combined description, returning the profile and the readings together on every call.",
+          "correct": false,
+          "explanation": "A merged tool removes the choice but returns profile, tariff, balance and readings on every call, which pads the context and changes the tool's code. The cause was vague descriptions, and merging would suit only tools that are always needed together.",
+          "trap": "TOOL_OVERLOAD"
+        }
+      ],
+      "keyConcept": "Tool descriptions drive selection, so fix confusion between similar tools by describing outputs, inputs and boundaries before adding layers.",
+      "studyRef": "§3 Task 2.1; §5 Key decision frameworks",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S1-D2-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "2.1",
+      "secondaryTasks": ["5.2"],
+      "stem": "Riverbend's system prompt says: \"If a customer mentions a disconnection notice, use `escalate_to_agent`.\" Escalations now reach 29% of contacts against a ceiling of 25%, and many conversations start with \"I got a notice about my bill\". Last sprint the team added three \"do not use when\" examples to the `escalate_to_agent` description, which moved the rate only from 31% to 29%. Escalations for registered vulnerable customers must keep working. What is the most effective next step?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Rewrite the `escalate_to_agent` description to name the real conditions, a vulnerable-customer registration or an explicit request for a person, and keep the prompt rule.",
+          "correct": false,
+          "explanation": "The description is not the cause: the system prompt names \"notice\" as a trigger, and an explicit prompt rule outweighs a better description. Three description edits already moved the rate only from 31% to 29%, so rewording the description again polishes a layer that is not the problem. It would be right if the prompt carried no keyword rule.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "b",
+          "text": "Add a `PreToolUse` hook that blocks `escalate_to_agent` unless the latest message contains \"agent\" or \"person\", and logs each blocked attempt.",
+          "correct": false,
+          "explanation": "A hook blocks escalations by keyword, so a registered vulnerable customer who never says \"person\" would be stopped, which the stem rules out. It also leaves the faulty trigger in the prompt. A hook suits a rule that must hold in code, not a fix for a bad instruction.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "c",
+          "text": "Escalate only when a sentiment check on the customer's message comes back negative, and let the agent resolve conversations that read as calm.",
+          "correct": false,
+          "explanation": "Sentiment is not the same as need for a human: a calm customer on the vulnerable register must still be escalated, and an annoyed customer with a simple question need not be. Escalation should rest on explicit, checkable conditions.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "d",
+          "text": "Change the system prompt rule to name the real conditions for escalation, a vulnerable-customer registration or an explicit request for a person, and drop the keyword trigger.",
+          "correct": true,
+          "explanation": "The prompt's keyword rule is what sends notice questions to `escalate_to_agent`. Replacing it with the real conditions fixes the cause at the layer where it sits, and registered vulnerable customers are still covered by name.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "When a good tool description is ignored, check the system prompt for keyword instructions that steer the model to that tool.",
+      "studyRef": "§3 Task 2.1 (system prompt wording); §5 Key decision frameworks",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S1-D2-003",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "2.2",
+      "secondaryTasks": ["5.2"],
+      "stem": "`apply_bill_credit` rejects any credit above $250 until a human approver signs off, but it returns `{\"isError\": true, \"message\": \"Request denied\"}`. In a sample of 60 denied attempts the agent retried the same call two or three times, then told the customer the system was having trouble. Credits of $250 or less are unaffected. What change to the tool's error response fixes this?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Return `errorCategory: \"business\"` and `isRetryable: false`, with a plain note that credits above $250 need approval, so the agent can offer `escalate_to_agent`.",
+          "correct": true,
+          "explanation": "The agent cannot tell a business-rule refusal from a glitch, so it retries and then blames the system. A category, a retry flag and a readable reason tell it the case needs a person, and it can hand over at once.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Cap retries for `apply_bill_credit` at one attempt in the agent loop, and keep the message \"Request denied\" so the customer receives a short, consistent reply.",
+          "correct": false,
+          "explanation": "A cap trims the wasted calls from three to one, but the agent still has no idea why the call failed and still tells the customer the system is having trouble. The reason is the missing information, not the number of retries.",
+          "trap": "ITERATION_CAP"
+        },
+        {
+          "id": "c",
+          "text": "Return a success response with `status: \"pending\"` when the credit needs approval, and queue it for a person in the background without informing the agent.",
+          "correct": false,
+          "explanation": "The agent would treat a pending item as done and could tell the customer the credit was applied. A refusal is not a success, and hiding it from the agent removes its chance to escalate or explain.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Add a system-prompt rule saying to treat \"Request denied\" as final, apologise to the customer and not call the tool again for that credit.",
+          "correct": false,
+          "explanation": "The rule stops the retries but sends no one to approve the credit, so the customer is apologised to and left. A prompt cannot carry the reason or the next step; the tool's response should say a human approver is needed.",
+          "trap": "FAILURE_TO_ESCALATE"
+        }
+      ],
+      "keyConcept": "Return business-rule failures as structured, non-retryable errors with a readable reason so the agent knows to hand the case on.",
+      "studyRef": "§3 Task 2.2 (retriable false for business errors)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S1-D2-004",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 3,
+      "primaryTask": "2.2",
+      "secondaryTasks": ["5.3"],
+      "stem": "`get_meter_reads` calls the metering system. During a 20-minute nightly maintenance window it times out, and for new smart meters with no readings yet it returns an empty `reads` list. Both reach the agent as `{\"reads\": []}`, so it tells affected customers their meter has never been read, which was wrong in one of three such contacts. A prompt line asking it to \"mention the system may be down if no reads appear\" cut wrong statements only from 34% to 29%. Live-chat customers cannot wait out the window, so the fix must work without a human step. Which two changes should you make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Retry the metering call inside the tool three times with a five-second pause, and return the empty list only if every attempt fails.",
+          "correct": false,
+          "explanation": "Local retries suit a brief glitch, but the outage lasts 20 minutes, so all three attempts fail and the agent again receives an empty list that looks like a valid answer. Retrying inside the tool does not separate a failure from a true empty.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "b",
+          "text": "When the metering system does not answer, return `isError: true` with a message that the call timed out, so the agent can say readings are temporarily unavailable.",
+          "correct": true,
+          "explanation": "An access failure has to look like a failure. The error flag and a clear message let the agent tell the customer readings can't be fetched right now, instead of claiming the meter was never read.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Return an error for the new-meter case too, so that any empty read list counts as a failed call.",
+          "correct": false,
+          "explanation": "A new meter with no readings is a valid result. Calling it a failure would send the agent into retries or apologies for something that is working, and it would still not explain that readings start after the first scheduled read.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Add the start and end times of the maintenance window to the prompt line, so the agent can guess the cause from the clock.",
+          "correct": false,
+          "explanation": "The agent would infer an outage from the time of day, which breaks when the window moves or a timeout happens at another hour. The tool knows whether the call failed, and a prompt guess is the weaker place to decide.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "e",
+          "text": "Leave `{\"reads\": []}` as an ordinary successful result for a new meter, so the agent can explain that readings begin after the first scheduled read.",
+          "correct": true,
+          "explanation": "A true empty is real data. Keeping it a success lets the agent explain what is going on for a new meter, while the failure path is handled separately and the two stop being confused.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Tell access failures apart from valid empty results at the tool: a failed call is an error, a true empty stays a success.",
+      "studyRef": "§3 Task 2.2 (access failures vs empty results); §3 Task 5.3",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S1-D2-005",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "2.3",
+      "secondaryTasks": [],
+      "stem": "Riverbend routes each incoming chat through a classifier step with three tools: `route_to_billing`, `route_to_outage` and `route_to_payments`. A dispatcher reads only the tool call that the step produces, and the step must hand every chat to a queue without a person watching. In about 6% of chats the model replies with a sentence such as \"This looks like a billing question\" and calls no tool, so the dispatcher stalls. What is the best fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Force `{\"type\": \"tool\", \"name\": \"route_to_billing\"}` on every request, since billing is the largest queue.",
+          "correct": false,
+          "explanation": "Forcing a named tool does guarantee a call, but it sends outage and payment chats to the billing queue as well. Forcing one tool suits a step where only that tool can be right.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "b",
+          "text": "Set `tool_choice` to `\"auto\"` and add a system-prompt rule that every reply must end in a tool call and not a sentence.",
+          "correct": false,
+          "explanation": "With `\"auto\"` the model may still answer in text, and a prompt rule only lowers the rate. The dispatcher stalls whenever it fails, and here every chat must reach a queue, so the setting must carry the guarantee.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Set `tool_choice` to `\"any\"`, so the model must call one of the three routing tools on every chat but still decides which.",
+          "correct": true,
+          "explanation": "`\"any\"` forces a tool call without choosing the tool, which is exactly what the dispatcher needs. The model keeps the routing decision and a text-only reply is no longer possible.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Have the dispatcher scan the reply for the words billing, outage or payments and route on the first match.",
+          "correct": false,
+          "explanation": "Scanning free text bolts a parser onto a step that should return a tool call. A sentence mentioning two topics or none would route wrongly or stall, and the cause stays unfixed.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "When some tool must be called but any of several fits, set `tool_choice` to `\"any\"` rather than prompting or forcing one tool.",
+      "studyRef": "§3 Task 2.3 (tool_choice options); §5 Key decision frameworks",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S1-D2-006",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "2.3",
+      "secondaryTasks": ["1.4"],
+      "stem": "Riverbend's coordinator delegates to a disputes subagent and a payment-plan subagent. Both were given `apply_bill_credit` because both handle billing. Last week the payment-plan subagent applied 23 credits of $40 to $180 to settle disputes it was never asked to handle. The existing hook that holds credits above $250 for a human approver never fired, and the team must fix it without adding a new component. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Remove `apply_bill_credit` from the payment-plan subagent's tool list and have it hand any credit request to the coordinator, which routes it to the disputes subagent.",
+          "correct": true,
+          "explanation": "A subagent should hold only the tools its role needs. Without the tool it cannot apply credits, and requests flow through the coordinator to the subagent that owns disputes, with no new component.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Lower the hook's threshold from $250 to $25, so these smaller credits also wait for a human approver before they are applied.",
+          "correct": false,
+          "explanation": "A lower threshold would catch these 23 credits, but it also sends legitimate small credits to approvers and leaves the tool in the wrong subagent. The cause is the out-of-role tool, and a threshold would suit a rule about credit size.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add a rule to the payment-plan subagent's system prompt allowing a credit only when the customer's plan request mentions one, and ask it to note why.",
+          "correct": false,
+          "explanation": "A prompt rule lowers the rate but does not stop the tool from being called when the model decides it fits. The subagent already applied credits it was never asked for, so access should be removed instead.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Give the payment-plan subagent the disputes subagent's other tools too, so it can check each dispute before applying a credit.",
+          "correct": false,
+          "explanation": "Extra tools widen the payment-plan subagent's reach and overlap with the disputes subagent, and the credit tool is still in its hands. Checking disputes is the other subagent's job.",
+          "trap": "TOOL_OVERLOAD"
+        }
+      ],
+      "keyConcept": "Give each subagent only the tools its role needs; a tool outside the role gets used, and a threshold hook won't catch it.",
+      "studyRef": "§3 Task 2.3 (scoped tool access); §5 anti-pattern 8",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S1-D2-007",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "2.4",
+      "secondaryTasks": ["5.1"],
+      "stem": "Riverbend's assistant connects to a tariff MCP server. The catalogue has about 400 tariff codes and changes only when the regulator approves new rates, a few times a year. At the start of most conversations the agent calls `search_tariffs` five to eight times to find out which codes exist before it can explain a charge. Most conversations need only two or three codes, and the prompt budget is tight. What is the most effective improvement?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Paste all 400 codes and descriptions into the system prompt, so the agent has them at the start of every conversation.",
+          "correct": false,
+          "explanation": "The agent would stop searching, but every conversation would carry 400 entries when two or three are needed, which uses up the budget, and the pasted list goes stale whenever the regulator changes a rate.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Add a prompt line asking the agent to remember the codes it found in earlier conversations and reuse them.",
+          "correct": false,
+          "explanation": "Each conversation starts fresh, so the agent has nothing to remember and the searches would continue. Shared reference data has to be offered by the server, not recalled.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "c",
+          "text": "Fold the catalogue into `get_account` and `search_tariffs` responses, so every account lookup returns all 400 codes beside the customer's own tariff and the agent can see which codes exist.",
+          "correct": false,
+          "explanation": "This returns the whole catalogue on every lookup, even when the question is about a balance, and mixes a customer record with reference data. It would be a heavy payload for a small need.",
+          "trap": "TOOL_OVERLOAD"
+        },
+        {
+          "id": "d",
+          "text": "Publish the tariff catalogue as an MCP resource that the agent can read when it needs to know which codes exist, instead of calling `search_tariffs` to find out.",
+          "correct": true,
+          "explanation": "A resource gives the agent a stable view of what exists up front, and it is read only when needed. The exploratory `search_tariffs` calls go away and the prompt stays small.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Expose stable content catalogues as MCP resources so the agent sees what exists without exploratory tool calls.",
+      "studyRef": "§3 Task 2.4 (MCP resources)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    }
+  ]
+}

@@ -21,7 +21,7 @@ test('2, S, Enter submit option B with confidence Sure; M toggles the mark', asy
   expect(JSON.parse(row[1])).toEqual([order[1]]);
   expect(row[2]).toBe('sure');
 
-  const mark = page.getByRole('button', { name: /review$/ });
+  const mark = page.getByRole('button', { name: /learn later$/ });
   await expect(mark).toHaveAttribute('aria-pressed', 'false');
   await page.keyboard.press('m');
   await expect(mark).toHaveAttribute('aria-pressed', 'true');

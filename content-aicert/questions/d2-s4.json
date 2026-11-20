@@ -1,0 +1,398 @@
+{
+  "scenario": "S4",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S4-D2-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "2.1",
+      "secondaryTasks": ["2.4"],
+      "stem": "Fleetway's assistant has two MCP search tools. `search_tickets` is described as \"Searches for information about the route service\", and `search_wiki` has almost the same description. The first indexes tickets with IDs such as `RTE-4821`; the second indexes architecture pages. The assistant uses `search_wiki` for ticket questions in about 40% of cases, but half of those questions name no ID, for example \"the depot sync ticket from last week\". What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Rewrite both descriptions to show what each one indexes, which questions it should answer and when to use it instead of the other.",
+          "correct": true,
+          "explanation": "The two descriptions are nearly identical, so the model has no basis for choosing. Stating what each indexes and where each stops fixes the cause, including for questions that name no ticket ID.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add a `CLAUDE.md` rule that sends any question containing a ticket ID such as `RTE-4821` to `search_tickets` and everything else to `search_wiki`, so the model has a clear route.",
+          "correct": false,
+          "explanation": "The rule covers questions with an ID, but half of the misrouted questions name none, so they would still go to the wiki. It also leaves both tool descriptions vague for any other context that uses them.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Set `tool_choice` to force `search_tickets` on any request that contains a number, and `search_wiki` on everything else.",
+          "correct": false,
+          "explanation": "Forcing by number would catch an ID but also any question with a date or a version, and the rest of the ticket questions still go to the wiki. A forced choice cannot judge what a question is about.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Merge both into one `search_everything` tool that queries tickets and wiki pages together and returns the top ten hits from each.",
+          "correct": false,
+          "explanation": "A merged tool floods each answer with results from the source that is not needed and hides the difference between tickets and design pages. Clear descriptions solve the choice without it.",
+          "trap": "TOOL_OVERLOAD"
+        }
+      ],
+      "keyConcept": "Overlapping tool descriptions cause misrouting; state what each tool covers, its expected input and when to use it instead of the other.",
+      "studyRef": "§3 Task 2.1; §5 Key decision frameworks",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S4-D2-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "2.4",
+      "secondaryTasks": ["2.1"],
+      "stem": "Fleetway has MCP servers for its ticket tracker and its internal wiki, both configured for the assistant. An engineer proposes writing a gateway server that wraps the two behind one set of combined tools, because \"the assistant can only use one server's tools per session\". The platform team has about six weeks of capacity, but the assistant is needed for the next release in two weeks. How should you respond?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Build the gateway, because each session loads the tools of only one MCP server and the platform team has six weeks free.",
+          "correct": false,
+          "explanation": "The premise is wrong: every configured server's tools are available together. The gateway would take weeks to deliver something that already works, and the release is in two.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "b",
+          "text": "Add a `switch_mcp_server` entry to `settings.json` so only one of the two servers is active in each session.",
+          "correct": false,
+          "explanation": "There is no such setting, and it would remove access to one system instead of combining them. Both servers already work together once configured.",
+          "trap": "NONEXISTENT_FEATURE"
+        },
+        {
+          "id": "c",
+          "text": "Keep both servers configured, because the assistant discovers every configured server's tools at connection and can use them together in one session.",
+          "correct": true,
+          "explanation": "Tools from all configured servers are discovered when the connection is made and are usable side by side. Nothing needs to be built, which suits the two-week deadline.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Run the tracker and the wiki in separate sessions, and carry results between them by pasting the output across.",
+          "correct": false,
+          "explanation": "Pasting between sessions copes with a limit that does not exist and loses the chance to use both systems in one question. It adds manual work for no gain.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Tools from all configured MCP servers are discovered at connection time and usable together, so don't build a gateway to combine them.",
+      "studyRef": "§3 Task 2.4 (tools discovered at connection time)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S4-D2-003",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "2.5",
+      "secondaryTasks": [],
+      "stem": "Before a database upgrade, a Fleetway engineer asks the assistant to list every Liquibase migration file in the route-planning service. The files follow the pattern `V<number>__<description>.sql` and sit in many modules under `src/`, alongside other `.sql` files such as seed data. The assistant needs the full list of paths without opening any file. Which built-in tool should it use?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Grep for `CREATE TABLE`, since migration files contain table definitions and the pattern appears in most of them.",
+          "correct": false,
+          "explanation": "Grep searches file contents, so it would miss migrations without a table definition and match seed or other `.sql` files that contain the phrase. The question is about file names.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Glob with a pattern such as `src/**/V*__*.sql`, which matches file paths by name wherever they sit.",
+          "correct": true,
+          "explanation": "Glob matches paths by pattern and returns names without opening any file, and the `V*__*` part keeps seed data out. It fits a question about which files exist.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Glob with `src/**/*.sql`, then keep every path in the result, since all the SQL files are migrations.",
+          "correct": false,
+          "explanation": "Glob is the right tool, but this pattern also matches the seed-data files, so the list would include files that are not migrations. The pattern has to follow the naming convention.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Bash with a loop that opens each directory under `src/` and prints its listing.",
+          "correct": false,
+          "explanation": "A shell loop does by hand what Glob does in one call, and the output would include every file, not only the migrations. A built-in tool is simpler and clearer.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Use Glob to match file paths by name or extension, and Grep to search what is inside files.",
+      "studyRef": "§3 Task 2.5 (Grep for content, Glob for paths)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S4-D2-004",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "2.4",
+      "secondaryTasks": [],
+      "stem": "A Fleetway engineer is prototyping an MCP server that reads depot telemetry from a sandbox database only she can reach, and the server needs her personal credentials. She wants it in her own Claude Code sessions in any repository, without changing what the other 119 engineers get. Where should it be configured?",
+      "options": [
+        {
+          "id": "a",
+          "text": "In the repository's `.mcp.json`, committed on a branch she does not merge and checked out when she wants the server.",
+          "correct": false,
+          "explanation": "A project file is for servers the team shares, and it applies only in that repository. It would also tie her credentials to a branch, and the server would be missing in her other repositories.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "b",
+          "text": "In a new team-wide server entry that wraps the sandbox database, so the platform team maintains it.",
+          "correct": false,
+          "explanation": "A shared server would put a prototype that needs her personal credentials in front of 119 people. The need is personal, so it should not become a team service.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "c",
+          "text": "In the project's `CLAUDE.md`, as a note telling the assistant how to launch the server with her credentials.",
+          "correct": false,
+          "explanation": "`CLAUDE.md` is committed and read by every engineer, and it only gives guidance; it does not configure a server. Her credentials would be exposed in a shared file.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "In her user-level `~/.claude.json`, which applies only to her sessions in any repository and is not shared through git.",
+          "correct": true,
+          "explanation": "User-level configuration follows her to every repository and stays out of version control. The team's setup and the credentials are untouched.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Shared team servers go in project `.mcp.json`; personal or experimental servers go in user-level `~/.claude.json`.",
+      "studyRef": "§3 Task 2.4 (.mcp.json vs ~/.claude.json)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S4-D2-005",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "2.5",
+      "secondaryTasks": ["5.4"],
+      "stem": "A support ticket at Fleetway quotes a production log line: `No feasible route for vehicle V-17 after 3 relaxations`. The engineer asks the assistant to find where the service produces that message. The route-planning service has about 1.4 million lines across Java and Python, but the failure cannot be reproduced locally. What should the assistant do first?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Read `RoutePlanner.java`, the largest solver file, from the top until it finds the message, and move on to the Python modules if it doesn't.",
+          "correct": false,
+          "explanation": "Reading a large file from the top guesses at the location and fills the context. It could miss the message entirely if it lives in the Python half.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Grep for the full logged line, `No feasible route for vehicle V-17 after 3 relaxations`, then Read the file it points to.",
+          "correct": false,
+          "explanation": "The vehicle ID and the count are filled in at runtime, so the full line never appears as a literal in the code and the search would return nothing. Search for the fixed part only.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Grep for the fixed text of the message, `No feasible route for vehicle`, and then Read the file it points to.",
+          "correct": true,
+          "explanation": "The constant text appears in the source where the message is built. A content search finds it across both languages, and only the files it points to need to be read.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Run the route planner locally with Bash, reproduce the failure for vehicle V-17 and follow the stack trace back to the line that logs the message.",
+          "correct": false,
+          "explanation": "The failure depends on production data and cannot be reproduced locally, so this would cost a lot of effort to learn what a text search shows in seconds.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Search by the fixed part of a message with Grep to find an entry point, then Read only the files it points to.",
+      "studyRef": "§3 Task 2.5 (Grep for error messages; build understanding incrementally)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S4-D2-006",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "2.4",
+      "secondaryTasks": ["2.1"],
+      "stem": "Fleetway's incident MCP server exposes `search_incidents`, which queries 9 years of incident history, including closed incidents never written to the repository. Its description was rewritten last week to say exactly that, with two example questions. The assistant still uses Grep on the local `docs/incidents/` folder in about 60% of incident questions. The project's `CLAUDE.md` says: \"For anything about incidents, search the `docs/incidents/` folder first.\" But the folder also holds the runbooks responders need during live incidents. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Extend the `search_incidents` description with five additional example questions, covering closed incidents and old outages.",
+          "correct": false,
+          "explanation": "The description is already clear, and it was rewritten without effect. The `CLAUDE.md` instruction explicitly sends the assistant to the folder first, and that instruction outweighs a description.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Change the `CLAUDE.md` instruction so every question about past incidents goes to `search_incidents` and the folder is kept for current runbooks.",
+          "correct": true,
+          "explanation": "The instruction is what steers the assistant away from the tool. Pointing history questions to `search_incidents` and leaving runbooks in the folder fixes the cause and keeps what the folder is good for.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Rename `search_incidents` to `grep_incidents`, so the assistant treats it as another search like the one it already uses.",
+          "correct": false,
+          "explanation": "A new name does not change the instruction that sends the assistant to the folder first, and it would hide that the tool covers history the files do not hold.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Add a `PreToolUse` hook that blocks Grep calls whose path contains `docs/incidents/`, so the assistant has to use `search_incidents`.",
+          "correct": false,
+          "explanation": "The hook would also block lookups of the runbooks that responders need, and the contradictory `CLAUDE.md` line would remain. A hook suits a hard rule, and this one is guidance.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "When an MCP tool is ignored despite a good description, check the CLAUDE.md or prompt wording that steers to built-in tools.",
+      "studyRef": "§3 Task 2.4 (descriptions vs built-ins); §3 Task 2.1 (keyword-sensitive prompts)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S4-D2-007",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "2.5",
+      "secondaryTasks": [],
+      "stem": "The file `config/depots.yaml` has 31 depot blocks, each with the same line `maxStops: 25`. An engineer asks the assistant to change the limit to 30 for the LHR depot only, and then to check that nothing else in the codebase still reads the old constant `MAX_STOPS_LEGACY`. An Edit attempt fails because the line is not unique, and the other 30 blocks must stay at 25. Which two actions are correct? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Run `sed -i 's/25/30/' config/depots.yaml` with Bash to change the number everywhere, then restore the other 30 blocks from git.",
+          "correct": false,
+          "explanation": "It changes all 31 blocks and then needs a manual restore, which risks leaving some at the wrong value. The single block can be changed directly.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "b",
+          "text": "Glob for `**/*MAX_STOPS_LEGACY*` to find every file that uses the constant, since file names show where it is used.",
+          "correct": false,
+          "explanation": "Glob matches file names, not contents, so it only finds files that happen to carry the constant's name. Usage inside other files needs a content search.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Read the file, change the `maxStops` value inside the LHR block only, and save the whole file back with Write.",
+          "correct": true,
+          "explanation": "When Edit cannot find a unique anchor, reading the file and writing it back with the one change is the reliable fallback. Only the LHR block changes.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Retry Edit with a slightly different old string such as ` maxStops: 25` and keep adjusting it until one call succeeds.",
+          "correct": false,
+          "explanation": "Every block has the same line, so a variation of the same string stays non-unique, and a lucky match could change the wrong depot. Identifying the block is the problem.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "e",
+          "text": "Grep for `MAX_STOPS_LEGACY` across the codebase and read each hit to find the remaining readers of the constant.",
+          "correct": true,
+          "explanation": "A content search finds every file that mentions the constant, wherever it is. It answers the second request directly.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "When Edit can't find a unique anchor, use Read plus Write; use Grep, not Glob, to find where a name is used.",
+      "studyRef": "§3 Task 2.5 (Edit fallback; Grep vs Glob)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S4-D2-008",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "2.5",
+      "secondaryTasks": ["5.4"],
+      "stem": "Fleetway engineers want every caller of `compute_eta` in the Python half of the route service, and the list must be complete within the hour. Grep for `compute_eta` returns 3 hits. The assistant has already retried with a case-insensitive search and a word-boundary pattern, and it still returns the same 3. Runtime traces show the function being called in about 40 places. One of the hits is `from fleetway.eta import compute_eta as estimate_arrival`. What should the assistant do next?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Search for partial matches such as `compute` and `eta`, then filter the long list of results by hand for real calls.",
+          "correct": false,
+          "explanation": "Partial matches bury the real calls in noise and still miss any alias that does not contain those words. The 3 hits already show the cause: callers use another name.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "List every `.py` file with Glob and Read each one in turn, looking for calls to the function or its aliases.",
+          "correct": false,
+          "explanation": "Reading every file would be slow and fill the context well beyond the hour available. A search by the alias finds the same callers directly.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "c",
+          "text": "Report the 3 hits as the complete list, since Grep searches the entire repository and has already covered every Python file.",
+          "correct": false,
+          "explanation": "Grep did cover the files, but it found only the literal name. Runtime traces show about 40 callers, so presenting 3 would hide most of the usage.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Take the alias `estimate_arrival` from that import and Grep for it, repeating for any other names the function is re-exported under.",
+          "correct": true,
+          "explanation": "Callers that use an alias never contain the original name. Following the names the function is exported under finds them, one search per name.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "To trace usage through aliases and wrappers, find the exported names first, then search the codebase for each of them.",
+      "studyRef": "§3 Task 2.5 (tracing usage across wrapper modules)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    },
+    {
+      "id": "S4-D2-009",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "2.4",
+      "secondaryTasks": ["2.1"],
+      "stem": "Fleetway wants the assistant to read pull requests and review comments from its hosted Git service, for all 120 engineers, without exposing credentials. A maintained community MCP server for that service covers the operations needed. A teammate proposes writing an in-house server and pasting the service's access token straight into the committed `.mcp.json`. Which two choices are best? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Write an in-house MCP server so the platform team controls the code, and add it to `.mcp.json`.",
+          "correct": false,
+          "explanation": "A custom server takes build and upkeep effort for operations a maintained community server already covers. A custom server would suit a need the community one does not meet.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "b",
+          "text": "Use the maintained community MCP server instead of building one, because this is a standard integration.",
+          "correct": true,
+          "explanation": "A maintained server for a standard service saves the build and upkeep cost and covers the operations needed.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Have each engineer add the server to their own `~/.claude.json` with a copy of the shared token.",
+          "correct": false,
+          "explanation": "User-level files suit personal servers, and 120 copies of one token are hard to rotate. A server the team shares belongs in the project file.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "d",
+          "text": "Configure it in the project `.mcp.json` with the token written as `${GIT_TOKEN}`, so each engineer supplies it from their environment.",
+          "correct": true,
+          "explanation": "The project file is shared through git, and the variable keeps the secret out of it. Every engineer gets the same server and supplies their own credential.",
+          "trap": null
+        },
+        {
+          "id": "e",
+          "text": "Commit the literal token in `.mcp.json` in the private repository, since only employees can read it.",
+          "correct": false,
+          "explanation": "A committed token lives in git history and is visible to everyone with repository access. It is hard to rotate, and a leak of the repository leaks the token.",
+          "trap": "WRONG_CONFIG_LAYER"
+        }
+      ],
+      "keyConcept": "Prefer a maintained community MCP server for standard integrations, and keep secrets out of git with `${VAR}` expansion in `.mcp.json`.",
+      "studyRef": "§3 Task 2.4 (community servers; env expansion)",
+      "sources": ["exam-guide", "research-6c-d2"]
+    }
+  ]
+}

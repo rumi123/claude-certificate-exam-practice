@@ -101,45 +101,47 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <Card className="mt-4" aria-labelledby="domains">
-        <CardHeader title="Domains" id="domains" />
-        <DomainBars domains={report.domains} withTasks={false} />
-        {weakest && (
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
-            <p className="min-w-0 truncate text-sm">
-              Weakest: {weakest.id} {weakest.name} {pct(weakest.mastery)}
-            </p>
-            {weakestTask && (
-              <DrillButton taskId={weakestTask.id} label={`Drill task ${weakestTask.id}`} />
-            )}
-          </div>
-        )}
-      </Card>
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
+        <Card aria-labelledby="domains">
+          <CardHeader title="Domains" id="domains" />
+          <DomainBars domains={report.domains} withTasks={false} />
+          {weakest && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
+              <p className="min-w-0 truncate text-sm">
+                Weakest: {weakest.id} {weakest.name} {pct(weakest.mastery)}
+              </p>
+              {weakestTask && (
+                <DrillButton taskId={weakestTask.id} label={`Drill task ${weakestTask.id}`} />
+              )}
+            </div>
+          )}
+        </Card>
 
-      <Card className="mt-4" aria-labelledby="top3">
-        <CardHeader title="Study again" id="top3" />
-        {top3.length > 0 ? (
-          <ol className="space-y-2">
-            {top3.map((p) => (
-              <li
-                key={p.taskId}
-                data-testid="top3-item"
-                data-task={p.taskId}
-                className="flex flex-wrap items-center gap-2"
-              >
-                <span className="min-w-0 flex-1 font-medium">
-                  {p.taskId} {p.title}
-                  {p.reasons[0] && <span className={`ml-2 ${MUTED}`}>{p.reasons[0]}</span>}
-                </span>
-                <StatusBadge status={p.status} />
-                <DrillButton taskId={p.taskId} label="Drill" />
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <EmptyState icon={ListChecks} title={EMPTY_TASKS} />
-        )}
-      </Card>
+        <Card aria-labelledby="top3">
+          <CardHeader title="Study again" id="top3" />
+          {top3.length > 0 ? (
+            <ol className="space-y-2">
+              {top3.map((p) => (
+                <li
+                  key={p.taskId}
+                  data-testid="top3-item"
+                  data-task={p.taskId}
+                  className="flex flex-wrap items-center gap-2"
+                >
+                  <span className="min-w-0 flex-1 font-medium">
+                    {p.taskId} {p.title}
+                    {p.reasons[0] && <span className={`ml-2 ${MUTED}`}>{p.reasons[0]}</span>}
+                  </span>
+                  <StatusBadge status={p.status} />
+                  <DrillButton taskId={p.taskId} label="Drill" />
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <EmptyState icon={ListChecks} title={EMPTY_TASKS} />
+          )}
+        </Card>
+      </div>
 
       <Card className="mt-4" aria-labelledby="coverage">
         <CardHeader title="Bank coverage" id="coverage" />

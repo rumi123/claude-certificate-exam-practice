@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Search } from 'lucide-react';
-import { Button, Card, EmptyState } from '@/components/ui';
+import { Button, Card, Chip, EmptyState, InlineText } from '@/components/ui';
 import { getDomains, getScenarios, getTasks } from '@/lib/db/queries/catalog';
 import { PAGE_SIZE, searchQuestions, type QuestionFilters } from '@/lib/db/queries/questions';
 
@@ -29,6 +29,7 @@ function parseFilters(p: Params): QuestionFilters {
     seen: pick(p.seen, ['seen', 'unseen'] as const),
     last: pick(p.last, ['right', 'wrong'] as const),
     flagged: p.flagged === '1',
+    marked: p.marked === '1',
     q: p.q?.trim() || undefined,
     page: Number.isInteger(page) && page >= 1 ? page : 1,
   };
@@ -83,7 +84,7 @@ export default async function QuestionsPage({ searchParams }: { searchParams: Pr
       <Card as="div" className="mt-4">
         <form
           method="get"
-          className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-10"
           aria-label="Filters"
         >
           <Select
@@ -143,6 +144,12 @@ export default async function QuestionsPage({ searchParams }: { searchParams: Pr
             value={filters.flagged ? '1' : undefined}
             options={[{ value: '1', label: 'Flagged' }]}
           />
+          <Select
+            name="marked"
+            label="Marked"
+            value={filters.marked ? '1' : undefined}
+            options={[{ value: '1', label: 'Marked' }]}
+          />
           <label className="flex min-w-0 flex-col gap-1 text-sm">
             Search
             <input type="search" name="q" defaultValue={filters.q ?? ''} className={FIELD} />
@@ -176,6 +183,7 @@ export default async function QuestionsPage({ searchParams }: { searchParams: Pr
                 <th className="pr-3">Scenario</th>
                 <th className="pr-3">Task</th>
                 <th className="pr-3">Type</th>
+                <th className="hidden pr-3 lg:table-cell">Question</th>
                 <th className="pr-3">Difficulty</th>
                 <th className="pr-3">Last result</th>
                 <th className="pr-3">Flag</th>
@@ -192,6 +200,9 @@ export default async function QuestionsPage({ searchParams }: { searchParams: Pr
                   <td className="pr-3">{r.scenarioId}</td>
                   <td className="pr-3">{r.primaryTaskId}</td>
                   <td className="pr-3">{r.type}</td>
+                  <td className="hidden w-full max-w-0 truncate pr-3 lg:table-cell">
+                    {r.stem.includes('`') ? <InlineText text={r.stem} /> : r.stem}
+                  </td>
                   <td className="pr-3">{r.difficulty}</td>
                   <td className="pr-3">{r.lastResult ? RESULT[r.lastResult] : '-'}</td>
                   <td className="pr-3">
@@ -200,6 +211,7 @@ export default async function QuestionsPage({ searchParams }: { searchParams: Pr
                         🚩
                       </span>
                     )}
+                    {r.marked && <Chip tone="accent">Marked</Chip>}
                   </td>
                 </tr>
               ))}

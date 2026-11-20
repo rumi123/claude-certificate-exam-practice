@@ -1,14 +1,17 @@
 import { createHash } from 'node:crypto';
-import { eq, inArray, and } from 'drizzle-orm';
+import { eq, inArray, and, ne } from 'drizzle-orm';
 import { now } from '../clock';
 import type { Db } from '../db/client';
 import * as t from '../db/schema';
 import type { RawContent } from './load';
 import {
   FlashcardsSchema,
+  LessonFileSchema,
+  MockFileSchema,
   QuestionFileSchema,
   SyllabusSchema,
   TrapsSchema,
+  type Lesson,
   type Question,
 } from './schemas';
 
@@ -21,6 +24,8 @@ export interface Counts {
 
 export interface ImportResult extends Counts {
   cards: Counts;
+  mocks: Counts;
+  lessons: Counts;
 }
 
 function emptyCounts(): Counts {
@@ -96,9 +101,25 @@ function writeQuestionChildren(tx: Db, q: Question) {
   }
 }
 
-function importQuestions(
+interface PoolItem {
+  scenarioId: string;
+  q: Question;
+}
+
+function addCounts(a: Counts, b: Counts): Counts {
+  return {
+    inserted: a.inserted + b.inserted,
+    updated: a.updated + b.updated,
+    unchanged: a.unchanged + b.unchanged,
+    retired: a.retired + b.retired,
+  };
+}
+
+// Imports one pool and retires that pool's questions that are no longer in `items`.
+function importPool(
   tx: Db,
-  files: ReturnType<typeof QuestionFileSchema.parse>[],
+  pool: string,
+  items: PoolItem[],
   taskDomain: Map<string, string>,
 ): Counts {
   const counts = emptyCounts();
@@ -110,49 +131,123 @@ function importQuestions(
       .all()
       .map((r) => [r.id, r]),
   );
-  for (const file of files) {
-    for (const q of file.questions) {
-      seen.add(q.id);
-      const hash = hashQuestion(q);
-      const prev = existing.get(q.id);
-      if (prev && prev.hash === hash) {
-        counts.unchanged++;
-        continue;
-      }
-      const row = {
-        scenarioId: file.scenario,
-        domainId: taskDomain.get(q.primaryTask) as string,
-        primaryTaskId: q.primaryTask,
-        pool: 'practice',
-        type: q.type,
-        selectCount: q.selectCount,
-        difficulty: q.difficulty,
-        stem: q.stem,
-        keyConcept: q.keyConcept,
-        studyRef: q.studyRef,
-        contentHash: hash,
-        retired: 0,
-      };
-      if (!prev) {
-        tx.insert(t.question).values({ id: q.id, ...row, version: 1 }).run();
-        counts.inserted++;
-      } else {
-        const version = prev.version + 1;
-        tx.update(t.question).set({ ...row, version }).where(eq(t.question.id, q.id)).run();
-        counts.updated++;
-      }
-      writeQuestionChildren(tx, q);
+  for (const { scenarioId, q } of items) {
+    seen.add(q.id);
+    const hash = hashQuestion(q);
+    const prev = existing.get(q.id);
+    if (prev && prev.hash === hash) {
+      counts.unchanged++;
+      continue;
     }
+    const row = {
+      scenarioId,
+      domainId: taskDomain.get(q.primaryTask) as string,
+      primaryTaskId: q.primaryTask,
+      pool,
+      type: q.type,
+      selectCount: q.selectCount,
+      difficulty: q.difficulty,
+      stem: q.stem,
+      keyConcept: q.keyConcept,
+      studyRef: q.studyRef,
+      contentHash: hash,
+      retired: 0,
+    };
+    if (!prev) {
+      tx.insert(t.question).values({ id: q.id, ...row, version: 1 }).run();
+      counts.inserted++;
+    } else {
+      const version = prev.version + 1;
+      tx.update(t.question).set({ ...row, version }).where(eq(t.question.id, q.id)).run();
+      counts.updated++;
+    }
+    writeQuestionChildren(tx, q);
   }
   const stale = tx
     .select({ id: t.question.id })
     .from(t.question)
-    .where(and(eq(t.question.pool, 'practice'), eq(t.question.retired, 0)))
+    .where(and(eq(t.question.pool, pool), eq(t.question.retired, 0)))
     .all()
     .filter((r) => !seen.has(r.id))
     .map((r) => r.id);
   if (stale.length) {
     tx.update(t.question).set({ retired: 1 }).where(inArray(t.question.id, stale)).run();
+    counts.retired = stale.length;
+  }
+  return counts;
+}
+
+function importQuestions(
+  tx: Db,
+  files: ReturnType<typeof QuestionFileSchema.parse>[],
+  taskDomain: Map<string, string>,
+): Counts {
+  const items = files.flatMap((f) => f.questions.map((q) => ({ scenarioId: f.scenario, q })));
+  return importPool(tx, 'practice', items, taskDomain);
+}
+
+// Every mock pool in the files, plus mock pools already in the database whose file is gone.
+function importMocks(
+  tx: Db,
+  files: ReturnType<typeof MockFileSchema.parse>[],
+  taskDomain: Map<string, string>,
+): Counts {
+  const byPool = new Map<string, PoolItem[]>();
+  for (const f of files) {
+    const items = byPool.get(f.pool) ?? [];
+    for (const { scenario, ...q } of f.questions) items.push({ scenarioId: scenario, q: { ...q } });
+    byPool.set(f.pool, items);
+  }
+  const known = tx
+    .selectDistinct({ pool: t.question.pool })
+    .from(t.question)
+    .where(ne(t.question.pool, 'practice'))
+    .all();
+  for (const { pool } of known) if (!byPool.has(pool)) byPool.set(pool, []);
+  let total = emptyCounts();
+  for (const [pool, items] of [...byPool].sort(([a], [b]) => a.localeCompare(b))) {
+    total = addCounts(total, importPool(tx, pool, items, taskDomain));
+  }
+  return total;
+}
+
+// Lessons are keyed by question id; rows whose lesson is gone from the files are deleted.
+function importLessons(tx: Db, files: ReturnType<typeof LessonFileSchema.parse>[]): Counts {
+  const counts = emptyCounts();
+  const lessons = new Map<string, Lesson>();
+  for (const f of files) for (const l of f.lessons) lessons.set(l.questionId, l);
+  const known = new Set(
+    tx
+      .select({ id: t.question.id })
+      .from(t.question)
+      .all()
+      .map((r) => r.id),
+  );
+  const existing = new Map(
+    tx
+      .select()
+      .from(t.questionLesson)
+      .all()
+      .map((r) => [r.questionId, r]),
+  );
+  for (const [id, lesson] of lessons) {
+    if (!known.has(id)) throw new Error(`Lesson for unknown question ${id}`);
+    const hash = createHash('sha256').update(JSON.stringify(stable(lesson))).digest('hex');
+    const prev = existing.get(id);
+    const row = { lessonJson: JSON.stringify(lesson), contentHash: hash };
+    if (!prev) {
+      tx.insert(t.questionLesson).values({ questionId: id, ...row }).run();
+      counts.inserted++;
+    } else if (prev.contentHash === hash) {
+      counts.unchanged++;
+    } else {
+      tx.update(t.questionLesson).set(row).where(eq(t.questionLesson.questionId, id)).run();
+      counts.updated++;
+    }
+  }
+  const stale = [...existing.keys()].filter((id) => !lessons.has(id));
+  if (stale.length) {
+    tx.delete(t.questionLesson).where(inArray(t.questionLesson.questionId, stale)).run();
     counts.retired = stale.length;
   }
   return counts;
@@ -212,7 +307,7 @@ function importCards(
 
 function versionMap(raw: RawContent): Record<string, number> {
   const out: Record<string, number> = {};
-  for (const f of [raw.syllabus, raw.traps, raw.flashcards, raw.cheatsheet, ...raw.questionFiles]) {
+  for (const f of [raw.syllabus, raw.traps, raw.flashcards, raw.cheatsheet, ...raw.questionFiles, ...raw.mockFiles]) {
     const v = (f.data as { version?: number }).version;
     const name = raw.questionFiles.includes(f) ? `questions/${f.file}` : f.file;
     if (typeof v === 'number') out[name] = v;
@@ -225,12 +320,16 @@ export function importContent(db: Db, raw: RawContent): ImportResult {
   const traps = TrapsSchema.parse(raw.traps.data);
   const flashcards = FlashcardsSchema.parse(raw.flashcards.data);
   const files = raw.questionFiles.map((f) => QuestionFileSchema.parse(f.data));
+  const mockFiles = raw.mockFiles.map((f) => MockFileSchema.parse(f.data));
+  const lessonFiles = raw.lessonFiles.map((f) => LessonFileSchema.parse(f.data));
   const taskDomain = new Map(syllabus.tasks.map((k) => [k.id, k.domain]));
 
   return db.transaction((tx) => {
     const d = tx as unknown as Db;
     upsertCatalog(d, syllabus, traps);
     const q = importQuestions(d, files, taskDomain);
+    const mocks = importMocks(d, mockFiles, taskDomain);
+    const lessons = importLessons(d, lessonFiles);
     const cards = importCards(d, flashcards.cards, taskDomain);
     const meta = [
       { key: 'versions', value: JSON.stringify(versionMap(raw)) },
@@ -239,6 +338,6 @@ export function importContent(db: Db, raw: RawContent): ImportResult {
     for (const m of meta) {
       d.insert(t.contentMeta).values(m).onConflictDoUpdate({ target: t.contentMeta.key, set: { value: m.value } }).run();
     }
-    return { ...q, cards };
+    return { ...q, cards, mocks, lessons };
   });
 }

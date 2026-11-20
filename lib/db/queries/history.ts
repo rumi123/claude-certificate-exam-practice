@@ -1,8 +1,10 @@
-import { and, asc, eq, isNotNull } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import { getDb } from '../client';
 import * as t from '../schema';
 import type { AnsweredItem } from '@/lib/analytics/types';
+import { isPreset, PRESET_NAMES } from '@/lib/engine/presets';
 import type { Confidence } from '@/lib/types';
+import { getDomains, getScenarios } from './catalog';
 
 export function getAnsweredItems(): AnsweredItem[] {
   const db = getDb();
@@ -75,6 +77,110 @@ export function getCompletedSessions(): {
       finishedAt: s.finishedAt!,
       correct: own.filter((i) => i.isCorrect === 1).length,
       answered: own.length,
+    };
+  });
+}
+
+export type SessionHistoryRow = {
+  id: string;
+  mode: 'study' | 'test';
+  status: 'completed' | 'abandoned';
+  finishedAt: number;
+  source: string;
+  total: number;
+  answered: number;
+  correct: number;
+  timeUsedMs: number;
+  marked: number;
+};
+
+export type SourceNames = { domains: Record<string, string>; scenarios: Record<string, string> };
+
+function parseFilters(filtersJson: string): { source?: unknown; ids?: unknown; drill?: unknown } {
+  try {
+    const v: unknown = JSON.parse(filtersJson);
+    return v !== null && typeof v === 'object' ? v : {};
+  } catch {
+    return {};
+  }
+}
+
+// Human label for where a session's questions came from; unknown shapes fall back to "Practice".
+export function sourceLabel(kind: string, filtersJson: string, names: SourceNames): string {
+  if (kind === 'review') return 'Review';
+  const f = parseFilters(filtersJson);
+  const ids = Array.isArray(f.ids) ? f.ids.filter((x): x is string => typeof x === 'string') : [];
+  switch (f.source) {
+    case 'domain':
+      return ids.length > 0 ? ids.map((id) => names.domains[id] ?? id).join(', ') : 'Practice';
+    case 'scenario':
+      return ids.length > 0 ? ids.map((id) => names.scenarios[id] ?? id).join(', ') : 'Practice';
+    case 'task':
+      return ids.length > 0
+        ? `Task ${ids.join(', ')}${f.drill === true ? ' drill' : ''}`
+        : 'Practice';
+    case 'preset':
+      return typeof ids[0] === 'string' && isPreset(ids[0]) ? PRESET_NAMES[ids[0]] : 'Practice';
+    case 'mock':
+      return ids[0]?.startsWith('mock-') ? `Mock ${ids[0].slice(5)}` : 'Practice';
+    case 'all':
+      return 'All questions';
+    case 'mistakes':
+      return 'Mistakes review';
+    default:
+      return 'Practice';
+  }
+}
+
+// Every finished (completed or abandoned) session, newest first, with its counts.
+export function getSessionHistory(mode?: 'study' | 'test'): SessionHistoryRow[] {
+  const db = getDb();
+  const sessions = db
+    .select()
+    .from(t.session)
+    .where(
+      and(
+        inArray(t.session.status, ['completed', 'abandoned']),
+        isNotNull(t.session.finishedAt),
+        mode ? eq(t.session.mode, mode) : undefined,
+      ),
+    )
+    .orderBy(desc(t.session.finishedAt), asc(t.session.id))
+    .all();
+  if (sessions.length === 0) return [];
+
+  const counts = new Map(
+    db
+      .select({
+        sessionId: t.sessionItem.sessionId,
+        total: sql<number>`count(*)`,
+        answered: sql<number>`coalesce(sum(case when ${t.sessionItem.answeredAt} is not null and ${t.sessionItem.selectedJson} is not null then 1 else 0 end), 0)`,
+        correct: sql<number>`coalesce(sum(case when ${t.sessionItem.isCorrect} = 1 then 1 else 0 end), 0)`,
+        marked: sql<number>`coalesce(sum(case when ${t.sessionItem.marked} = 1 then 1 else 0 end), 0)`,
+      })
+      .from(t.sessionItem)
+      .groupBy(t.sessionItem.sessionId)
+      .all()
+      .map((r) => [r.sessionId, r]),
+  );
+  const names: SourceNames = {
+    domains: Object.fromEntries(getDomains().map((d) => [d.id, d.name])),
+    scenarios: Object.fromEntries(getScenarios().map((s) => [s.id, s.name])),
+  };
+
+  return sessions.map((s) => {
+    const c = counts.get(s.id);
+    return {
+      id: s.id,
+      mode: s.mode as 'study' | 'test',
+      status: s.status as 'completed' | 'abandoned',
+      finishedAt: s.finishedAt!,
+      source: sourceLabel(s.kind, s.filtersJson, names),
+      total: c?.total ?? 0,
+      answered: c?.answered ?? 0,
+      correct: c?.correct ?? 0,
+      timeUsedMs: s.finishedAt! - s.startedAt,
+      marked: c?.marked ?? 0,
     };
   });
 }

@@ -1,0 +1,187 @@
+{
+  "domain": "D1",
+  "lessons": [
+    {
+      "questionId": "S1-002",
+      "explanation": "This question tests how an agent handles the case in S1-002, and why the correct choice fits the failure described in the stem better than the alternatives.",
+      "options": {
+        "a": {
+          "reasoning": "This option is judged against the cause in the stem and what the correct approach needs. It splits the request and resolves each concern. This is the fixture reasoning for S1-002, key a"
+        },
+        "b": {
+          "reasoning": "This option is judged against the cause in the stem and what the correct approach needs. Raising the cap does not change how the agent reads the request. This is the fixture reasoning for S1-002, key b"
+        },
+        "c": {
+          "reasoning": "This option is judged against the cause in the stem and what the correct approach needs. Subagents do not inherit the conversation context at all. This is the fixture reasoning for S1-002, key c"
+        },
+        "d": {
+          "reasoning": "This option is judged against the cause in the stem and what the correct approach needs. Routine issues do not need a human to resolve them. This is the fixture reasoning for S1-002, key d",
+          "tempting": "Multiple orders look complex, so handing off feels safe."
+        }
+      },
+      "concept": [
+        "Fixture concept paragraph one, long enough to pass the forty character minimum.",
+        "Fixture concept paragraph two, also long enough to pass the minimum."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Setting",
+          "What it does"
+        ],
+        "rows": [
+          [
+            "`auto`",
+            "Lets the model decide on its own."
+          ],
+          [
+            "`any`",
+            "Forces the model to call some tool."
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "in one message",
+          "meaning": "The request holds several separate concerns."
+        },
+        {
+          "phrase": "never touches the others",
+          "meaning": "The agent stops after the first resolved item."
+        },
+        {
+          "phrase": "reopen the case",
+          "meaning": "The business cost is unresolved concerns."
+        }
+      ],
+      "lookFor": [
+        "An answer that fixes the cause named in the stem.",
+        "An answer that keeps the needed context available."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A larger iteration cap does not change when the agent decides it is done."
+        },
+        {
+          "option": "c",
+          "reason": "A subagent starts without the order numbers or customer identity."
+        },
+        {
+          "option": "d",
+          "reason": "Each issue is routine, so escalating them all is not needed."
+        }
+      ],
+      "rule": "Split a multi-concern request into items, resolve each, and answer once.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "Exam guide, Task 1.4",
+          "url": "https://example.com/exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Handling stop reasons",
+          "url": "https://example.com/docs/stop-reasons"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API",
+          "url": "https://example.com/skilljar/api"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S1-003",
+      "explanation": "This question tests how an agent handles the case in S1-003, and why the correct choice fits the failure described in the stem better than the alternatives.",
+      "options": {
+        "a": {
+          "reasoning": "This option is judged against the cause in the stem and what the correct approach needs. A structured summary carries what the agent learned. This is the fixture reasoning for S1-003, key a"
+        },
+        "b": {
+          "reasoning": "This option is judged against the cause in the stem and what the correct approach needs. Required schema fields make every handoff complete. This is the fixture reasoning for S1-003, key b"
+        },
+        "c": {
+          "reasoning": "This option is judged against the cause in the stem and what the correct approach needs. A raw transcript pushes the reading work onto the human. This is the fixture reasoning for S1-003, key c"
+        },
+        "d": {
+          "reasoning": "This option is judged against the cause in the stem and what the correct approach needs. A sentiment score says nothing about the actual problem. This is the fixture reasoning for S1-003, key d"
+        },
+        "e": {
+          "reasoning": "This option is judged against the cause in the stem and what the correct approach needs. Asking the customer to repeat themselves recreates the problem. This is the fixture reasoning for S1-003, key e"
+        }
+      },
+      "concept": [
+        "Fixture concept paragraph one, long enough to pass the forty character minimum.",
+        "Fixture concept paragraph two, also long enough to pass the minimum."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Setting",
+          "What it does"
+        ],
+        "rows": [
+          [
+            "`auto`",
+            "Lets the model decide on its own."
+          ],
+          [
+            "`any`",
+            "Forces the model to call some tool."
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "in one message",
+          "meaning": "The request holds several separate concerns."
+        },
+        {
+          "phrase": "never touches the others",
+          "meaning": "The agent stops after the first resolved item."
+        },
+        {
+          "phrase": "reopen the case",
+          "meaning": "The business cost is unresolved concerns."
+        }
+      ],
+      "lookFor": [
+        "An answer that fixes the cause named in the stem.",
+        "An answer that keeps the needed context available."
+      ],
+      "eliminate": [
+        {
+          "option": "c",
+          "reason": "A raw transcript moves the work to the human instead of summarising it."
+        },
+        {
+          "option": "d",
+          "reason": "Sentiment does not show what the problem is or what was tried."
+        },
+        {
+          "option": "e",
+          "reason": "Making the customer repeat everything is the six-minute problem itself."
+        }
+      ],
+      "rule": "Escalations carry a structured handoff so the human can act at once.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "Exam guide, Task 1.4",
+          "url": "https://example.com/exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Handling stop reasons",
+          "url": "https://example.com/docs/stop-reasons"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API",
+          "url": "https://example.com/skilljar/api"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    }
+  ]
+}

@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  BookOpen,
   ChartColumn,
+  ClipboardList,
   Layers,
   LayoutDashboard,
   List,
@@ -16,7 +18,9 @@ import {
 
 const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/learn', label: 'Learn', icon: BookOpen },
   { href: '/practice', label: 'Practice', icon: Play },
+  { href: '/exams', label: 'Exams', icon: ClipboardList },
   { href: '/review', label: 'Review', icon: RotateCcw },
   { href: '/report', label: 'Report', icon: ChartColumn },
   { href: '/flashcards', label: 'Flashcards', icon: Layers },
@@ -36,7 +40,7 @@ export default function Nav({ dueCount = 0 }: { dueCount?: number }) {
       aria-label="Main"
       className="sticky top-0 z-10 border-b border-border bg-surface/90 backdrop-blur"
     >
-      <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-2">
+      <div className="mx-auto flex max-w-[96rem] items-center gap-3 px-4 py-2 lg:px-6">
         <span className="font-bold max-md:hidden">CCAR-F</span>
         <ul className="flex min-w-0 flex-1 justify-between gap-1 md:justify-start">
           {LINKS.map(({ href, label, icon: Icon }) => {

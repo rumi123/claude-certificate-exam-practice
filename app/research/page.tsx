@@ -29,7 +29,7 @@ export default function ResearchPage() {
           </ul>
         </Card>
       </nav>
-      <article className="research min-w-0 flex-1">
+      <article className="research min-w-0 max-w-5xl flex-1">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeSlug, rehypeTaskAnchors]}

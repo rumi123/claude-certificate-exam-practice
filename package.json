@@ -15,6 +15,12 @@
     "format": "prettier --write .",
     "content:validate": "tsx scripts/validate-content.ts",
     "content:import": "tsx scripts/import-content.ts",
+    "content:quality": "tsx scripts/check-question-quality.ts",
+    "content:validate:aicert": "CONTENT_DIR=content-aicert tsx scripts/validate-content.ts",
+    "content:quality:aicert": "CONTENT_DIR=content-aicert tsx scripts/check-question-quality.ts",
+    "content:report:aicert": "CONTENT_DIR=content-aicert tsx scripts/question-report.ts",
+    "content:import:aicert": "CONTENT_DIR=content-aicert DATABASE_PATH=data/aicert.db tsx scripts/import-content.ts",
+    "dev:aicert": "npm run content:import:aicert && CONTENT_DIR=content-aicert DATABASE_PATH=data/aicert.db next dev -p 3001",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts"
   },

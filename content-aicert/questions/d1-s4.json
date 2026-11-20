@@ -1,0 +1,566 @@
+{
+  "scenario": "S4",
+  "version": 2,
+  "questions": [
+    {
+      "id": "S4-D1-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.1",
+      "secondaryTasks": [
+        "5.3"
+      ],
+      "stem": "Your team's custom exploration agent runs `./gradlew test --tests RouteCostTest`, which fails with a classpath error. The loop catches non-zero exit codes and drops those results instead of adding them to the conversation. The agent then runs the identical command up to 9 times, until it hits the iteration cap, although the build itself is healthy and only the test classpath is broken. What change fixes the loop?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Tell the agent in the system prompt not to repeat a command that has already run, and to try a different approach after any failure.",
+          "correct": false,
+          "explanation": "The model cannot tell what a command produced if its result was never added to the conversation, so it has nothing to base a different approach on. A prompt instruction is a weak patch for a loop that hides the evidence.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "b",
+          "text": "Append every tool result to the conversation, failures included with their exit code, so the model sees the classpath error and changes course.",
+          "correct": true,
+          "explanation": "The loop is what lets the model reason about its next step, and that works only when results, failures included, are in the history. With the error visible, the model can fix the classpath instead of repeating the command.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Add failed results to the conversation as the one-line message \"command failed\" and keep the full classpath output in a log file for engineers.",
+          "correct": false,
+          "explanation": "The model now knows a command failed but not why, so it still has no way to fix the classpath and will retry blindly. Failures need to reach the model with their detail; a log file only helps the humans.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Cut the iteration cap from 9 to 3 so that failing runs stop sooner, and show the engineer the last failed command when the cap is reached.",
+          "correct": false,
+          "explanation": "A lower cap makes the agent give up earlier but does not help it learn why the command failed, and it would cut off healthy investigations too. The missing piece is the error output.",
+          "trap": "ITERATION_CAP"
+        }
+      ],
+      "keyConcept": "Always append tool results, failures included, to the conversation so the model can reason about its next action.",
+      "studyRef": "§3 Task 1.1 (tool results appended to history)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S4-D1-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.2",
+      "secondaryTasks": [
+        "1.6"
+      ],
+      "stem": "The Fleetway assistant answers each question by running a fixed set of three subagents: code search, internal wiki and ticket tracker. About 70% of questions concern code only, the wiki server takes about 6 seconds per call, and median response time is 41 seconds. Engineers have started to skip the assistant for quick questions, but questions that span all three sources must keep their full coverage. Which change fits best?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Let the coordinator pick the subagents for each question: code search alone for most code questions, with the wiki or ticket subagent added when the question needs it.",
+          "correct": true,
+          "explanation": "Most questions need one subagent, so selecting by need removes the wiki wait for about 70% of them. The coordinator still calls all three for questions that span the sources, so coverage is kept.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Cache wiki and ticket results for 24 hours and keep calling all three subagents for every question, so that repeated lookups of the same page return quickly.",
+          "correct": false,
+          "explanation": "Caching helps repeat wiki and ticket lookups but still runs three subagents for a one-subagent question, and the first call to any page remains slow. It treats the symptom instead of the fixed pipeline.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Replace the three subagents with one subagent that has all of their tools, so it can search code, wiki and tickets in a single pass.",
+          "correct": false,
+          "explanation": "A single agent with every tool is harder to steer and picks tools less reliably, since each role is best served by about 4 or 5 tools. It does not stop unnecessary wiki calls either.",
+          "trap": "TOOL_OVERLOAD"
+        },
+        {
+          "id": "d",
+          "text": "Run the three subagents in parallel for every question, so that the 6-second wiki call overlaps with the code search and the ticket lookup.",
+          "correct": false,
+          "explanation": "Parallel calls would cut the wait for questions that need all three, but code-only questions would still pay for two unneeded subagents. Parallelism is the right tool when all of them are needed.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "A coordinator should choose which subagents to invoke per request instead of routing everything through the full pipeline.",
+      "studyRef": "§3 Task 1.2 (dynamic subagent selection)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S4-D1-003",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.3",
+      "secondaryTasks": [
+        "1.2"
+      ],
+      "stem": "The platform team uses an exploration subagent to map call chains in the route-planning service. It inherited the main session's tool list, including `Write`, `Edit` and `Bash`, and in 2 of 40 runs it modified a file while \"cleaning up\" a comment. Mapping should leave the repository untouched, but the subagent does need to read and search the code. How should the subagent be configured?",
+      "options": [
+        {
+          "id": "a",
+          "text": "State in its system prompt that no files may be modified under any circumstances while it maps the call chains.",
+          "correct": false,
+          "explanation": "The prompt is a nudge, and the subagent already modified files twice in 40 runs. Where a tool should not be used at all, the way to guarantee that is not to give it the tool.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "b",
+          "text": "Define it in an `AgentDefinition` whose `tools` list contains only `Read`, `Grep` and `Glob`, so it has no write-capable tool.",
+          "correct": true,
+          "explanation": "A subagent can only use the tools in its definition, so with no `Write`, `Edit` or `Bash` it cannot change a file. Three read tools are enough for call-chain mapping.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Define it in an `AgentDefinition` whose `tools` list holds `Read`, `Grep`, `Glob` and `Edit`, and describe in its prompt that `Edit` is for its own notes file.",
+          "correct": false,
+          "explanation": "Keeping `Edit` leaves a tool that can change repository files, and the prompt note only asks the subagent not to. The tool list is the right place for the restriction, but it must leave out every write-capable tool.",
+          "trap": "TOOL_OVERLOAD"
+        },
+        {
+          "id": "d",
+          "text": "Record in the project CLAUDE.md that exploration subagents are read-only, so every session loads the rule at its start.",
+          "correct": false,
+          "explanation": "CLAUDE.md is guidance the model may weigh, not enforcement, and a subagent's tool list is not set there. A rule that must hold belongs in the subagent's definition.",
+          "trap": "WRONG_CONFIG_LAYER"
+        }
+      ],
+      "keyConcept": "Restrict a subagent's tools in its `AgentDefinition`; the prompt cannot prevent a tool it is given from being used.",
+      "studyRef": "§3 Task 1.3 (AgentDefinition tool restrictions)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S4-D1-004",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.4",
+      "secondaryTasks": [
+        "1.5"
+      ],
+      "stem": "Change management says a `payments-routing` ticket may move to Ready for Review only after the full suite (`./gradlew test`, with no `--tests` filter) passes on the branch, and a move to Ready notifies two reviewers at once. The assistant uses the tracker's MCP tool `transition_ticket`. In 8% of sessions it moved a ticket to Ready after running only a subset of tests, although the system prompt states the rule. The team proposes a `PostToolUse` hook that reverts the ticket when no passing run is recorded. What should you recommend?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep the `PostToolUse` hook that reverts `transition_ticket` when no `./gradlew test` run is recorded, and post a message to the reviewers' channel explaining the revert.",
+          "correct": false,
+          "explanation": "The reviewers have already been notified when the ticket moved to Ready, so the revert and the extra message come after the damage. The hook runs at the wrong point for a rule about what must happen before the move.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Add a `PreToolUse` hook that blocks `transition_ticket` to Ready until the session contains a `Bash` test run that exited 0, and leave the choice of tests to the agent.",
+          "correct": false,
+          "explanation": "The block comes at the right point, but it accepts any passing test run, so a `--tests` subset still unlocks the move. The condition has to be the full-suite command with exit code 0, which is what the rule actually requires.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add a `PreToolUse` hook that blocks `transition_ticket` to Ready until the session has a `./gradlew test` run without a `--tests` filter that exited 0, with a message naming the missing run.",
+          "correct": true,
+          "explanation": "The gate stops the move before reviewers are notified, and it checks for the recorded full-suite run, so a partial run does not count. The message tells the agent what to do next, so it runs the suite and tries again.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Write the rule in the project CLAUDE.md, that `transition_ticket` to Ready needs a `./gradlew test` run without a `--tests` filter that exited 0, so every session loads it.",
+          "correct": false,
+          "explanation": "CLAUDE.md holds guidance that is loaded into context, not rules that are enforced, so the assistant can still skip it. It would add no more reliability than the existing prompt rule.",
+          "trap": "WRONG_CONFIG_LAYER"
+        }
+      ],
+      "keyConcept": "A prerequisite that must hold before a step belongs in a pre-call gate that checks the real condition, not a cleanup after the effect.",
+      "studyRef": "§3 Task 1.4 (programmatic prerequisites); §3 Task 1.5",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S4-D1-005",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.6",
+      "secondaryTasks": [
+        "1.4"
+      ],
+      "stem": "Every pull request in the route-planning service gets the same four checks in the same order: style, test coverage, dependency changes and changelog entry. A new assistant workflow lets Claude plan its own review subtasks for each PR. Results vary: some runs skip the changelog, and the cost per review is three times that of the old script. Which design should the team use?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Use a fixed chain of four prompts, one per check, run in order on every pull request, each reading the diff and passing its findings on.",
+          "correct": true,
+          "explanation": "The four checks never change, so a fixed chain runs all four on every PR and the changelog check can't be skipped. With no planning step, the review no longer pays for the planning the adaptive workflow adds, so its cost is predictable and lower.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Keep the adaptive plan and add an instruction that every plan must include the four checks, listed by name, before any review step begins.",
+          "correct": false,
+          "explanation": "A prompt instruction only nudges a planner whose output already varies, so some runs would still skip a check, and the planning step keeps adding cost a fixed chain doesn't have. A fixed chain removes the planning decision altogether.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Use a fixed chain of four prompts, one per check, and let Claude add further steps to it when it decides a PR needs additional checks, such as a security review.",
+          "correct": false,
+          "explanation": "The chain is the right base, but letting the model extend it brings back planning cost and variation for a review whose four checks never change. Dynamic decomposition suits open-ended investigation, not this fixed list.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Run the adaptive plan on a smaller model for small PRs and on the current model for larger ones, and have the agent list its planned checks first.",
+          "correct": false,
+          "explanation": "Routing by PR size adds a layer that lowers the price of the planning but leaves it variable. Having the agent list its planned checks first is still the agent's own plan, so a run can leave out the changelog. The gap comes from planning a task that never changes, and the planning step adds cost a fixed chain doesn't have.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "For predictable multi-aspect reviews, use a fixed prompt chain; reserve dynamic decomposition for open-ended investigation.",
+      "studyRef": "§3 Task 1.6 (prompt chaining vs dynamic decomposition)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S4-D1-006",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 3,
+      "primaryTask": "1.6",
+      "secondaryTasks": [
+        "1.2"
+      ],
+      "stem": "An engineer asks the assistant why the nightly route-optimisation job in the 1.4-million-line service takes 3 hours, and needs an answer within the hour. The assistant followed a fixed plan (read the entry point, then each caller, then each callee). After 40 minutes it had read 60 Java files, while the time is spent in a Python scoring module that no step listed. Which two changes make the investigation effective? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Map the structure first with `Glob` and `Grep`: modules, languages, entry points and heavy loops, to find the likely high-impact areas.",
+          "correct": true,
+          "explanation": "A quick map shows the Python scoring module before 60 Java files are read. Starting from structure replaces the assumption in the fixed plan with what is actually in the codebase.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Extend the fixed plan with a step that also reads Python files after the Java callees, so the scoring module is covered.",
+          "correct": false,
+          "explanation": "That adds one more fixed step, placed late, so the agent would read the Java callees first and reach the scoring module last. The next codebase will have another blind spot, since the plan is still fixed in advance.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Write a prioritised plan from that map, and revise it after each finding, adding or dropping subtasks as evidence appears.",
+          "correct": true,
+          "explanation": "An adaptive plan lets what is found steer the next step, for example moving to the scoring module after seeing where time is spent. Together with the first change it focuses effort on high-impact areas.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Spawn one subagent per directory to read all of its files in parallel, then merge their notes into one report.",
+          "correct": false,
+          "explanation": "Reading all 1.4 million lines at once is costly, and notes from every directory bury the one module that matters. Parallelism helps with independent work, but here the problem is choosing what to read.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "e",
+          "text": "Add \"be thorough and consider every language in the repository\" to the system prompt before the investigation starts.",
+          "correct": false,
+          "explanation": "General encouragement does not tell the agent where to look first, and a fixed plan would still run in the same order. The agent needs a structured way to find the high-impact areas.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        }
+      ],
+      "keyConcept": "For open-ended investigation, map the structure first, rank the high-impact areas, and revise the plan as findings arrive.",
+      "studyRef": "§3 Task 1.6 (adaptive investigation plans)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S4-D1-007",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.7",
+      "secondaryTasks": [],
+      "stem": "An engineer spent 3 hours in a session named `eta-drift` tracing ETA errors through 42 files. Overnight a merged PR changed 3 of them: `git diff --name-only HEAD@{1}` lists `EtaSmoother.java`, `DepotClock.java` and `eta_weights.py`. The next morning she resumes the session, and the agent cites `EtaSmoother.apply()`, which the PR renamed. Her findings on the other 39 files still hold, but she can't afford to repeat the 3 hours. What should she do when resuming?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Resume `eta-drift` without comment, since the agent sees the current files and will notice what changed on its next search.",
+          "correct": false,
+          "explanation": "A session saves the conversation, not the files, so the agent's earlier reads still show the old code and it has no reason to search again. Without being told, it will keep citing the renamed method.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "b",
+          "text": "Start a fresh session seeded with a summary of yesterday's findings, because any code change makes the old session's results unreliable.",
+          "correct": false,
+          "explanation": "A fresh start with a summary is the right choice when most tool results are stale. Here only 3 of 42 files changed, so the session is mostly valid and resuming keeps far more detail.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Resume `eta-drift` and tell the agent those 3 files changed overnight, so it re-reads them before relying on any finding drawn from them.",
+          "correct": true,
+          "explanation": "Most of the session is still valid, so resuming is right, but a resumed session holds tool results from when they were read. Naming the 3 changed files gets targeted re-reading and keeps the findings on the other 39 files.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Resume `eta-drift` and have the agent re-read all 42 files it analysed yesterday, so that all of its findings are checked again against the current code.",
+          "correct": false,
+          "explanation": "Re-reading everything works, but it spends much of the 3 hours again on 39 files that did not change. Re-checking every input fits when you don't know what changed; here `git diff` says exactly which files did.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "When resuming a mostly valid session, tell the agent exactly which files changed so it re-reads only those.",
+      "studyRef": "§3 Task 1.7 (informing resumed sessions about file changes)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S4-D1-008",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.7",
+      "secondaryTasks": [],
+      "stem": "A session named `cache-baseline` holds 2 hours of mapping of the route cache. To compare a Caffeine-based design with a Redis-based one, an engineer runs `claude --resume cache-baseline --fork-session` in two terminals, one fork per design, both in the same checkout. The Caffeine fork finishes first. The Redis fork's tests then fail with compile errors in `RouteCache.java`, but in code the Redis fork never wrote. What explains the failure, and what should change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Forking copies the conversation, not the files, so both forks edited the same files; give each fork its own checkout, for example a separate git worktree.",
+          "correct": true,
+          "explanation": "Forking branches the conversation, not the filesystem, so a fork's edits are real and both forks wrote to the same files. The Redis fork compiled code the Caffeine fork had changed. Claude Code's docs run parallel sessions in git worktrees so edits don't collide: each worktree is a separate checkout on its own branch, so each design is built and tested on its own files. Running the same fork command from each worktree still forks the 2-hour baseline into it.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Forks share their conversation history, so the Redis fork followed the Caffeine fork's plan; start the Redis design from a fresh session instead.",
+          "correct": false,
+          "explanation": "Each fork gets its own copy of the conversation and the original stays unchanged, so the Redis fork never saw the Caffeine plan. A fresh session would throw away the 2-hour baseline and still share the same checkout.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "`--fork-session` only gives the session a new name; use the Agent SDK's `fork_session` option instead, which copies each branch's files into its own separate working tree.",
+          "correct": false,
+          "explanation": "The CLI flag and the SDK option do the same thing: a new session ID with a copy of the history. Neither isolates files, because sessions don't hold the filesystem.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "The forks edited files at the same time; run the Caffeine fork to completion first, then start the Redis fork from the same baseline in the same repository.",
+          "correct": false,
+          "explanation": "Running one after the other removes the race but not the cause: the Caffeine fork's edits stay in the checkout, so the Redis fork starts on modified files. Sequencing helps when two jobs compete only for time, not when they share files.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Forking a session branches the conversation, not the files; parallel forks that edit code each need their own working copy.",
+      "studyRef": "§3 Task 1.7 (fork_session for comparing approaches)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S4-D1-009",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.1",
+      "secondaryTasks": [],
+      "stem": "For a batch tool outside Claude Code, Fleetway's platform team built its own exploration loop on the Claude API. It sends each round of tool output as one user message: the `tool_result` blocks followed by a text block, \"Reminder: cite file paths and line numbers.\" In 11% of investigations Claude answers a tool round with an empty response and `stop_reason: \"end_turn\"`, and the loop ends with no answer. The team raised the iteration cap from 30 to 60, but the rate did not change. What is the most likely cause, and the fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Claude believes it has finished, a known cause of empty responses; when a response is empty, keep looping until the text contains file paths and line numbers as requested.",
+          "correct": false,
+          "explanation": "Deciding whether to continue from what the text contains is natural-language termination, and it would loop on a response with nothing to act on. The empty `end_turn` has a cause in how the loop builds its messages; fix that instead.",
+          "trap": "NL_TERMINATION"
+        },
+        {
+          "id": "b",
+          "text": "The tool results are too long for Claude to act on; trim each `tool_result` to its first 2,000 characters and keep the reminder text block where it is.",
+          "correct": false,
+          "explanation": "Long results can be a context problem, but nothing in the stem points to length, and trimming throws away output the agent may need while keeping the reminder that triggers the empty responses.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "The loop ends on `\"end_turn\"` too early; ignore it and keep looping until 60 iterations have run, which covers the longest investigations.",
+          "correct": false,
+          "explanation": "An iteration count as the stopping rule is the anti-pattern, and the stem shows the cap is not the issue: raising it to 60 changed nothing. `end_turn` should end the loop; the question is why Claude sends it with nothing to say.",
+          "trap": "ITERATION_CAP"
+        },
+        {
+          "id": "d",
+          "text": "A text block after the tool results is a known cause of empty responses; send the results without that block and move the citation reminder to the system prompt.",
+          "correct": true,
+          "explanation": "The stop-reasons guide warns against a text block after `tool_result` blocks in the same user message: user text after every tool result sets a pattern, and Claude ends its turn to follow it, which gives the empty `end_turn`. Sending the results alone removes that pattern. The Messages API reference describes the system prompt as a way to give Claude context and instructions, so the citation reminder can move there and is kept.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Send `tool_result` blocks without trailing text; put standing instructions in the system prompt instead of each tool-result message.",
+      "studyRef": "§3 Task 1.1 (loop lifecycle; adding tool results between iterations)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S4-D1-010",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "1.3",
+      "secondaryTasks": [
+        "1.2"
+      ],
+      "stem": "Fleetway's `legacy-explainer` subagent explains old route-planning modules. The main session delegates with prompts such as \"explain routing\", so the subagent spends much of each run working out which module and question are meant. Runs average 25 minutes and end with 3,000-word narratives, which the main session reads again to find class names and files. Engineers want answers within 10 minutes without losing accuracy. Which two changes help most? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "State in the subagent's description that the main session should pass the module path and the engineer's exact question when it delegates.",
+          "correct": true,
+          "explanation": "A subagent's description sits in the main agent's system prompt and guides the prompt the main agent writes for it. Saying what to pass means delegations name the module and the question, so the subagent stops spending its run guessing. It fixes the input while the output format fixes the result.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Cap the subagent at 10 turns so it must return within the 10-minute goal, and keep its prompt and description as they are.",
+          "correct": false,
+          "explanation": "A turn cap stops runs on time but cuts them off wherever they are, so answers lose accuracy, which the engineers ruled out. A cap is a safety net; the subagent needs a clear task and a clear finish.",
+          "trap": "ITERATION_CAP"
+        },
+        {
+          "id": "c",
+          "text": "Have the main session read the subagent's intermediate messages after each run, so it can pick out class names without reading the narrative.",
+          "correct": false,
+          "explanation": "Only the subagent's final message returns to the main session; its intermediate messages stay in its own context, so the main session would find nothing extra to read. Even if it could, the runs would still take 25 minutes, because the vague delegations that make the subagent guess would be unchanged.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "d",
+          "text": "Switch the subagent to a larger model, so that it understands the legacy code better and writes tighter, more focused explanations of each module it covers.",
+          "correct": false,
+          "explanation": "It puts the fault in the model, but the stem places it in the handoff and the missing output format: delegations still don't say which module or question is meant, and there is still no defined output to mark the end, so runs stay long and end in narratives. Model choice fits work that is too hard for the current model, which is not the problem here.",
+          "trap": "WRONG_COMPONENT"
+        },
+        {
+          "id": "e",
+          "text": "Define an output format in the subagent's prompt: entry points with file and line, a one-line role for each key class, and open questions, then stop.",
+          "correct": true,
+          "explanation": "A defined output format is the most important improvement to a subagent: it gives a natural stopping point, so the run ends when the format is filled, and the main session gets class names and files without re-reading a narrative.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Give a subagent a defined output format, and a description that tells the delegating agent what context to pass.",
+      "studyRef": "§3 Task 1.3 (AgentDefinition: description and system prompt)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S4-D1-011",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.4",
+      "secondaryTasks": [
+        "1.5"
+      ],
+      "stem": "Fleetway's platform team added a `PreToolUse` command hook on `Bash` that should stop any command touching `config/prod/`. On a match the script prints \"Blocked: production config\" and runs `exit 1`. Logs show the message appeared in 6 sessions, and in all 6 the command still ran. Other `Bash` commands must keep running without delay. What change makes the hook enforce the rule?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Widen the hook's matcher beyond `Bash` to cover `Edit` and `Write` too, so each matching call is checked before it can touch `config/prod/`.",
+          "correct": false,
+          "explanation": "Widening the matcher may be worth doing later, but every extra check would still exit with code 1, which blocks nothing. The matcher decides where the check runs, not whether it blocks.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Keep the hook as it is and add a line to the project CLAUDE.md saying that commands must not touch `config/prod/`.",
+          "correct": false,
+          "explanation": "CLAUDE.md is guidance Claude usually follows, not enforcement, and the hook already exists; only its exit code is wrong. A written rule fits a preference, not a production safeguard.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Exit with code 2 and write the reason to stderr, so the matching call is blocked and Claude is told why it can't touch `config/prod/`.",
+          "correct": true,
+          "explanation": "Exit code 2 is what blocks in a command hook; exit code 1 does not block, so the message printed and the command ran anyway. With exit 2 the call is stopped and stderr becomes the reason Claude sees, while other commands pass untouched.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Keep `exit 1` and the reason it prints, but move the script to a `PostToolUse` hook on `Bash`, where it can check the exact command that ran.",
+          "correct": false,
+          "explanation": "It still treats `exit 1` as a block, but exit code 1 does not block, and a `PostToolUse` hook fires after the command has already run, too late to stop a change to production config. Post-call hooks suit clean-up and formatting.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "A command hook blocks only with exit code 2 or a deny decision; exit code 1 reports a problem but lets the call run.",
+      "studyRef": "§3 Task 1.4 (programmatic enforcement with hooks)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S4-D1-012",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.6",
+      "secondaryTasks": [
+        "1.1"
+      ],
+      "stem": "A ticket asks the assistant to add a `region` field to 30 DTO classes it lists. The assistant planned all 30 edits from the list and applied them in one scripted `sed` pass through Bash, without inspecting the classes; 7 had already been migrated by hand, so they now declare `region` twice, and the build fails in 4 modules. The wiki's migration tracker is a week out of date. The work must finish today, though each module's build takes 6 minutes. How should the assistant work through the change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Read every class before editing it, skip or adjust those already migrated, and build each module after its edits, changing the remaining plan from what it finds.",
+          "correct": true,
+          "explanation": "An agent has to observe its environment, reading before writing and checking results, and adjust its approach from what it sees. Reading each class catches the 7 hand-migrated ones. Only the modules it touched are built, each once after its own edits, which fits within today, and errors show up one module at a time while the remaining plan can still change.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Plan all 30 edits from the ticket as before, apply them, then run the full build once at the end and fix whatever errors and duplicates it reports in each module.",
+          "correct": false,
+          "explanation": "Building at the end does check results, but only after 30 blind edits, so the 7 duplicates and their knock-on errors arrive together in 4 modules. Checking once at the end suits small, low-risk changes, not one where each step should shape the next.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Take the list of unmigrated classes from the wiki's migration tracker instead of the ticket, then apply the planned edits without inspecting each class.",
+          "correct": false,
+          "explanation": "The tracker is a week out of date, so this swaps one stale list for another and still skips reading the code. A list is a fine starting plan, but the classes themselves are the source of truth.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Spawn 30 subagents in parallel, one per class, each editing its own class and reporting back to the main session when done.",
+          "correct": false,
+          "explanation": "It tempts because parallel work seems to fit a deadline of today, but it adds 30 contexts and their coordination to a mechanical edit, and nothing builds each module or feeds what was found back into the remaining plan, so the 6-minute module builds that catch errors early never shape the work. Subagents suit independent exploration where only the result matters.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Let the plan adapt to what each step finds: read before writing, check results as you go, and revise the remaining steps.",
+      "studyRef": "§3 Task 1.6 (adaptive plans that generate subtasks from findings)",
+      "sources": [
+        "exam-guide"
+      ]
+    }
+  ]
+}

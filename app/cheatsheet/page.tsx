@@ -130,16 +130,18 @@ export default function CheatsheetPage() {
         <h2 id="key-facts" className="text-xl font-semibold">
           Key facts
         </h2>
-        {sheet.keyFacts.map((g) => (
-          <div key={g.group} data-testid="keyfact-group" className="mt-4">
-            <h3 className="font-semibold">{g.group}</h3>
-            <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm">
-              {g.items.map((item, i) => (
-                <li key={i}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        ))}
+        <div className="grid grid-cols-1 gap-x-6 md:grid-cols-2 xl:grid-cols-3">
+          {sheet.keyFacts.map((g) => (
+            <div key={g.group} data-testid="keyfact-group" className="mt-4 break-inside-avoid">
+              <h3 className="font-semibold">{g.group}</h3>
+              <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm">
+                {g.items.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
       </Card>
     </div>
   );

@@ -18,8 +18,8 @@ async function pick(page: Page, correct: boolean): Promise<void> {
   const escaped = text.replace(/`/g, '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   await page.getByRole('radio', { name: new RegExp(`^[A-E]\\. ${escaped}$`) }).check();
   await page.getByRole('radio', { name: 'Sure', exact: true }).check();
-  await page.getByRole('button', { name: 'Submit' }).click();
-  await expect(page.getByTestId('feedback-option').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Submit', exact: true }).click();
+  await expect(page.getByRole('status')).toBeVisible();
 }
 
 test.describe.configure({ mode: 'serial' });

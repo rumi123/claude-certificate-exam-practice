@@ -1,17 +1,18 @@
-import { and, asc, eq, inArray, isNotNull, isNull, max, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, isNull, max, ne, sql } from 'drizzle-orm';
 import { now } from '@/lib/clock';
 import { displayLetter, type PlanItem } from '@/lib/engine/session';
 import { score } from '@/lib/engine/scoring';
 import { filterCandidates, type SetupFilter } from '@/lib/engine/setup-schema';
 import type { Candidate } from '@/lib/engine/selection';
-import type { FeedbackData } from '@/lib/feedback';
+import type { Lesson } from '@/lib/content/schemas';
+import { buildLessonView, type FeedbackData } from '@/lib/feedback';
 import { defaultRng, shuffle } from '@/lib/rng';
 import { nextReviewState, type ReviewState } from '@/lib/srs/leitner';
 import type { Confidence, Mode, ReviewEffect, SessionKind } from '@/lib/types';
 import { getDb, type Db } from '../client';
 import * as t from '../schema';
 
-export function getCandidates(filter: SetupFilter = {}): Candidate[] {
+export function getCandidates(filter: SetupFilter = {}, pool = 'practice'): Candidate[] {
   const db = getDb();
   const rows = db
     .select({
@@ -22,7 +23,7 @@ export function getCandidates(filter: SetupFilter = {}): Candidate[] {
       domainId: t.question.domainId,
     })
     .from(t.question)
-    .where(and(eq(t.question.pool, 'practice'), eq(t.question.retired, 0)))
+    .where(and(eq(t.question.pool, pool), eq(t.question.retired, 0)))
     .orderBy(asc(t.question.id))
     .all();
   const seen = db
@@ -37,6 +38,17 @@ export function getCandidates(filter: SetupFilter = {}): Candidate[] {
     lastSeenAt: lastSeen.get(r.id) ?? null,
   }));
   return filterCandidates(cands, filter);
+}
+
+// Names of the active mock papers, oldest first.
+export function getMockPools(): string[] {
+  return getDb()
+    .selectDistinct({ pool: t.question.pool })
+    .from(t.question)
+    .where(and(ne(t.question.pool, 'practice'), eq(t.question.retired, 0)))
+    .all()
+    .map((r) => r.pool)
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 }
 
 export function getOptionKeys(questionIds: string[]): Record<string, string[]> {
@@ -400,8 +412,7 @@ export function recordAnswer(input: RecordAnswerInput): RecordAnswerResult {
 
 export function setMarked(sessionId: string, position: number, marked: boolean): void {
   getDb().transaction((tx) => {
-    const sess = getSession(tx, sessionId);
-    if (sess.status !== 'in_progress') throw new Error('Session is finished');
+    getSession(tx, sessionId);
     const res = tx
       .update(t.sessionItem)
       .set({ marked: marked ? 1 : 0 })
@@ -661,6 +672,16 @@ export function getFeedback(
     .orderBy(asc(t.taskStatement.id))
     .all();
 
+  const lessonRow = db
+    .select({ json: t.questionLesson.lessonJson })
+    .from(t.questionLesson)
+    .where(eq(t.questionLesson.questionId, questionId))
+    .get();
+  const parsedLesson = lessonRow ? (JSON.parse(lessonRow.json) as Lesson) : null;
+  // Option keys come from the DB as plain strings; the lesson's record is keyed by option id.
+  const lessonOptions: Partial<Record<string, Lesson['options'][keyof Lesson['options']]>> =
+    parsedLesson?.options ?? {};
+
   const options = optionOrder.flatMap((key, i) => {
     const r = byKey.get(key);
     if (!r) return [];
@@ -672,6 +693,8 @@ export function getFeedback(
         isCorrect: r.o.isCorrect === 1,
         selected: picked.has(key),
         explanation: r.o.explanation,
+        reasoning: lessonOptions[key]?.reasoning ?? null,
+        tempting: lessonOptions[key]?.tempting ?? null,
         trap:
           r.o.trapId && r.trapName
             ? { id: r.o.trapId, name: r.trapName, description: r.trapDescription ?? '' }
@@ -696,6 +719,7 @@ export function getFeedback(
     result,
     options,
     keyConcept: q.q.keyConcept,
+    lesson: parsedLesson ? buildLessonView(parsedLesson, options) : null,
     tags: {
       scenario: q.scenario,
       domain: q.domain,

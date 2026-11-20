@@ -16,7 +16,7 @@ function main(): number {
     return 1;
   }
   const r = importContent(getDb(), raw);
-  console.log(`content:import ${fmt(r)} (questions); cards ${fmt(r.cards)}`);
+  console.log(`content:import ${fmt(r)} (questions); mocks ${fmt(r.mocks)}; cards ${fmt(r.cards)}; lessons ${fmt(r.lessons)}`);
   return 0;
 }
 

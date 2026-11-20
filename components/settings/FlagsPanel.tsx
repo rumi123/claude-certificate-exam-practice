@@ -43,7 +43,7 @@ export default function FlagsPanel({ flags, stamp }: { flags: OpenFlag[]; stamp:
       <Button type="button" variant="secondary" onClick={download}>
         Export as markdown
       </Button>
-      <ul className="mt-3 space-y-3">
+      <ul className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-start">
         {flags.map((f) => (
           <Card as="li" key={f.id} data-testid="flag-row">
             <div className="flex items-center justify-between gap-2">

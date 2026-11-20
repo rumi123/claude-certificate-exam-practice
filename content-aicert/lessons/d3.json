@@ -1,0 +1,2083 @@
+{
+  "domain": "D3",
+  "lessons": [
+    {
+      "questionId": "S2-D3-001",
+      "explanation": "The convention is guidance for Claude, not a hard line, and it has to reach every fresh clone with no per-person setup. A CLAUDE.md committed in the repository does that: it is shared through version control, and a file in `engine/` loads when Claude works in that subtree. Putting the rule and a short `Result<T>` example there fixes the six missed pastes for good, and the next six engineers get it with the clone.",
+      "options": {
+        "a": {
+          "reasoning": "A hook guarantees the result, which is right for a rule that must never be broken. The stem calls a stray `throw` a nuisance that review catches in minutes, so a hook is more than the need. It also adds a pattern scanner to maintain and can block harmless mentions such as comments or tests.",
+          "tempting": "A hook is the only way to be sure, so it feels like the safe choice."
+        },
+        "b": {
+          "reasoning": "The setup script automates the wrong layer. The user-level file is personal and is not shared through version control, so the copied text drifts from the wiki when the convention changes and nobody can review it in a pull request.",
+          "tempting": "It removes the manual step that six of the nine hires skipped."
+        },
+        "c": {
+          "reasoning": "Nothing here has to be enforced, so guidance is enough. A committed CLAUDE.md in `engine/` reaches every clone with no setup, loads when Claude works under that directory, and changes through review like any other file."
+        },
+        "d": {
+          "reasoning": "A reminder to people does not change what Claude generates. The stray `throw` statements keep appearing and the cost moves to reviewers. It would help only if the convention were also loaded for Claude.",
+          "tempting": "Checklists and templates are cheap, and they do involve the engineers."
+        }
+      },
+      "concept": [
+        "CLAUDE.md is guidance, not enforced configuration. Use it for conventions Claude should follow, and reserve hooks for rules that must never be broken. Files stack: the user file, the project file and a directory file are all loaded, and nothing is overridden.",
+        "Only the project file is shared through version control. The user-level file belongs to one person, so a team convention placed there reaches only those who copy it. A CLAUDE.md in a subdirectory loads on demand, the first time Claude reads, writes or edits a file in that subtree."
+      ],
+      "conceptTable": {
+        "headers": ["Need", "Where it goes"],
+        "rows": [
+          ["Team convention, nothing to enforce", "Committed CLAUDE.md nearest the code it covers"],
+          ["Rule that must never be broken", "A hook that can block the action"],
+          ["Personal habit", "User-level `~/.claude/CLAUDE.md`"]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "a style convention ... a nuisance that review catches in minutes",
+          "meaning": "Guidance is enough. A hook would be more than the need."
+        },
+        {
+          "phrase": "new hires are told to paste it into their own `~/.claude/CLAUDE.md`",
+          "meaning": "The convention sits in a personal, unversioned layer, which is the root cause."
+        },
+        {
+          "phrase": "6 skipped that step",
+          "meaning": "Setup that depends on each person fails, so the fix must live in the repository."
+        },
+        {
+          "phrase": "without any per-engineer setup",
+          "meaning": "The fix has to arrive with the clone."
+        }
+      ],
+      "lookFor": [
+        "A committed CLAUDE.md that arrives with every clone.",
+        "A file placed where it loads for the code it covers.",
+        "Guidance, not enforcement, since the stem says it is only a style convention."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A hook is for rules that must never break; this is a style preference, and the scanner adds upkeep."
+        },
+        {
+          "option": "b",
+          "reason": "It copies the rule into a personal, unversioned file that drifts and cannot be reviewed."
+        },
+        {
+          "option": "d",
+          "reason": "It reminds people but never gives Claude the convention, so the `throw` statements continue."
+        }
+      ],
+      "rule": "Put team conventions in the committed CLAUDE.md nearest the code they cover. Use hooks only for rules that must never be broken, and the user file for personal habits.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: A CLAUDE.md that follows",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/a-claude-md-that-follows"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The CLAUDE.md file",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-claude-md-file"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S2-D3-002",
+      "explanation": "The four imports in the root file all load with it, so every session carries all four standards. Moving each language import into the CLAUDE.md of the directory that needs it makes those standards load only when Claude works in that subtree. The shared build standards stay imported in the root, and the files stay in `docs/standards/` with no copies.",
+      "options": {
+        "a": {
+          "reasoning": "Imports in a directory-level CLAUDE.md load when Claude works in that directory, so `tools/` sessions stop receiving the C++ and Lua standards. The build standards stay in the root where everyone needs them, and no file is copied."
+        },
+        "b": {
+          "reasoning": "This is the right mechanism applied half-way. Sessions in `tools/` would still load the C++ and Lua standards from the root, which is the complaint. It would be fine only if every engineer needed those two languages.",
+          "tempting": "It moves the one language the tools team needs and leaves the rest for the majority."
+        },
+        "c": {
+          "reasoning": "Team standards would then depend on each engineer's setup and drift between people, and new hires would get nothing by default. The user-level file is for personal preferences, not for standards the whole team shares.",
+          "tempting": "Each engineer then chooses what loads for their own work."
+        },
+        "d": {
+          "reasoning": "A plain Markdown link is just text, and it does not load the file. Claude would rarely open the standards, so the Python work loses the rules it needs. The `@` import is what pulls a file into context.",
+          "tempting": "A link keeps the root file small and lets Claude open a file only when relevant."
+        }
+      },
+      "concept": [
+        "`@path/to/file` imports another file into CLAUDE.md. Imports organize; they do not shrink context, because imported files are expanded in place and load up front with the file that imports them. The saving here comes from moving each import into a directory file that loads only in its subtree.",
+        "A CLAUDE.md in a subdirectory loads on demand, the first time Claude reads, writes or edits a file in that subtree. Import a shared file at the level where it is shared, and a per-area file from the CLAUDE.md of that area."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`@docs/standards/cpp.md`, `@docs/standards/lua.md`",
+          "meaning": "All imports sit in the root, so they load in every session."
+        },
+        {
+          "phrase": "Engineers working only in `tools/` see C++ and Lua rules",
+          "meaning": "Standards loaded where they are not needed. The fix is conditional loading."
+        },
+        {
+          "phrase": "the files stay in `docs/standards/` with no copies",
+          "meaning": "The imports move, the files do not."
+        },
+        {
+          "phrase": "the shared build standards",
+          "meaning": "These are needed everywhere, so they stay imported in the root."
+        }
+      ],
+      "lookFor": [
+        "Language imports moved into the directory file that needs each one.",
+        "Shared build standards kept in the root.",
+        "Files left in one place, with no copies."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The C++ and Lua imports stay in the root, so `tools/` sessions still load them."
+        },
+        {
+          "option": "c",
+          "reason": "It moves shared standards into personal files, so new hires get none of them."
+        },
+        {
+          "option": "d",
+          "reason": "A plain link does not load the file, so the standards would rarely be read."
+        }
+      ],
+      "rule": "Import each area's standards from that area's CLAUDE.md so they load only there, and keep an import in the root only when everyone needs the file.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: A CLAUDE.md that follows",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/a-claude-md-that-follows"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S2-D3-003",
+      "explanation": "The root file mixes three kinds of content that belong at different levels. Rules that apply to one area go into that area's directory CLAUDE.md, which loads only when Claude works there. Personal habits go into each engineer's own user-level file, which affects nobody else. What remains in the root is studio-wide guidance. Splitting by scope fixes the structure; shortening or re-labelling the same content does not.",
+      "options": {
+        "a": {
+          "reasoning": "Directory-level files load when Claude works in that directory, so `gameplay/` sessions stop receiving engine and tool guidance. The root file keeps only what applies to all 45 engineers."
+        },
+        "b": {
+          "reasoning": "Personal preferences belong in the user-level file, which applies only to that engineer and is not shared through version control. Each person keeps their habits and teammates no longer inherit them."
+        },
+        "c": {
+          "reasoning": "A rule file with no `paths` frontmatter loads at launch, like the root file, so it still reaches every session. The split looks tidier, but `gameplay/` engineers would receive all of it. A `paths` field would make it conditional.",
+          "tempting": "Separate topic files under `.claude/rules/` look like the modular fix."
+        },
+        "d": {
+          "reasoning": "Trimming makes the file shorter but leaves engine rules, tool tips and personal habits mixed together. The irrelevant guidance still loads in every session for every engineer.",
+          "tempting": "The docs recommend keeping a file under about 200 lines, so shortening seems on point."
+        },
+        "e": {
+          "reasoning": "A generator adds a moving part and writes files nobody asked for, including in directories with nothing to say. Moving the few relevant sections by hand into the directories that need them is enough.",
+          "tempting": "Automation would keep every directory's file in step with a template."
+        }
+      },
+      "concept": [
+        "Scope guidance to where it applies: the project file for studio-wide guidance, a directory file for one area, and the user file for personal habits. Every line of CLAUDE.md competes for attention, so a leaner file is followed more closely, and the docs recommend files under about 200 lines.",
+        "A `.claude/rules/` file with no `paths` frontmatter loads at launch, so moving text into one changes the layout but not who receives it. Conditional loading needs a directory file or a `paths` rule."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "certification rules that matter only under `engine/`",
+          "meaning": "Area-specific content that belongs in a directory file."
+        },
+        {
+          "phrase": "three engineers' personal habits",
+          "meaning": "Personal content that belongs in the user-level file."
+        },
+        {
+          "phrase": "Engineers in `gameplay/` receive guidance that does not apply to them",
+          "meaning": "The cost of unconditional loading."
+        },
+        {
+          "phrase": "the studio-wide guidance must stay in the root file",
+          "meaning": "The root keeps only what applies to everyone."
+        }
+      ],
+      "lookFor": [
+        "Area rules moved into the directory files for those areas.",
+        "Personal habits moved into each engineer's user-level file.",
+        "Studio-wide guidance left in the root."
+      ],
+      "eliminate": [
+        {
+          "option": "c",
+          "reason": "Rule files without `paths` load at launch, so `gameplay/` still receives all of it."
+        },
+        {
+          "option": "d",
+          "reason": "It shrinks the file but leaves the area-specific and personal content loading for everyone."
+        },
+        {
+          "option": "e",
+          "reason": "A script adds machinery and files nobody asked for; moving the sections by hand is enough."
+        }
+      ],
+      "rule": "Split a crowded CLAUDE.md by scope: directory files for one area, the user file for personal habits, and the root for what everyone needs.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: A CLAUDE.md that follows",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/a-claude-md-that-follows"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The CLAUDE.md file",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-claude-md-file"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S2-D3-004",
+      "explanation": "Four teams edit one file and paste copies of their own docs into it. The fix is to keep each team's conventions doc where the team owns it and let the root file import it with `@`. Each team then edits only its own file under its own CODEOWNERS entry, the root stays a short index of guidance that applies to everyone, and no second copy exists to drift. Claude still sees all four through the import lines.",
+      "options": {
+        "a": {
+          "reasoning": "Each team edits only its own doc under its own CODEOWNERS, and the root file just imports them, so merge conflicts and drifting copies both disappear. Claude still sees all four documents through the `@` import lines."
+        },
+        "b": {
+          "reasoning": "Rule files are a fine way to split guidance, but copying the docs creates a second source of truth that drifts from the team's own tree. Teams would have to edit two places, which is the duplication the stem wants removed.",
+          "tempting": "Splitting into `.claude/rules/` files is a documented way to modularize."
+        },
+        "c": {
+          "reasoning": "A generator and an automated commit duplicate what `@` import does natively. The generated root file still changes on every team edit, so conflicts move to the bot, and a bad build can overwrite the file.",
+          "tempting": "A build step guarantees the root file always matches the team docs."
+        },
+        "d": {
+          "reasoning": "An approval queue and a freeze window reduce simultaneous edits but keep four teams inside one file. The pasted copies still drift, and the teams lose ownership of their own conventions.",
+          "tempting": "A single owner and a weekly window would stop the merge conflicts."
+        }
+      },
+      "concept": [
+        "`@path/to/file` imports another file, so a shared CLAUDE.md can stay a short index while each owner edits the file that holds their conventions. Paths resolve from the importing file, and imports can nest up to four hops.",
+        "Use `@` with a file path to point CLAUDE.md at existing project docs instead of pasting them. Pasted text becomes a second copy that drifts; an import keeps one source."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "31 pull requests touching it hit merge conflicts",
+          "meaning": "Several teams share one file. Ownership has to be split."
+        },
+        {
+          "phrase": "one bad merge dropped the certification section",
+          "meaning": "The cost of a single shared file."
+        },
+        {
+          "phrase": "the root file holds pasted copies that drift",
+          "meaning": "Copies are the problem. An import removes them."
+        },
+        {
+          "phrase": "under its own CODEOWNERS entry",
+          "meaning": "Each team already owns its own doc, so the import respects that."
+        }
+      ],
+      "lookFor": [
+        "Imports of each team's own doc from the root file.",
+        "Only guidance for all four teams left in the root.",
+        "No second copy of any team's conventions."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It copies the docs, so a second version drifts from each team's own file."
+        },
+        {
+          "option": "c",
+          "reason": "It rebuilds what import already does and adds an automated commit that can overwrite the file."
+        },
+        {
+          "option": "d",
+          "reason": "It keeps four teams in one file, so copies still drift and teams lose ownership."
+        }
+      ],
+      "rule": "Keep a shared CLAUDE.md as a short index that imports files owned by each team, instead of pasting copies of them.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The CLAUDE.md file",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-claude-md-file"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S2-D3-005",
+      "explanation": "The engineers want the invocation itself to show which parameter is expected. The `argument-hint` field in SKILL.md frontmatter does exactly that: it shows the expected arguments when someone types the command, and `$ARGUMENTS` inserts what was typed. One line fixes it, with no guard code to maintain.",
+      "options": {
+        "a": {
+          "reasoning": "A line in CLAUDE.md is read by Claude, not shown to the engineer typing the command. The engineer still sees no hint at invocation, and Claude may still guess when no path is given.",
+          "tempting": "Telling Claude to expect a path seems to address the guessing."
+        },
+        "b": {
+          "reasoning": "`argument-hint` is the frontmatter field made for this: it shows the expected argument when the command is typed. One line in the skill file solves it, with no extra code to maintain."
+        },
+        "c": {
+          "reasoning": "A hook could block the call, but it shows no hint of the expected parameter and adds a script to maintain. Blocking suits a rule that must hold; this team only wants the parameter to be visible.",
+          "tempting": "A hook is deterministic, so a bare call would never get through."
+        },
+        "d": {
+          "reasoning": "`context: fork` runs the skill in an isolated subagent so its output stays out of the conversation. It says nothing about parameters, so engineers would still type the bare command and Claude would still guess.",
+          "tempting": "Another frontmatter field, so it looks like a nearby fix."
+        }
+      },
+      "concept": [
+        "Skills live in `.claude/skills/<name>/SKILL.md`, and the frontmatter configures them. `argument-hint` shows the expected arguments when someone types the command, and `$ARGUMENTS` inserts what was typed. `context: fork` runs the skill in a forked subagent, and `allowed-tools` pre-approves tools."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "Engineers often type `/shader-test` with nothing after it",
+          "meaning": "The missing argument is the problem to fix."
+        },
+        {
+          "phrase": "show which parameter is expected",
+          "meaning": "A visible hint at the point of typing."
+        },
+        {
+          "phrase": "without adding guard code",
+          "meaning": "Rules out a hook or a script that checks the call."
+        }
+      ],
+      "lookFor": [
+        "A frontmatter field that shows the expected parameter when the command is typed.",
+        "A fix in the SKILL.md file itself, with no code to maintain."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It is read by Claude, not shown to the engineer, so nothing appears at invocation."
+        },
+        {
+          "option": "c",
+          "reason": "It blocks the call but shows no hint, and adds a script to maintain."
+        },
+        {
+          "option": "d",
+          "reason": "It isolates output and says nothing about parameters."
+        }
+      ],
+      "rule": "Use `argument-hint` in SKILL.md frontmatter to show the expected parameter at invocation. Hooks and CLAUDE.md lines do not.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: extend Claude with skills",
+          "url": "https://code.claude.com/docs/en/skills"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S2-D3-006",
+      "explanation": "Two needs meet here: the raw dump text must stay out of the conversation, and all 45 engineers must get the command. A skill with `context: fork` runs the scan in a forked subagent and only its summary returns, which keeps the 60,000 tokens out. Committing it under `.claude/skills/` in the project shares it through git with everyone who clones the repo.",
+      "options": {
+        "a": {
+          "reasoning": "The fork keeps the 60,000 tokens in the subagent's own context and returns just the summary. Because the skill is committed in the project folder, every engineer gets it, and updates arrive on the next pull."
+        },
+        "b": {
+          "reasoning": "The fork would fix the context pollution, but a skill in the author's home folder is available only to that engineer. The other 44 would not get the command. A personal skill suits individual customization, not a team tool.",
+          "tempting": "It uses the right isolation setting, so it looks complete."
+        },
+        "c": {
+          "reasoning": "`/compact` summarizes the whole conversation and can lose details, and it depends on 45 people remembering to run it. The raw text has already used context before compaction runs, so quality drops until someone compacts.",
+          "tempting": "It does clear the raw text once someone runs it."
+        },
+        "d": {
+          "reasoning": "`allowed-tools` pre-approves the listed tools and removes none, so Read stays available. Even if Read were removed, the Grep results from 900 dumps would still enter the conversation. Isolation needs a forked context.",
+          "tempting": "Listing only Grep seems to keep full dump files out of the conversation."
+        }
+      },
+      "concept": [
+        "`context: fork` runs the skill in a forked subagent: the skill body becomes the subagent's task and only its result comes back to the conversation. Use it for verbose or exploratory output.",
+        "Project skills live in `.claude/skills/` and are shared through git. Personal skills in `~/.claude/skills/` are available only to that user. Legacy `.claude/commands/*.md` files still work, but skills are the recommended form for new work.",
+        "`allowed-tools` pre-approves tools; it does not restrict them. Every other tool stays available under normal permission settings. The exam guide describes it as restricting tool access, so read an exam question's options with that in mind."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "leaves roughly 60,000 tokens of raw dump text in the engineer's conversation",
+          "meaning": "Verbose intermediate output polluting the context. That points to a fork."
+        },
+        {
+          "phrase": "do not quote raw dumps",
+          "meaning": "A prompt instruction did not stop raw text appearing."
+        },
+        {
+          "phrase": "must reach all 45 engineers",
+          "meaning": "The command must live in the project folder, not a personal one."
+        },
+        {
+          "phrase": "nothing else should stay behind",
+          "meaning": "Only the summary may return."
+        }
+      ],
+      "lookFor": [
+        "A forked context so only the summary returns.",
+        "A project-level location so the whole team gets the skill.",
+        "No reliance on engineers remembering a step."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A personal skill reaches only its author, so the other 44 engineers get nothing."
+        },
+        {
+          "option": "c",
+          "reason": "It relies on each person to run it, and the raw text has already filled context by then."
+        },
+        {
+          "option": "d",
+          "reason": "`allowed-tools` pre-approves rather than restricts, and Grep results would still fill the conversation."
+        }
+      ],
+      "rule": "Isolate verbose skill output with `context: fork`, and keep team skills in `.claude/skills/` so everyone gets them.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: extend Claude with skills",
+          "url": "https://code.claude.com/docs/en/skills"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to agent skills: Configuration and multi-file skills",
+          "url": "https://academy.claude.com/courses/introduction-to-agent-skills/configuration-and-multi-file-skills"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to agent skills: Sharing skills",
+          "url": "https://academy.claude.com/courses/introduction-to-agent-skills/sharing-skills"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S2-D3-007",
+      "explanation": "There are two separate problems, and each needs its own setting. `context: fork` runs the 800-file scan in an isolated subagent so only the report returns to the conversation. `disallowed-tools: Write, Edit, Bash` removes those tools while the skill is active, so it cannot edit a manifest. Both go in the committed SKILL.md, so the whole studio gets them.",
+      "options": {
+        "a": {
+          "reasoning": "A sentence in the body makes an edit less likely but does not remove the ability to edit. The engineer already saw one slip, and a restriction on the tools is what prevents it.",
+          "tempting": "It is simple, and re-running on a sample gives some evidence."
+        },
+        "b": {
+          "reasoning": "The fork keeps the intermediate tool output inside the subagent, so the conversation receives only the final report. This addresses the second issue."
+        },
+        "c": {
+          "reasoning": "`allowed-tools` only pre-approves tools and removes none. Listing `Write` makes things worse, because the skill could then write files without asking. The audit only reports, so it needs no file write.",
+          "tempting": "It looks like a read-focused tool list, and the guide describes the field as restricting tools."
+        },
+        "d": {
+          "reasoning": "Personal copies drift apart and do not carry a team-wide restriction. Each engineer would have to apply the fix by hand, while the committed project skill is what everyone already shares.",
+          "tempting": "Local copies let each engineer adjust the behavior."
+        },
+        "e": {
+          "reasoning": "`disallowed-tools` removes the listed tools while the skill is active, so it has no way to modify a manifest. A removed tool is a guarantee rather than a request. This addresses the first issue and works independently of the fork."
+        }
+      },
+      "concept": [
+        "`allowed-tools` pre-approves tools: the listed ones run without a permission prompt during the turn that invoked the skill, and every other tool stays available. `disallowed-tools` is the field that removes tools while the skill is active.",
+        "Exam note: the exam guide describes `allowed-tools` as restricting tool access. If an exam question offers `allowed-tools` with only read tools as the way to stop a skill from editing, and no `disallowed-tools` option, that is the answer the guide expects. Here a `disallowed-tools` option exists, so it is the one that matches how the field works.",
+        "Listing `Bash` alone in `allowed-tools` pre-approves shell commands in general; narrow it to a pattern such as `Bash(git status *)`."
+      ],
+      "conceptTable": {
+        "headers": ["Setting", "What it does"],
+        "rows": [
+          ["`context: fork`", "Runs the skill in a subagent; only the result returns"],
+          ["`allowed-tools`", "Pre-approves listed tools; removes none"],
+          ["`disallowed-tools`", "Removes tools while the skill is active"]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "must only report naming problems",
+          "meaning": "The skill must be unable to edit. That needs removed tools."
+        },
+        {
+          "phrase": "an engineer saw it edit a manifest once",
+          "meaning": "A request is not enough; the capability has to go."
+        },
+        {
+          "phrase": "its intermediate tool output fills the engineer's conversation",
+          "meaning": "Verbose output. That points to a fork."
+        },
+        {
+          "phrase": "must be committed so the whole studio gets it",
+          "meaning": "The change goes in the project skill file."
+        }
+      ],
+      "lookFor": [
+        "A fork for the verbose scan.",
+        "`disallowed-tools` to remove the editing tools.",
+        "Changes in the committed project skill, not personal copies."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A body sentence is a request, not a block, and the skill still holds the editing tools."
+        },
+        {
+          "option": "c",
+          "reason": "`allowed-tools` pre-approves rather than restricts, and listing Write lets it write without asking."
+        },
+        {
+          "option": "d",
+          "reason": "Personal copies drift and carry no team-wide fix."
+        }
+      ],
+      "rule": "Use `context: fork` to isolate a skill's verbose output and `disallowed-tools` to remove tools it must not use. `allowed-tools` only pre-approves.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: extend Claude with skills",
+          "url": "https://code.claude.com/docs/en/skills"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to agent skills: Configuration and multi-file skills",
+          "url": "https://academy.claude.com/courses/introduction-to-agent-skills/configuration-and-multi-file-skills"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to agent skills: Sharing skills",
+          "url": "https://academy.claude.com/courses/introduction-to-agent-skills/sharing-skills"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S2-D3-008",
+      "explanation": "The conventions follow a file type, `.hlsl`, across three directories. A rule file in `.claude/rules/` with `paths: [\"**/*.hlsl\"]` loads only when Claude works with a matching file, wherever it sits. One committed file covers all three directories, and Lua and Python sessions never load the 90 lines.",
+      "options": {
+        "a": {
+          "reasoning": "A `paths` glob loads the rule only when Claude works with matching files, in any directory. That covers all three locations with one file and leaves Lua and Python sessions without the 90 lines."
+        },
+        "b": {
+          "reasoning": "A directory-level file covers only that directory. Shader edits in `gameplay/fx/` and `tools/preview/` would miss the conventions. This would suit rules that apply to one folder rather than a file type.",
+          "tempting": "Most shader work happens there, and Claude does load that file for the directory."
+        },
+        "c": {
+          "reasoning": "An import from the root loads the imported file in every session, so Lua and Python sessions still carry the shader text. It reorganizes the file without making the loading conditional.",
+          "tempting": "It keeps the root short and the shader text in one place."
+        },
+        "d": {
+          "reasoning": "`applies-to` is not a recognised key. `paths` is the only frontmatter key a rule reads, and other keys are ignored, so the file would load unconditionally. Conditional loading needs `paths` with glob patterns.",
+          "tempting": "The key name reads naturally and names the file type."
+        }
+      },
+      "concept": [
+        "Every `.md` file under `.claude/rules/` is discovered. A rule with no `paths` frontmatter loads at launch, like the project CLAUDE.md. A rule with `paths:`, a YAML list of globs, loads only when Claude works with a matching file. `paths` is the only frontmatter key a rule reads.",
+        "A convention that follows a file type or spans separate directories fits one path-scoped rule. Patterns are relative to the project root, and `**` matches any number of nested folders."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "apply only to `.hlsl` files",
+          "meaning": "The scope is a file type, not a directory."
+        },
+        {
+          "phrase": "sit in `engine/render/`, `gameplay/fx/` and `tools/preview/`",
+          "meaning": "One type across three separate directories."
+        },
+        {
+          "phrase": "Lua and Python sessions must stay free of them",
+          "meaning": "Loading has to be conditional."
+        }
+      ],
+      "lookFor": [
+        "A rule file with a `paths` glob on the file type.",
+        "One file covering every directory that holds the type."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A directory file covers one folder, so shader files in the other two would miss the rules."
+        },
+        {
+          "option": "c",
+          "reason": "An import loads up front in every session, so it is not conditional."
+        },
+        {
+          "option": "d",
+          "reason": "`paths` is the only key a rule reads, so `applies-to` is ignored."
+        }
+      ],
+      "rule": "Path-scoped rule files load conventions by file pattern, so they follow a file type across directories. Only the `paths` key makes a rule conditional.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S2-D3-009",
+      "explanation": "The glob has to scope by location and by name together. Prefixing each pattern with the studio tree (`gameplay/` and `tools/`) keeps `vendor/` out, and `**` lets the pattern reach the nested folders. So `gameplay/**/*_spec.lua` and `tools/**/test_*.py` match the studio's own test files and nothing under `vendor/`.",
+      "options": {
+        "a": {
+          "reasoning": "The directory prefixes limit the rule to the two studio trees, and `**` reaches nested folders. Third-party `test_*.py` files under `vendor/` do not match, so editing them does not load the 60 lines."
+        },
+        "b": {
+          "reasoning": "A single `*` stays inside one folder, so specs in `gameplay/quests/` and other nested folders would not match. Most of the 140 specs would never load the rule.",
+          "tempting": "The prefixes are right and the names are right, so it looks correct."
+        },
+        "c": {
+          "reasoning": "Patterns that start with `**/` and name only the file match every file with that name, including the 300 third-party files under `vendor/`. That loads studio rules for foreign tests.",
+          "tempting": "Name-only patterns are short and cover every nested folder."
+        },
+        "d": {
+          "reasoning": "Matching every file loads the 60 lines for all gameplay and tooling edits, not just tests. It never misses a test only by loading the rule far too often, which defeats conditional loading.",
+          "tempting": "It guarantees no nested test file is missed."
+        }
+      },
+      "concept": [
+        "Patterns in `paths` are relative to the project root. `**` matches any number of nested folders, and a single `*` stays inside one folder. Documented examples include `src/api/**/*.ts` and `tests/**/*.test.ts`.",
+        "To target a file type while excluding a folder, combine a directory prefix with the name pattern: the prefix decides where the rule applies, and the name decides which files in it."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "nested folders such as `gameplay/quests/`",
+          "meaning": "A single `*` would miss these. `**` is needed."
+        },
+        {
+          "phrase": "`vendor/` holds 300 third-party files with the same `test_*.py` names",
+          "meaning": "A name-only pattern would match them. A directory prefix is needed."
+        },
+        {
+          "phrase": "load only when Claude edits the studio's own test files",
+          "meaning": "Both location and name must be in the pattern."
+        }
+      ],
+      "lookFor": [
+        "A directory prefix for each tree that is in scope.",
+        "`**` for nested folders, and a name pattern for the test files.",
+        "Nothing that matches under `vendor/`."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A single `*` does not cross folders, so nested specs never match."
+        },
+        {
+          "option": "c",
+          "reason": "Name-only patterns also match the 300 files under `vendor/`."
+        },
+        {
+          "option": "d",
+          "reason": "It matches every file in both trees, so the rule loads far too often."
+        }
+      ],
+      "rule": "Write `paths` globs with a directory prefix and `**` for nested folders: scope by location and name together.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S2-D3-010",
+      "explanation": "The conventions apply to one directory tree, `engine/audio/`, whatever the file type, so that directory's CLAUDE.md fits. It is committed once, loads when Claude works under that directory, and covers `.cpp`, `.h` and `.json` files alike. Dropped from the root, Lua and Python sessions no longer carry the 70 lines.",
+      "options": {
+        "a": {
+          "reasoning": "The rules apply to a single directory regardless of file type, so a directory-level CLAUDE.md fits. It is committed once, loads for audio work and not for Lua or Python sessions, and covers headers and presets too."
+        },
+        "b": {
+          "reasoning": "Path scoping is the right idea, but this pattern matches only `.cpp` files. Edits to `.h` headers and `.json` presets in the same folder would not load the conventions, leaving gaps.",
+          "tempting": "The rule is scoped to audio code, which is where it matters most."
+        },
+        "c": {
+          "reasoning": "A rule file without `paths` loads at launch in every session. The root file gets shorter, but Lua and Python engineers still carry the 70 lines.",
+          "tempting": "A separate file keeps the root short."
+        },
+        "d": {
+          "reasoning": "An import from the root loads the file in every session, so nothing changes for Lua and Python work. The conventions become easier to edit but are no more conditional than before.",
+          "tempting": "It keeps the rules in a single file that is easy to edit."
+        }
+      },
+      "concept": [
+        "A convention for one directory tree fits that directory's CLAUDE.md, which loads when Claude works in the subtree. A convention that follows a file type or a set of separate directories fits a path-scoped rule.",
+        "Glob rules beat directory files when a convention spans directories, and a directory file beats a glob when the files in one directory are of mixed types."
+      ],
+      "conceptTable": {
+        "headers": ["Scope", "Best fit"],
+        "rows": [
+          ["One directory, mixed file types", "That directory's CLAUDE.md"],
+          ["One file type across directories", "A rule with `paths`"],
+          ["Everything, in every session", "The project CLAUDE.md"]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "apply only inside `engine/audio/`",
+          "meaning": "The scope is a directory tree."
+        },
+        {
+          "phrase": "the files are mixed: `.cpp`, `.h` and `.json`",
+          "meaning": "A file-type glob would leave gaps."
+        },
+        {
+          "phrase": "one committed copy",
+          "meaning": "No duplicates, so no copies in other places."
+        }
+      ],
+      "lookFor": [
+        "A CLAUDE.md in the directory the rules apply to.",
+        "The conventions removed from the root file.",
+        "Coverage of every file type in the folder."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The pattern matches only `.cpp`, so headers and presets in the folder would miss the rules."
+        },
+        {
+          "option": "c",
+          "reason": "With no `paths` the rule loads at launch for everyone."
+        },
+        {
+          "option": "d",
+          "reason": "An import loads up front in every session, so it is not conditional."
+        }
+      ],
+      "rule": "Conventions for one directory belong in that directory's CLAUDE.md. A path-scoped rule is for patterns that span directories.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S2-D3-011",
+      "explanation": "The change is small, well understood and limited to one file, and the behaviour is already decided. Direct execution fits: tell Claude the file, the function and the `ValueError` to raise, then review the diff before the freeze. Plan mode is for work with open design choices or many files, and it would spend part of the 30 minutes without adding information.",
+      "options": {
+        "a": {
+          "reasoning": "Plan mode suits changes with several valid approaches or many files. Here the behaviour is decided and the scope is one function, so a planning round spends time without adding information.",
+          "tempting": "Planning is the careful route, and it lets her approve before any edit."
+        },
+        "b": {
+          "reasoning": "An Explore subagent isolates verbose discovery and returns a summary. It is for reading, not for making an edit, and nothing here needs discovery because the file and function are known.",
+          "tempting": "It keeps the main conversation small."
+        },
+        "c": {
+          "reasoning": "A small, well-understood change needs no exploration. Naming the file, the function and the behaviour is enough, and reviewing the diff checks the 25 lines before the freeze."
+        },
+        "d": {
+          "reasoning": "The interview pattern helps in unfamiliar domains where the developer may miss considerations. She has already decided the behaviour, so several rounds of questions would only delay a clear change.",
+          "tempting": "Questions would surface edge cases before any code."
+        }
+      },
+      "concept": [
+        "In plan mode Claude reads files and runs commands to explore but cannot edit. It proposes a plan you approve before any change. It suits complex tasks: large changes, several valid approaches, architectural decisions, multi-file changes.",
+        "Direct execution suits simple, well-scoped changes such as a single-file bug fix. Being specific saves context: name the file, the symptom and what fixed looks like."
+      ],
+      "conceptTable": {
+        "headers": ["Task", "Mode"],
+        "rows": [
+          ["Known behaviour, one file", "Direct execution"],
+          ["Several valid approaches or many files", "Plan mode"],
+          ["Verbose discovery you only need a summary of", "Explore subagent"]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "She has already decided the behaviour",
+          "meaning": "No open design choice, so no plan is needed."
+        },
+        {
+          "phrase": "About 25 lines change in this one file",
+          "meaning": "Small, well-scoped change."
+        },
+        {
+          "phrase": "the build freeze starts in 30 minutes",
+          "meaning": "Time pressure. Extra rounds are costly."
+        }
+      ],
+      "lookFor": [
+        "Direct execution with the file, function and behaviour named.",
+        "A review of the diff.",
+        "No exploration or interview for a decided change."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "The behaviour is decided and the scope is one function, so planning adds time and no information."
+        },
+        {
+          "option": "b",
+          "reason": "It is for discovery, which is not needed, and it does not make the edit."
+        },
+        {
+          "option": "d",
+          "reason": "She has already decided the behaviour, so interviewing only delays the change."
+        }
+      ],
+      "rule": "For a well-scoped change with known behaviour, use direct execution and review the diff. Plan mode is for open design choices.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: common workflows (plan mode)",
+          "url": "https://code.claude.com/docs/en/common-workflows"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The explore → plan → code → commit workflow",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S2-D3-012",
+      "explanation": "The conflict with the C++ bindings shows the approach was never settled. Switching to plan mode lets Claude read the binding contract and fix one approach for the remaining files, and the plan is the best place to course-correct because no further code has been written. Once the approach is fixed, execution can go back to direct mode for the 43 remaining files and the 9 redos.",
+      "options": {
+        "a": {
+          "reasoning": "The conflict shows the approach was never settled. Exploring the binding contract in plan mode fixes it once, and the remaining 43 files plus the 9 redos can then run by direct execution without more surprises."
+        },
+        "b": {
+          "reasoning": "Checkpoints catch conflicts after the work is done, so more files may need redoing. The approach is still unsettled, and a three-day deadline makes repeated redo rounds expensive.",
+          "tempting": "Regular checks seem to limit how much goes wrong at a time."
+        },
+        "c": {
+          "reasoning": "Six of the 15 files are fine and the engineer has learned how the bindings yield. A restart throws that away and repeats the original prompt, which may pick the same conflicting approach.",
+          "tempting": "A clean start seems to clear the bad approach."
+        },
+        "d": {
+          "reasoning": "The note asks for care but does not settle which approach to use across the remaining files. Checking per file could produce a different choice each time, which is the inconsistency that caused the conflict.",
+          "tempting": "It is a small change to the prompt and does ask Claude to read the bindings."
+        }
+      },
+      "concept": [
+        "Plan mode allows safe exploration before committing to changes, and the plan is the best place to course-correct, because no code has been written for it yet. After approval, Claude works through the plan in the chosen permission mode.",
+        "Direct execution and plan mode combine: investigate in plan mode, settle the approach, then execute directly. Switching back to plan mode is the right response when direct execution exposes a design conflict.",
+        "In plan mode Claude reads files and proposes a plan but cannot edit until you approve; enter it with Shift+Tab or `--permission-mode plan`."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "started in direct execution",
+          "meaning": "The mode was chosen before the approach was settled."
+        },
+        {
+          "phrase": "conflicted with how the C++ bindings yield",
+          "meaning": "An unresolved design question, found mid-task."
+        },
+        {
+          "phrase": "9 of those files must be redone",
+          "meaning": "Continuing without settling the approach repeats the cost."
+        },
+        {
+          "phrase": "43 files remain",
+          "meaning": "Enough work left that a settled approach pays off."
+        }
+      ],
+      "lookFor": [
+        "A return to plan mode to settle one approach.",
+        "Direct execution again once the approach is fixed.",
+        "Keeping the files that are already correct."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Checkpoints find conflicts after the work, so more files need redoing."
+        },
+        {
+          "option": "c",
+          "reason": "It discards the good work and repeats the prompt that chose the conflicting approach."
+        },
+        {
+          "option": "d",
+          "reason": "It asks for care but does not fix one approach, so each file could differ."
+        }
+      ],
+      "rule": "When direct execution hits an unresolved design conflict, switch to plan mode to settle the approach, then execute.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: common workflows (plan mode)",
+          "url": "https://code.claude.com/docs/en/common-workflows"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The explore → plan → code → commit workflow",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Steering long sessions",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/steering-long-sessions"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S2-D3-013",
+      "explanation": "Prose was already read inconsistently, so the fix is to define correct as executable tests before the code is trusted. The suite should cover normal use, the four edge cases and the 2-microsecond limit, because the timing limit is part of the expected behaviour. Iterating by sharing each failing test gives Claude a precise, checkable target.",
+      "options": {
+        "a": {
+          "reasoning": "The prose was already interpreted inconsistently, and longer prose has the same weakness. Executable cases leave less room for interpretation than a longer description of each edge case.",
+          "tempting": "More detail seems to remove the ambiguity."
+        },
+        "b": {
+          "reasoning": "Test-first is right for the edge cases, but the timing limit is part of the expected behaviour. Left to a manual check at the end, a violation appears late, after Claude has built on a design that may be too slow. Putting the limit in the suite catches it on the first failing run.",
+          "tempting": "It is test-first with the edge cases covered, so it is almost right."
+        },
+        "c": {
+          "reasoning": "Tests derived from the code encode its current behaviour, including the zero-step and drift bugs. They would pass while the accumulator stays wrong, because nothing independent defines the expected results.",
+          "tempting": "Tests written afterwards are quick and match what the code does."
+        },
+        "d": {
+          "reasoning": "Tests written before the code define the expected behaviour, including the timing limit. Each failure shared with Claude is a precise, verifiable target, so iteration converges instead of guessing."
+        }
+      },
+      "concept": [
+        "Give Claude a check that returns pass or fail, such as a test file, and ask for the evidence. Test-driven iteration means writing the tests first and then iterating by sharing the failures. The suite should cover behaviour, edge cases and performance before implementation.",
+        "Tests written from the finished code can encode its bugs, and a test loosened to pass is a warning sign worth checking in the diff. Make sure the tests are a reliable source of truth."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "The prose spec produced code that looks right",
+          "meaning": "Review found failures that prose did not define."
+        },
+        {
+          "phrase": "a zero timestep, negative deltas, a 300 ms stall ... and drift",
+          "meaning": "Edge cases that need executable tests."
+        },
+        {
+          "phrase": "Each tick must stay under 2 microseconds",
+          "meaning": "A performance requirement that belongs in the suite."
+        }
+      ],
+      "lookFor": [
+        "Tests written before the implementation.",
+        "The performance limit inside the suite, not a late manual check.",
+        "Iteration by sharing each failing test."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Longer prose has the same weakness as the original spec."
+        },
+        {
+          "option": "b",
+          "reason": "The timing limit is left to a manual check, so a violation appears late."
+        },
+        {
+          "option": "c",
+          "reason": "Tests written from the finished code encode its bugs."
+        }
+      ],
+      "rule": "Write the test suite first, covering edge cases and performance, then iterate by sharing each failure with Claude.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Verification skills",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/verification-skills"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The explore → plan → code → commit workflow",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S2-D3-014",
+      "explanation": "Three prose requests each fixed one input and broke another, so the spec is ambiguous. Giving Claude the failing inputs with their exact expected outputs as test cases removes the ambiguity, and including the working `1.2.3` case as a test catches any attempt that breaks it. Claude then fixes the function until they all pass.",
+      "options": {
+        "a": {
+          "reasoning": "A restart discards what the conversation learned, and the same vague request would likely produce the same one-at-a-time fixes. The missing piece is a precise definition of correct, not a clean slate.",
+          "tempting": "Earlier failed attempts may be biasing the new version."
+        },
+        "b": {
+          "reasoning": "Concrete input and output pairs remove the ambiguity that three prose attempts left. Including the working `1.2.3` case as a test also catches any attempt that breaks it."
+        },
+        "c": {
+          "reasoning": "A longer description is still prose, so it can be read in several ways, and nothing checks the result. Exact examples as tests would show immediately whether each case passes.",
+          "tempting": "It gives the expected tuple shapes, which is more precise than before."
+        },
+        "d": {
+          "reasoning": "Tests are the right tool, but a suite for the whole module is far more than the problem needs. A handful of cases for `parse_version()` give the same feedback with far less work.",
+          "tempting": "A full suite would protect everything in the module."
+        }
+      },
+      "concept": [
+        "Concrete input and output examples show expected transformations when prose is read inconsistently. They are especially useful for corner cases and exact output formats, and several examples help when there are several edge cases.",
+        "A check that returns pass or fail gives Claude something to keep validating against. Keep the case that works today in the checks so a fix cannot silently break it."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "asked three times, in prose",
+          "meaning": "Prose has failed repeatedly, so a different kind of input is needed."
+        },
+        {
+          "phrase": "each attempt fixed one input while breaking another",
+          "meaning": "Nothing defines all the cases together."
+        },
+        {
+          "phrase": "must not break the `1.2.3` case that works today",
+          "meaning": "The working case belongs in the checks."
+        }
+      ],
+      "lookFor": [
+        "Exact failing inputs with expected outputs as test cases.",
+        "The working case kept in the set.",
+        "Scope limited to the function in question."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A restart keeps the vague request, so it likely repeats the same one-at-a-time fixes."
+        },
+        {
+          "option": "c",
+          "reason": "It is still prose, and nothing checks the result."
+        },
+        {
+          "option": "d",
+          "reason": "A whole-module suite is far more than needed; a few cases for the function give the feedback."
+        }
+      ],
+      "rule": "When prose requests keep fixing one input and breaking another, supply exact failing inputs and expected outputs as test cases.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Providing examples",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/providing-examples"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Verification skills",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/verification-skills"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S2-D3-015",
+      "explanation": "Batch problems that interact into one message and handle independent ones sequentially. The rarity weights and the pity-counter reset affect each other, so Claude needs to see both, with the expected result for each case, to find one change that satisfies both. The empty-table crash and the log typo are independent, so separate follow-up messages work, and each can be verified on its own.",
+      "options": {
+        "a": {
+          "reasoning": "Sequential fixes suit independent issues. For the weights and the pity counter, fixing one alone shifts the other, so the two would keep undoing each other across messages.",
+          "tempting": "One at a time with a check after each seems the careful route."
+        },
+        "b": {
+          "reasoning": "Fresh sessions lose the context of what changed in the rewrite. The interacting problems especially need to be seen together, and each new session would have to relearn the file.",
+          "tempting": "It stops earlier fixes from influencing later ones."
+        },
+        "c": {
+          "reasoning": "The two problems interact, so Claude needs to see both at once to find a change that satisfies each case. A single message with expected results avoids fixing one and breaking the other."
+        },
+        "d": {
+          "reasoning": "Independent problems cannot affect each other, so separate sequential messages are simple and each fix can be verified on its own."
+        },
+        "e": {
+          "reasoning": "A design document is heavy for a crash and a typo, and it delays the fixes. Two of the problems are plain, independent corrections that need no planning.",
+          "tempting": "A design document would cover all four problems in one place."
+        }
+      },
+      "concept": [
+        "The exam guide's rule for feedback: batch interacting problems into one message, and iterate sequentially on independent problems. Interacting fixes need to be seen together; independent ones can be verified one at a time.",
+        "Include the expected result for each case, so each fix has a pass-or-fail check."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "changing either shifts the other's results",
+          "meaning": "Interacting problems. They need one message."
+        },
+        {
+          "phrase": "A crash on an empty table and a typo",
+          "meaning": "Independent problems, so sequential messages work."
+        },
+        {
+          "phrase": "each fix must be verified",
+          "meaning": "Every report needs an expected result."
+        }
+      ],
+      "lookFor": [
+        "The two interacting problems sent together.",
+        "The two independent problems sent separately.",
+        "An expected result for each case."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It splits the two interacting problems, so each fix disturbs the other."
+        },
+        {
+          "option": "b",
+          "reason": "Fresh sessions lose the rewrite's context and split the interacting problems."
+        },
+        {
+          "option": "e",
+          "reason": "It is heavy for a crash and a typo, and delays plain independent fixes."
+        }
+      ],
+      "rule": "Report interacting problems together in one message, and handle independent problems in separate, sequential messages.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S4-D3-001",
+      "explanation": "Both engineers have identical project files, so the difference must come from a layer that is personal. `/memory` for the first engineer lists the user-level file as the only personal layer, and that file is not shared through version control. Comparing the two engineers' `~/.claude/CLAUDE.md` files will show the JDK 8 line, without touching files both engineers share.",
+      "options": {
+        "a": {
+          "reasoning": "The project and directory files are the same for both, so the difference must come from a personal layer. The user-level file is not shared through version control, and a diff shows the JDK 8 line quickly."
+        },
+        "b": {
+          "reasoning": "A model's own account of why it did something is not a record of which files were loaded. `/memory` is the documented check, and the answer might blame the wrong file.",
+          "tempting": "It is the quickest question to ask."
+        },
+        "c": {
+          "reasoning": "This destroys guidance that both engineers share and does nothing for a rule in a personal file. The rule differs between two people with identical project files, so it is not in the repository.",
+          "tempting": "Starting clean would remove every stale rule."
+        },
+        "d": {
+          "reasoning": "These files are identical for both engineers, so a rule in them would affect both the same way. Fixing them would change behaviour for the engineer who is already fine and leave the real source untouched.",
+          "tempting": "The project files are the usual place for a Java style rule."
+        }
+      },
+      "concept": [
+        "Memory files stack: managed policy, the user file `~/.claude/CLAUDE.md`, the project file, and the local `CLAUDE.local.md`, with directory files loading on demand. Only the project file is shared through version control. User and local files belong to one person.",
+        "`/memory` lists the CLAUDE.md and other memory files loaded in the session, so it is the way to check which files are in play. When two people with identical project files behave differently, look at the personal layers: the user file, `CLAUDE.local.md` and `~/.claude/rules/`."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "Nobody remembers adding a JDK 8 rule",
+          "meaning": "The rule is not in anything the team reviews."
+        },
+        {
+          "phrase": "`/memory` lists `~/.claude/CLAUDE.md`, the root `CLAUDE.md` and `services/routing/CLAUDE.md`",
+          "meaning": "Only the user file is a personal layer here."
+        },
+        {
+          "phrase": "The second engineer's project files are identical",
+          "meaning": "So the project files cannot explain the difference."
+        },
+        {
+          "phrase": "the team does not want to change files both engineers share",
+          "meaning": "Rules out edits to shared files."
+        }
+      ],
+      "lookFor": [
+        "A comparison of the layers that differ between the two engineers.",
+        "`/memory` or a diff as the evidence, not the model's own explanation.",
+        "No change to files the two share."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The model's explanation is not a record of loaded files, so it may blame the wrong one."
+        },
+        {
+          "option": "c",
+          "reason": "It destroys shared guidance and leaves a personal-file rule untouched."
+        },
+        {
+          "option": "d",
+          "reason": "The files are identical for both engineers, so the difference lies elsewhere."
+        }
+      ],
+      "rule": "When two people with identical project files get different behavior, look at the personal layers, starting with the user-level file.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: A CLAUDE.md that follows",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/a-claude-md-that-follows"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The CLAUDE.md file",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-claude-md-file"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S4-D3-002",
+      "explanation": "Three candidate boundaries, about 400 files each and a changing public API make this an architectural decision, and no boundary is chosen yet. Plan mode allows safe exploration and a reviewable comparison before any file changes. Once a boundary is chosen, the work can be executed.",
+      "options": {
+        "a": {
+          "reasoning": "Several valid boundaries, 400 files each and a changing public API make this an architectural decision. Plan mode allows safe exploration and a reviewable comparison before committing to one."
+        },
+        "b": {
+          "reasoning": "A passing build says nothing about whether the boundary is the right one. Finding a poor choice after 400 files change means redoing the work, and reviewers never saw the reasoning.",
+          "tempting": "Direct execution is fast, and the full diff gets reviewed."
+        },
+        "c": {
+          "reasoning": "An Explore subagent isolates verbose discovery and returns a summary. It helps inside plan mode, but it does not choose a boundary or perform the edits, so it cannot replace the planning step.",
+          "tempting": "It keeps the main conversation small during a huge change."
+        },
+        "d": {
+          "reasoning": "The open question is which boundary to use across all four modules, and each changes the public API. Planning one module settles part of it, and the rest would be done without the comparison.",
+          "tempting": "Planning the first module seems enough to set the pattern."
+        }
+      },
+      "concept": [
+        "Plan mode suits complex tasks: large changes, several valid approaches, architectural decisions and multi-file changes. Claude explores without editing and proposes a plan you review before any change.",
+        "The plan is where to course-correct, because no code has been written yet. After approval, Claude works through the plan in the chosen permission mode."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "Three candidate boundaries exist",
+          "meaning": "Several valid approaches. That points to plan mode."
+        },
+        {
+          "phrase": "each would touch about 400 files",
+          "meaning": "A large multi-file change, costly to redo."
+        },
+        {
+          "phrase": "Nobody has chosen a boundary yet",
+          "meaning": "The decision is still open."
+        },
+        {
+          "phrase": "reviewers want to see the reasoning before files move",
+          "meaning": "A reviewable plan comes first."
+        }
+      ],
+      "lookFor": [
+        "Exploration and a comparison of the boundaries before any edit.",
+        "A plan that reviewers can read.",
+        "Execution only after one boundary is chosen."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A green build does not show the boundary is right, and reviewers never see the reasoning."
+        },
+        {
+          "option": "c",
+          "reason": "It returns summaries of discovery; it does not choose a boundary or do the edits."
+        },
+        {
+          "option": "d",
+          "reason": "It plans only one module, so the rest proceed without the comparison."
+        }
+      ],
+      "rule": "Choose plan mode for large, multi-file changes with several valid approaches, then execute the chosen one.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: common workflows (plan mode)",
+          "url": "https://code.claude.com/docs/en/common-workflows"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The explore → plan → code → commit workflow",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Context management",
+          "url": "https://academy.claude.com/courses/claude-code-101/context-management"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S4-D3-003",
+      "explanation": "Every file read fills the context window, and 150 files of text have made answers vague. Sending broad questions to a subagent keeps the reading in its own context and returns only a summary, so the main conversation stops filling up and the findings stay. Once the cause is agreed, the fix touches three files and is small and clear, so leaving plan mode for direct execution is faster.",
+      "options": {
+        "a": {
+          "reasoning": "The subagent reads files in its own context and returns a summary, so the main conversation stops filling with file text. The agreed findings stay available."
+        },
+        "b": {
+          "reasoning": "Compacting after every read is constant overhead, and each summary can drop details the investigation still needs. It treats the symptom of a full context rather than moving the reading elsewhere.",
+          "tempting": "Compaction does free space by summarizing the conversation."
+        },
+        "c": {
+          "reasoning": "Plan mode suited the open investigation. With the cause known and only three files to change, direct execution is faster and needs no further exploration."
+        },
+        "d": {
+          "reasoning": "Replies are a small part of the context; the 150 files of text are the bulk. Shorter answers barely change that, and exploration would continue to fill the conversation.",
+          "tempting": "Shorter replies use less of the remaining space."
+        },
+        "e": {
+          "reasoning": "The cause is already found, so three more explorations would consume far more context for no new information. The files to change are known and the fix is small.",
+          "tempting": "Confirming each change separately sounds thorough."
+        }
+      },
+      "concept": [
+        "Every file read and tool result fills the context window. When it gets full, compaction summarizes and can lose details. Subagents have their own context window, so a question where you only need the answer is best sent to a subagent, which does the reading and returns a summary.",
+        "Use plan mode to investigate, then execute directly once the scope is small and clear."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "had the assistant read some 150 files",
+          "meaning": "Verbose discovery filling the main context."
+        },
+        {
+          "phrase": "answers have become vague",
+          "meaning": "A symptom of a crowded context."
+        },
+        {
+          "phrase": "a 3-file fix is still needed",
+          "meaning": "Small and clear once the cause is known, so direct execution fits."
+        },
+        {
+          "phrase": "must keep the findings from the investigation",
+          "meaning": "Rules out discarding the conversation."
+        }
+      ],
+      "lookFor": [
+        "Reading moved to a subagent that returns summaries.",
+        "A switch to direct execution once the cause is agreed.",
+        "The findings kept."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It adds overhead on every read and each summary can lose details."
+        },
+        {
+          "option": "d",
+          "reason": "Replies are a small share of the context, and exploration keeps filling it."
+        },
+        {
+          "option": "e",
+          "reason": "It repeats a full exploration for three files whose cause is already known."
+        }
+      ],
+      "rule": "Keep verbose exploration in a subagent, and once the cause is clear, switch from plan mode to direct execution.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Context management",
+          "url": "https://academy.claude.com/courses/claude-code-101/context-management"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The explore → plan → code → commit workflow",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D3-001",
+      "explanation": "The pipeline needs machine-readable findings on every run, and prompt wording or cleanup cannot guarantee that. Adding `--json-schema` with a findings schema makes the output match the schema, and the validated object arrives in the `structured_output` field. The `jq` step then reads `.structured_output`, and the run is no slower.",
+      "options": {
+        "a": {
+          "reasoning": "Examples make the format more likely but give no guarantee, so some share of runs would still wrap the reply. A pipeline that counts blocking findings needs the format enforced.",
+          "tempting": "Showing the exact raw format in the prompt seems to be enough."
+        },
+        "b": {
+          "reasoning": "The regular expression hides the symptom but not the cause. A new wrapper, a missing field or a changed key still breaks the pipeline, because nothing defines the findings' structure.",
+          "tempting": "It would repair today's failures without touching the prompt."
+        },
+        "c": {
+          "reasoning": "The schema constrains the output to a defined findings structure, so the reply is machine-parseable on every run. It adds no extra step and no waiting, which keeps the merge fast."
+        },
+        "d": {
+          "reasoning": "The Message Batches API processes requests asynchronously, with results available later, up to 24 hours. That would block a pre-merge check, and batching does not change the reply format of the CLI.",
+          "tempting": "Batch results are structured and cheaper."
+        }
+      },
+      "concept": [
+        "`claude -p` runs one prompt non-interactively, prints the result and exits. `--output-format json` returns a JSON object with the text in `result` plus `session_id` and cost metadata. Adding `--json-schema` makes the output match the schema, and the validated object arrives in the `structured_output` field.",
+        "Read it with `jq '.structured_output'`. The Message Batches API suits latency-tolerant work nothing is waiting on, not a blocking pre-merge check."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "About 6% of runs fail",
+          "meaning": "Prompt-only output is not reliable enough."
+        },
+        {
+          "phrase": "wraps the findings in a sentence or a code fence",
+          "meaning": "The format is not enforced."
+        },
+        {
+          "phrase": "a script pipes the reply through `jq`",
+          "meaning": "The consumer needs exact structure."
+        },
+        {
+          "phrase": "the check must not slow the merge",
+          "meaning": "Rules out asynchronous batch processing."
+        }
+      ],
+      "lookFor": [
+        "A schema that enforces the findings structure.",
+        "A parser reading the structured output field.",
+        "No extra waiting before the merge."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Examples make the format likelier but do not enforce it."
+        },
+        {
+          "option": "b",
+          "reason": "It patches the wrapper but nothing defines the findings' structure."
+        },
+        {
+          "option": "d",
+          "reason": "Batch results can take up to 24 hours, which would block a pre-merge check."
+        }
+      ],
+      "rule": "For machine-parseable CI output, add `--json-schema` with a findings schema rather than relying on prompt wording or cleanup.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: run Claude Code programmatically (non-interactive mode)",
+          "url": "https://code.claude.com/docs/en/headless"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Scheduled tasks and headless",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/routines-and-headless"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D3-002",
+      "explanation": "The session that wrote the change is not the best judge of it. With `--resume`, the review carries the reasoning that produced the code, and the session that wrote a change is not the best judge of it, which fits the two defects found against 19 found later by humans. Running the review as a separate `claude -p` call with the diff and the criteria in CLAUDE.md, and none of the author's reasoning, gives a clean context, and it still runs before the merge.",
+      "options": {
+        "a": {
+          "reasoning": "Criteria help, but the resumed session still carries the reasoning that produced the code, and the session that wrote a change is not the best judge of it. The review remains the author checking its own work.",
+          "tempting": "Adding the criteria and the diff gives the reviewer something concrete."
+        },
+        "b": {
+          "reasoning": "A fresh instance has no memory of why the code was written that way, so it reads the diff critically against written criteria. It still runs before the merge, as required."
+        },
+        "c": {
+          "reasoning": "The call is independent, but the notes hand over the author's reasoning, which biases the reviewer toward the same assumptions. The diff and criteria alone keep the review independent.",
+          "tempting": "It is a separate call, and the notes give useful context."
+        },
+        "d": {
+          "reasoning": "Batch processing suits work nothing waits on. Running after the merge means defects reach `main` first, and it does not address the review's lack of independence.",
+          "tempting": "Batching bulk reviews is cheap and covers every merge."
+        }
+      },
+      "concept": [
+        "A session that wrote code is less effective at reviewing its own changes. Review from a clean context with none of the session's history: `/code-review`, or a separate reviewer. Review criteria and project rules go in the root CLAUDE.md, which CI-invoked Claude Code reads.",
+        "`--resume <session_id>` continues an earlier session with its full context, which is the opposite of what an independent review needs."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`--resume $SESSION_ID`",
+          "meaning": "The reviewer continues the author's session with its full context."
+        },
+        {
+          "phrase": "the review found 2 defects, while human reviewers later found defects in 19",
+          "meaning": "The review is missing defects the author's reasoning hides."
+        },
+        {
+          "phrase": "The review must still run before each merge",
+          "meaning": "It stays a blocking check."
+        }
+      ],
+      "lookFor": [
+        "A separate call with no resume.",
+        "The diff and written criteria, not the author's reasoning.",
+        "A check that still runs before the merge."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "The resumed session still carries the author's reasoning, so it is the author checking its own work."
+        },
+        {
+          "option": "c",
+          "reason": "The notes pass the author's reasoning on, which biases the reviewer."
+        },
+        {
+          "option": "d",
+          "reason": "It runs after the merge and does nothing about independence."
+        }
+      ],
+      "rule": "Review with an independent Claude instance given the diff and criteria, not the author's session or its reasoning.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Code review",
+          "url": "https://academy.claude.com/courses/claude-code-101/code-review"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: run Claude Code programmatically (non-interactive mode)",
+          "url": "https://code.claude.com/docs/en/headless"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D3-003",
+      "explanation": "The two pieces need different loading. The one-line rule must apply to all code, so it stays in the always-loaded root CLAUDE.md. The 25-step checklist is needed about three times a month, so it should be a skill, which loads on demand: only its name and description sit in context until it is used. Placing the skill in `.claude/skills/` in the project shares it with the whole team.",
+      "options": {
+        "a": {
+          "reasoning": "The short rule applies to all code, so it stays always-loaded. The checklist is needed about three times a month, so an on-demand skill saves its tokens in every other session, and the project folder shares it with the team."
+        },
+        "b": {
+          "reasoning": "The skill mechanism is right, but a personal skill reaches only the engineer who wrote it. The team needs the checklist when touching the vault, so it must live in the committed project folder.",
+          "tempting": "It is the right on-demand mechanism, and it removes the tokens."
+        },
+        "c": {
+          "reasoning": "The one-line rule must apply to all code, and a skill loads only when invoked. An engineer who forgets to invoke it gets no card-number rule at all, so the universal standard belongs in CLAUDE.md.",
+          "tempting": "Moving everything into skills removes all 2,500 tokens."
+        },
+        "d": {
+          "reasoning": "Editing a committed file by script adds fragile machinery, and the file would differ between branches. A skill gives the same on-demand loading natively.",
+          "tempting": "It keeps both parts in CLAUDE.md and lean for other sessions."
+        }
+      },
+      "concept": [
+        "CLAUDE.md loads into every conversation, so it fits project-wide standards and constraints. Skills load on demand: only names and descriptions sit in context until a skill is used, then its body joins the conversation. Use skills for task-specific procedures that are only sometimes relevant.",
+        "Project skills in `.claude/skills/` are shared through git. Personal skills in `~/.claude/skills/` are available only to that user."
+      ],
+      "conceptTable": {
+        "headers": ["Content", "Where it goes"],
+        "rows": [
+          ["Universal, always applies", "Root CLAUDE.md"],
+          ["Procedure needed only sometimes", "A skill, loaded on demand"],
+          ["Procedure the team needs", "A project skill, shared through git"]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "a one-line rule ... that must apply to all code",
+          "meaning": "Always-on, so CLAUDE.md."
+        },
+        {
+          "phrase": "a 25-step ... checklist needed only when someone changes `services/card-vault/`",
+          "meaning": "Task-specific, so a skill."
+        },
+        {
+          "phrase": "adding roughly 2,500 tokens to every session",
+          "meaning": "The cost of loading everything always."
+        },
+        {
+          "phrase": "must be available to everyone on the team",
+          "meaning": "It belongs in the project folder."
+        }
+      ],
+      "lookFor": [
+        "The short rule left in CLAUDE.md.",
+        "The checklist as a project skill, not a personal one.",
+        "Nothing universal moved to on-demand loading."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A personal skill is available only to its author, not the team."
+        },
+        {
+          "option": "c",
+          "reason": "A skill loads only when invoked, so the universal rule could be missed."
+        },
+        {
+          "option": "d",
+          "reason": "It adds fragile machinery to do what a skill already does."
+        }
+      ],
+      "rule": "Keep universal standards in always-loaded CLAUDE.md and move rarely needed procedures into shared project skills.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to agent skills: Skills vs. other Claude Code features",
+          "url": "https://academy.claude.com/courses/introduction-to-agent-skills/skills-vs-other-claude-code-features"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to agent skills: Sharing skills",
+          "url": "https://academy.claude.com/courses/introduction-to-agent-skills/sharing-skills"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: extend Claude with skills",
+          "url": "https://code.claude.com/docs/en/skills"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D3-004",
+      "explanation": "The complaints have two causes: Claude lacks the team's criteria, so it flags allowed patterns, and it has no record of earlier findings, so it repeats them after each push. Documenting the review criteria in CLAUDE.md, including the patterns the team accepts, gives CI-invoked Claude the standards. Including the previous review's findings in the prompt on re-runs lets it report only new or still-open issues.",
+      "options": {
+        "a": {
+          "reasoning": "Self-reported confidence is poorly calibrated, so a threshold would drop real findings while keeping confident false ones. The problem is missing criteria, not a missing score.",
+          "tempting": "A threshold cuts the volume of comments."
+        },
+        "b": {
+          "reasoning": "CLAUDE.md gives CI-invoked Claude the project's review standards. Stating which patterns are allowed removes the false positives at the source."
+        },
+        "c": {
+          "reasoning": "Two runs double the cost and time, and both runs still lack the criteria, so both can repeat the same false positives. Agreement between runs does not show a finding is wanted.",
+          "tempting": "Findings that appear twice seem more reliable."
+        },
+        "d": {
+          "reasoning": "With earlier findings in the prompt, Claude can skip issues the author already fixed or dismissed. This removes the duplicate comments after each push."
+        },
+        "e": {
+          "reasoning": "Batch results can take up to 24 hours, which would hold up a pre-merge check, and it changes nothing about what the review flags. Batching suits work that nothing is waiting on.",
+          "tempting": "Lower cost per run is attractive."
+        }
+      },
+      "concept": [
+        "For claude-code-action and CI-invoked Claude Code, put review criteria and project rules in the root CLAUDE.md. Claude follows them when it reviews and responds. Without `--bare`, `-p` loads the same context as an interactive session, including CLAUDE.md.",
+        "On re-runs, include prior review findings so Claude reports only new or still-open issues instead of repeating comments."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "flag patterns the team's standards allow",
+          "meaning": "Missing criteria. They belong in CLAUDE.md."
+        },
+        {
+          "phrase": "post again the comments for issues the author already fixed or dismissed",
+          "meaning": "No record of earlier findings. Pass them in."
+        },
+        {
+          "phrase": "the repository has no review guidance",
+          "meaning": "Nothing tells CI-invoked Claude what to flag."
+        },
+        {
+          "phrase": "must not slow merges",
+          "meaning": "Rules out asynchronous batch review."
+        }
+      ],
+      "lookFor": [
+        "Review criteria written in CLAUDE.md.",
+        "Prior findings supplied on re-runs.",
+        "No change that slows the merge."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A confidence score does not supply the missing criteria."
+        },
+        {
+          "option": "c",
+          "reason": "Both runs lack the criteria, so agreement does not show a finding is wanted."
+        },
+        {
+          "option": "e",
+          "reason": "Batch results can take up to 24 hours, and the flags would not change."
+        }
+      ],
+      "rule": "Give CI-invoked Claude explicit review criteria in CLAUDE.md and prior findings on re-runs, to cut false positives and duplicates.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: GitHub Actions",
+          "url": "https://code.claude.com/docs/en/github-actions"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: GitHub Actions and Code Review",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/github-actions-and-code-review"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: run Claude Code programmatically (non-interactive mode)",
+          "url": "https://code.claude.com/docs/en/headless"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D3-005",
+      "explanation": "The conventions apply to three paths that are not under one parent, out of about 95 directories. One rule file in `.claude/rules/` with a `paths` list of the three globs loads them only when Claude works with a matching file, in local sessions and in the CI review, with no copies to drift. A parent-directory file would load for every service directory.",
+      "options": {
+        "a": {
+          "reasoning": "A parent-directory file loads for work in all of `services/`, so about 90 unrelated directories would get the conventions. It also cannot scope `libs/crypto/` correctly. A path-scoped rule covers all three paths exactly.",
+          "tempting": "It covers two of the three directories and can name the third."
+        },
+        "b": {
+          "reasoning": "The root file loads in every session, so all engineers carry the 80 lines everywhere. A heading is only a label for Claude, not a condition on loading.",
+          "tempting": "One file with a clear heading keeps the three areas together."
+        },
+        "c": {
+          "reasoning": "Three copies must be kept in sync by hand, so they would drift apart. A single file with a glob list gets the same loading with one source of truth.",
+          "tempting": "Each directory's file loads exactly where the work happens."
+        },
+        "d": {
+          "reasoning": "One path-scoped rule file lists all three locations, so the conventions load only when Claude works there, in local sessions and in CI. It has no copies, so nothing can drift."
+        }
+      },
+      "concept": [
+        "A rule in `.claude/rules/` with `paths:` loads only when Claude works with a matching file. Patterns are relative to the project root, and several globs can sit in one list. A convention that follows a set of separate directories fits one path-scoped rule.",
+        "A directory's CLAUDE.md fits one directory tree: it loads when Claude works in that subtree, so a parent-directory file loads for every directory beneath it."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`services/card-vault/`, `services/tokenizer/` and `libs/crypto/`",
+          "meaning": "Three separate paths, not one tree."
+        },
+        {
+          "phrase": "out of roughly 95 directories",
+          "meaning": "A parent-directory file would load far too widely."
+        },
+        {
+          "phrase": "without copies that can drift",
+          "meaning": "One source of truth."
+        },
+        {
+          "phrase": "Local sessions and the CI reviewer",
+          "meaning": "The rule must reach both through the repository."
+        }
+      ],
+      "lookFor": [
+        "One rule file with a `paths` list of all three locations.",
+        "No copies and no unconditional loading."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It loads for all of `services/` and cannot scope `libs/crypto/`."
+        },
+        {
+          "option": "b",
+          "reason": "The root file loads in every session, and a heading is not a loading condition."
+        },
+        {
+          "option": "c",
+          "reason": "Three copies must be kept in sync by hand and would drift."
+        }
+      ],
+      "rule": "Conventions spanning several directories belong in one path-scoped rule file, not in a parent-directory CLAUDE.md or in copies.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D3-006",
+      "explanation": "Running the reviewer after the merge let defects reach `main`, and 22 needed follow-up fixes. A review that must gate a merge has to run before it. Restoring the reviewer as a blocking pre-merge check, an independent `claude -p` run on the PR diff with criteria in CLAUDE.md, stops the defects, and keeping it on the diff with written criteria keeps the run short.",
+      "options": {
+        "a": {
+          "reasoning": "Auto-revert cleans up after the defect has already reached `main`, and it can revert good changes on a false positive. The review's timing, not its cleanup, is what needs fixing.",
+          "tempting": "It speeds up merges and still removes bad ones."
+        },
+        "b": {
+          "reasoning": "A blocking pre-merge review stops defects before they reach `main`. Limiting it to the diff with written criteria keeps the run short, and an independent instance keeps it unbiased."
+        },
+        "c": {
+          "reasoning": "Batch fits work nothing waits on, such as a nightly audit, and results can take up to 24 hours. A nightly run finds defects a day after merge, so the 22 follow-up fixes would continue.",
+          "tempting": "Batch is cheaper than a synchronous run."
+        },
+        "d": {
+          "reasoning": "The author's session is less effective at spotting its own mistakes because it carries the reasoning behind them. Removing the independent job saves the 4 minutes but loses the reviewer's value.",
+          "tempting": "No new job is needed and the author already has the context."
+        }
+      },
+      "concept": [
+        "Code Review as a managed service never approves or blocks a PR, so a merge gate needs a check that runs before the merge. The Message Batches API processes requests asynchronously, with results available later up to 24 hours, so a blocking check cannot use it.",
+        "The session that wrote a change is not the best judge of it. Review from a clean context with the diff and written criteria."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "moved it to run on `main` after the merge",
+          "meaning": "Defects now arrive after the merge."
+        },
+        {
+          "phrase": "22 merged PRs needed follow-up fixes",
+          "meaning": "The cost of reviewing too late."
+        },
+        {
+          "phrase": "two of them touched card-handling services",
+          "meaning": "The risk is in what reaches `main`."
+        },
+        {
+          "phrase": "cut the 4 minutes, but not at the price of defects reaching `main`",
+          "meaning": "The check must stay before the merge."
+        }
+      ],
+      "lookFor": [
+        "A blocking check that runs before the merge.",
+        "An independent instance on the diff with written criteria.",
+        "No asynchronous batch or after-the-fact cleanup."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It reacts after the defect has reached `main` and can revert good changes."
+        },
+        {
+          "option": "c",
+          "reason": "A nightly batch finds defects after merge, so the follow-up fixes continue."
+        },
+        {
+          "option": "d",
+          "reason": "The author's session carries its own reasoning, so it misses its own mistakes."
+        }
+      ],
+      "rule": "A review that must gate a merge runs synchronously and independently before the merge. Batch review suits only work nothing waits on.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: GitHub Actions and Code Review",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/github-actions-and-code-review"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Code review",
+          "url": "https://academy.claude.com/courses/claude-code-101/code-review"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S5-D3-007",
+      "explanation": "The prose spec was read two ways, so the results vary. Two or three concrete input and output examples, such as `0.125 -> 0.12` and `0.135 -> 0.14`, show the exact tie-breaking rule that includes a half rounding down and a half rounding up. Claude can then match every one, and the examples can double as tests.",
+      "options": {
+        "a": {
+          "reasoning": "More prose is the same kind of input that was already interpreted two ways. Concrete examples show the tie-breaking rule directly and leave much less room for reading it differently.",
+          "tempting": "A fuller explanation of the ledger's rule seems to remove the doubt."
+        },
+        "b": {
+          "reasoning": "Examples that include several halves show the exact tie-breaking rule, so Claude can infer it instead of guessing. Two or three varied cases are enough, and they can double as tests."
+        },
+        "c": {
+          "reasoning": "Sampling temperature is an API parameter; Claude Code has no session temperature setting. Even where one exists, it would only make runs alike and not choose the ledger's rule.",
+          "tempting": "Consistent runs seem to be the actual goal."
+        },
+        "d": {
+          "reasoning": "A single example fits several rules, such as always rounding halves down, and it says nothing about `0.135`. Varied examples that include a half going up pin the rule down.",
+          "tempting": "One example is a concrete reference."
+        }
+      },
+      "concept": [
+        "Examples, one-shot or multi-shot, show instead of tell. They are especially useful for corner cases and exact output formats, and several examples are needed when there are several edge cases. The exam guide recommends 2 to 3 concrete input and output examples when prose is read inconsistently.",
+        "Sampling temperature is an API parameter; Claude Code has no session temperature setting."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "results vary between runs",
+          "meaning": "The prose spec is read more than one way."
+        },
+        {
+          "phrase": "the decimal `0.125` sometimes becomes `0.12` and sometimes `0.13`",
+          "meaning": "A tie-breaking rule that the prose does not pin down."
+        },
+        {
+          "phrase": "the ledger expects `0.12` for `0.125` and `0.14` for `0.135`",
+          "meaning": "Concrete pairs that already define the rule."
+        }
+      ],
+      "lookFor": [
+        "Two or three input and output pairs that include halves rounding in both directions.",
+        "Examples that can serve as tests."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "More prose has the same ambiguity as the original spec."
+        },
+        {
+          "option": "c",
+          "reason": "It would not define the ledger's rule, and Claude Code has no session temperature setting."
+        },
+        {
+          "option": "d",
+          "reason": "One example fits several rules and says nothing about the other half."
+        }
+      ],
+      "rule": "When prose is read inconsistently, give two or three concrete input and output examples that pin down the rule.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Providing examples",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/providing-examples"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    }
+  ]
+}

@@ -2,13 +2,25 @@
 
 import { useState, useTransition, type FormEvent } from 'react';
 import { createPracticeSession } from '@/app/practice/actions';
-import { Button, Card, CardHeader } from '@/components/ui';
+import { Button, Card, CardHeader, Chip } from '@/components/ui';
+import { plural } from '@/lib/format/plural';
 import { isPreset, PRESET_NAMES, type Preset } from '@/lib/engine/presets';
-import { filterCandidates, toFilter, type SetupInput } from '@/lib/engine/setup-schema';
+import {
+  countProgress,
+  filterCandidates,
+  toFilter,
+  type PracticeProgress,
+  type SetupInput,
+} from '@/lib/engine/setup-schema';
 import type { Candidate } from '@/lib/engine/selection';
 
-type Summary = Pick<Candidate, 'id' | 'scenarioId' | 'type' | 'primaryTaskId' | 'domainId'>;
-type Option = { id: string; label: string };
+type Summary = Pick<
+  Candidate,
+  'id' | 'scenarioId' | 'type' | 'primaryTaskId' | 'domainId' | 'lastSeenAt'
+>;
+type Option = { id: string; label: string; progress: PracticeProgress };
+
+export type MockPool = { id: string; candidates: Summary[] };
 
 export type PresetInfo = {
   id: Preset;
@@ -36,21 +48,59 @@ const MODES: { value: SetupInput['mode']; label: string }[] = [
   { value: 'test', label: 'Test (feedback at the end)' },
 ];
 
-function availableCount(
+function matching(
   cands: Summary[],
   source: SetupInput['source'],
   ids: string[],
   multi: SetupInput['multi'],
   presets: PresetInfo[],
-) {
+  mockPools: MockPool[],
+): Summary[] {
   const pool =
     source === 'preset'
       ? presetPool(
           cands,
           presets.find((p) => p.id === ids[0]),
         )
-      : filterCandidates(cands, toFilter({ source, ids }));
-  return pool.filter((c) => multi === 'yes' || (multi === 'only') === (c.type === 'multi')).length;
+      : source === 'mock'
+        ? (mockPools.find((m) => m.id === ids[0])?.candidates ?? [])
+        : filterCandidates(cands, toFilter({ source, ids }));
+  return pool.filter((c) => multi === 'yes' || (multi === 'only') === (c.type === 'multi'));
+}
+
+// Presets deliberately revisit attended questions, so they keep the plain total.
+function availableText(source: SetupInput['source'], { total, remaining }: PracticeProgress) {
+  if (source === 'preset' || total === remaining) return `${plural(total, 'question')} available`;
+  if (remaining === 0) return `All ${total} completed. Starting will repeat attended questions.`;
+  return `${plural(remaining, 'question')} available to practise (${total - remaining} of ${total} already attended)`;
+}
+
+function ProgressChip({ id, progress }: { id: string; progress: PracticeProgress }) {
+  const { total, remaining } = progress;
+  const testId = `progress-${id}`;
+  if (total === 0) {
+    return (
+      <Chip tone="neutral" data-testid={testId}>
+        No questions
+      </Chip>
+    );
+  }
+  if (remaining === 0) {
+    return (
+      <Chip tone="good" data-testid={testId}>
+        Completed
+      </Chip>
+    );
+  }
+  return (
+    <Chip tone="neutral" data-testid={testId}>
+      {remaining} of {total} left
+    </Chip>
+  );
+}
+
+function mockLabel(id: string): string {
+  return `Paper ${id.replace('mock-', '')}`;
 }
 
 function presetPool(cands: Summary[], info: PresetInfo | undefined): Summary[] {
@@ -85,7 +135,10 @@ function CheckGroup(props: {
               onChange(e.target.checked ? [...ids, o.id] : ids.filter((x) => x !== o.id))
             }
           />
-          <span>{o.label}</span>
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <span>{o.label}</span>
+            <ProgressChip id={o.id} progress={o.progress} />
+          </span>
         </label>
       ))}
     </fieldset>
@@ -98,9 +151,11 @@ export default function SetupForm(props: {
   tasks: { id: string; title: string }[];
   candidates: Summary[];
   presets: PresetInfo[];
+  mockPools?: MockPool[];
   initial: SetupInitial;
 }) {
   const { initial, candidates, presets } = props;
+  const mockPools = props.mockPools ?? [];
   const [source, setSource] = useState(initial.source);
   const [ids, setIds] = useState(initial.ids);
   const [sizeChoice, setSizeChoice] = useState(
@@ -116,14 +171,17 @@ export default function SetupForm(props: {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const available = availableCount(candidates, source, ids, multi, presets);
+  const progress = countProgress(matching(candidates, source, ids, multi, presets, mockPools));
+  const optionProgress = (id: string) =>
+    countProgress(matching(candidates, source, [id], multi, presets, mockPools));
   const presetOk = source !== 'preset' || presets.find((p) => p.id === ids[0])?.available === true;
+  const mockOk = source !== 'mock' || mockPools.some((m) => m.id === ids[0]);
   const size = sizeChoice === 'custom' ? Number(custom) : Number(sizeChoice);
   const sizeOk = Number.isInteger(size) && size >= 5 && size <= 150;
 
   function changeSource(next: SetupInput['source']) {
     setSource(next);
-    setIds([]);
+    setIds(next === 'mock' && mockPools[0] ? [mockPools[0].id] : []);
   }
 
   function changeMode(next: SetupInput['mode']) {
@@ -158,7 +216,7 @@ export default function SetupForm(props: {
   }
 
   return (
-    <form onSubmit={submit} className="mt-4 max-w-3xl space-y-4">
+    <form onSubmit={submit} className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
       <Card>
         <CardHeader title="What to practise" />
         <label className={ROW}>
@@ -173,6 +231,7 @@ export default function SetupForm(props: {
             <option value="domain">Domain</option>
             <option value="task">Task</option>
             <option value="preset">Focus preset</option>
+            {mockPools.length > 0 && <option value="mock">New question set</option>}
           </select>
         </label>
         {source === 'preset' && (
@@ -191,8 +250,33 @@ export default function SetupForm(props: {
                 <span>
                   {presetLabel(
                     info,
-                    availableCount(candidates, 'preset', [info.id], multi, presets),
+                    matching(candidates, 'preset', [info.id], multi, presets, mockPools).length,
                   )}
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        )}
+        {source === 'mock' && (
+          <fieldset className="mt-2 grid gap-1">
+            <legend className="mb-1 text-sm font-semibold">New question set</legend>
+            {mockPools.map((m) => (
+              <label key={m.id} className="flex items-start gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="mock-pool"
+                  className="mt-1"
+                  checked={ids[0] === m.id}
+                  onChange={() => setIds([m.id])}
+                />
+                <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                  <span>{mockLabel(m.id)}</span>
+                  <ProgressChip
+                    id={m.id}
+                    progress={countProgress(
+                      matching(candidates, 'mock', [m.id], multi, presets, mockPools),
+                    )}
+                  />
                 </span>
               </label>
             ))}
@@ -201,7 +285,11 @@ export default function SetupForm(props: {
         {source === 'scenario' && (
           <CheckGroup
             legend="Scenarios"
-            options={props.scenarios.map((s) => ({ id: s.id, label: `${s.id} ${s.name}` }))}
+            options={props.scenarios.map((s) => ({
+              id: s.id,
+              label: `${s.id} ${s.name}`,
+              progress: optionProgress(s.id),
+            }))}
             ids={ids}
             onChange={setIds}
           />
@@ -209,7 +297,11 @@ export default function SetupForm(props: {
         {source === 'domain' && (
           <CheckGroup
             legend="Domains"
-            options={props.domains.map((d) => ({ id: d.id, label: `${d.id} ${d.name}` }))}
+            options={props.domains.map((d) => ({
+              id: d.id,
+              label: `${d.id} ${d.name}`,
+              progress: optionProgress(d.id),
+            }))}
             ids={ids}
             onChange={setIds}
           />
@@ -217,7 +309,11 @@ export default function SetupForm(props: {
         {source === 'task' && (
           <CheckGroup
             legend="Tasks"
-            options={props.tasks.map((k) => ({ id: k.id, label: `${k.id} ${k.title}` }))}
+            options={props.tasks.map((k) => ({
+              id: k.id,
+              label: `${k.id} ${k.title}`,
+              progress: optionProgress(k.id),
+            }))}
             ids={ids}
             onChange={setIds}
           />
@@ -249,98 +345,102 @@ export default function SetupForm(props: {
         </label>
       </Card>
 
-      <Card className="space-y-3">
-        <CardHeader title="How" />
-        <fieldset className={ROW}>
-          <legend className="sr-only">Mode</legend>
-          <span aria-hidden="true" className={LABEL}>
-            Mode
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {MODES.map((m) => (
-              <label
-                key={m.value}
-                className="flex cursor-pointer items-center gap-2 rounded-full border border-border px-3 py-1 text-sm hover:bg-surface-2 has-[:checked]:border-accent has-[:checked]:bg-accent-soft"
-              >
-                <input
-                  type="radio"
-                  name="mode"
-                  checked={mode === m.value}
-                  onChange={() => changeMode(m.value)}
-                />
-                {m.label}
-              </label>
-            ))}
-          </div>
-        </fieldset>
-        <label className={ROW}>
-          <span className={LABEL}>Timer</span>
-          <input
-            type="checkbox"
-            checked={timer}
-            onChange={(e) => {
-              setTimer(e.target.checked);
-              setTimerTouched(true);
-            }}
-          />
-          <span className="text-sm">2 minutes per question</span>
-        </label>
-        <label className={ROW}>
-          <span className={LABEL}>Order</span>
-          <select
-            className={FIELD}
-            value={order}
-            onChange={(e) => setOrder(e.target.value as SetupInput['order'])}
-          >
-            <option value="group">Group by scenario</option>
-            <option value="mixed">Mixed</option>
-          </select>
-        </label>
-      </Card>
-
-      <Card>
-        <CardHeader title="Size" />
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="space-y-4">
+        <Card className="space-y-3">
+          <CardHeader title="How" />
+          <fieldset className={ROW}>
+            <legend className="sr-only">Mode</legend>
+            <span aria-hidden="true" className={LABEL}>
+              Mode
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {MODES.map((m) => (
+                <label
+                  key={m.value}
+                  className="flex cursor-pointer items-center gap-2 rounded-full border border-border px-3 py-1 text-sm hover:bg-surface-2 has-[:checked]:border-accent has-[:checked]:bg-accent-soft"
+                >
+                  <input
+                    type="radio"
+                    name="mode"
+                    checked={mode === m.value}
+                    onChange={() => changeMode(m.value)}
+                  />
+                  {m.label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
           <label className={ROW}>
-            <span className={LABEL}>Size</span>
+            <span className={LABEL}>Timer</span>
+            <input
+              type="checkbox"
+              checked={timer}
+              onChange={(e) => {
+                setTimer(e.target.checked);
+                setTimerTouched(true);
+              }}
+            />
+            <span className="text-sm">2 minutes per question</span>
+          </label>
+          <label className={ROW}>
+            <span className={LABEL}>Order</span>
             <select
               className={FIELD}
-              value={sizeChoice}
-              onChange={(e) => setSizeChoice(e.target.value)}
+              value={order}
+              onChange={(e) => setOrder(e.target.value as SetupInput['order'])}
             >
-              {SIZES.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-              <option value="custom">Custom</option>
+              <option value="group">Group by scenario</option>
+              <option value="mixed">Mixed</option>
             </select>
           </label>
-          {sizeChoice === 'custom' && (
-            <input
-              type="number"
-              min={1}
-              max={150}
-              aria-label="Custom number of questions"
-              className="w-24 min-w-0 rounded-lg border border-border bg-surface px-2 py-1.5"
-              value={custom}
-              onChange={(e) => setCustom(e.target.value)}
-            />
-          )}
-        </div>
-        <p data-testid="available" className="mt-3 text-sm text-muted">
-          {available} questions available
-        </p>
-      </Card>
+        </Card>
 
-      {error && (
-        <p role="alert" className="text-sm text-weak">
-          {error}
-        </p>
-      )}
-      <Button type="submit" variant="primary" disabled={pending || !presetOk}>
-        {pending ? 'Starting…' : 'Start'}
-      </Button>
+        <Card>
+          <CardHeader title="Size" />
+          <div className="flex flex-wrap items-center gap-2">
+            <label className={ROW}>
+              <span className={LABEL}>Size</span>
+              <select
+                className={FIELD}
+                value={sizeChoice}
+                onChange={(e) => setSizeChoice(e.target.value)}
+              >
+                {SIZES.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+                <option value="custom">Custom</option>
+              </select>
+            </label>
+            {sizeChoice === 'custom' && (
+              <input
+                type="number"
+                min={1}
+                max={150}
+                aria-label="Custom number of questions"
+                className="w-24 min-w-0 rounded-lg border border-border bg-surface px-2 py-1.5"
+                value={custom}
+                onChange={(e) => setCustom(e.target.value)}
+              />
+            )}
+          </div>
+          <p data-testid="available" className="mt-3 text-sm text-muted">
+            {availableText(source, progress)}
+          </p>
+        </Card>
+
+        {error && (
+          <p role="alert" className="text-sm text-weak">
+            {error}
+          </p>
+        )}
+        <div>
+          <Button type="submit" variant="primary" disabled={pending || !presetOk || !mockOk}>
+            {pending ? 'Starting…' : 'Start'}
+          </Button>
+        </div>
+      </div>
     </form>
   );
 }

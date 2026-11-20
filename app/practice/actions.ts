@@ -17,7 +17,7 @@ import { getPresetContext, getTaskMasteryMap } from '@/lib/db/queries/presets';
 import { isPreset, presetSelection } from '@/lib/engine/presets';
 import { selectQuestions, type Candidate } from '@/lib/engine/selection';
 import { planSession, timeLimitFor } from '@/lib/engine/session';
-import { SetupInputSchema, toFilter } from '@/lib/engine/setup-schema';
+import { MOCK_POOL, SetupInputSchema, toFilter } from '@/lib/engine/setup-schema';
 import type { FeedbackData } from '@/lib/feedback';
 import { defaultRng } from '@/lib/rng';
 
@@ -28,7 +28,13 @@ export async function createPracticeSession(input: unknown): Promise<ActionError
   if (!parsed.success) return { ok: false, error: 'Invalid setup' };
   const setup = parsed.data;
 
-  let candidates = getCandidates(toFilter(setup));
+  let pool = 'practice';
+  if (setup.source === 'mock') {
+    pool = setup.ids[0] ?? '';
+    if (setup.ids.length !== 1 || !MOCK_POOL.test(pool))
+      return { ok: false, error: 'Unknown question set' };
+  }
+  let candidates = getCandidates(toFilter(setup), pool);
   let prefer = setup.prefer;
   let rankKey: ((c: Candidate) => number) | undefined;
   let mastery: Record<string, number | null> | undefined;

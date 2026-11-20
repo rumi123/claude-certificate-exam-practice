@@ -1,0 +1,307 @@
+{
+  "scenario": "S1",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S1-D5-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "5.1",
+      "secondaryTasks": [],
+      "stem": "Riverbend's support agent keeps long conversations manageable by replacing older turns with a model-written summary once the history passes 30,000 tokens. In one audited case the customer had said: \"I want a credit of $184.30 for the estimated read on 14 March, and a payment plan of 6 instalments ending by 30 April.\" After summarisation the agent offered \"a credit and a payment plan\" and later proposed 12 instalments. The summaries end normally, well inside their output limit, and the team wants long chats to continue without making customers repeat themselves. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Extract amounts, dates, bill references and stated expectations into a case-facts block that is added to every prompt in the conversation, outside the summarised history.",
+          "correct": true,
+          "explanation": "Transactional facts are the first thing progressive summarisation blurs into vague wording. A case-facts block carried outside the summary keeps $184.30, 14 March and the 6 instalments exact however often older turns are condensed, and the chat carries on without a restart.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Extract amounts, dates, bill references and stated expectations into a case-facts block, but append it to the end of the summary so that it travels with the history.",
+          "correct": false,
+          "explanation": "The block then sits inside the history, and the next summary condenses it like any other text, so the figures blur again after a few rounds. Capturing the facts is right; keeping them inside the summarised material is the mistake.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Give the summarisation call a `max_tokens` of 4,000 instead of 1,000, so that the summary has room to carry the full detail of earlier turns.",
+          "correct": false,
+          "explanation": "`max_tokens` only caps how long the output can be. These summaries already finish well inside the cap, so the figures were condensed away by choice, not cut off, and a bigger output allowance (or a bigger context window) changes nothing about what the summariser keeps.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Rewrite the summariser's prompt to require that amounts, dates and instalment counts are copied exactly, and spot-check a sample of summaries each week.",
+          "correct": false,
+          "explanation": "A prompt instruction is a probabilistic nudge, and summaries of summaries still drift. It would suit a case where small losses are harmless, but here an exact amount and instalment count must survive, so the facts need to live outside the summary.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        }
+      ],
+      "keyConcept": "Persist transactional facts such as amounts, dates and stated expectations in a case-facts block outside summarised history, because summaries blur numbers.",
+      "studyRef": "§3 Task 5.1; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S1-D5-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "5.1",
+      "secondaryTasks": ["2.2"],
+      "stem": "Each `get_meter_reads` result from Riverbend's MCP server holds 24 months of half-hourly readings, about 45 fields per record, yet settling an estimated-read dispute needs only the read date, read type, value and estimate flag. After ten tool calls a conversation is at 70% of its context window, and answers about the first bill are getting vaguer. The team wants to keep the customer's earlier statements in the conversation, but the tool output must shrink. What is the best change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Write a rule in the system prompt that tells the agent to ignore the irrelevant fields and to mention only the date, type and value in its replies.",
+          "correct": false,
+          "explanation": "Ignoring a field does not remove its tokens. The full 45-field records still fill the window, so the vagueness about the first bill continues.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Add a PostToolUse hook that truncates each `get_meter_reads` result to its first 100 records before it enters the conversation.",
+          "correct": false,
+          "explanation": "Cutting by position keeps all 45 fields on the records it retains and may drop the very months the dispute is about. The hook is in the right place, but it must select the needed fields, not an arbitrary slice.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Clear the history after each five tool calls and have the agent ask the customer to restate their earlier details.",
+          "correct": false,
+          "explanation": "Clearing discards the customer's stated facts along with the bloat. Trimming the tool output keeps the history that matters and removes only the waste.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "d",
+          "text": "Add a PostToolUse hook that keeps only the read date, read type, value and estimate flag from each `get_meter_reads` result before it enters the conversation.",
+          "correct": true,
+          "explanation": "Verbose tool output accumulates and crowds out relevant detail. Trimming to the needed fields before they enter context removes the tokens themselves, and the dispute keeps everything it needs.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Trim verbose tool results to the fields the task needs before they accumulate in context, rather than limiting calls or ignoring fields.",
+      "studyRef": "§3 Task 5.1; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S1-D5-003",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "5.1",
+      "secondaryTasks": [],
+      "stem": "Riverbend's agent keeps a case-facts block of amounts, bill dates and promised credits. The block is rebuilt only when the history is compacted at 60,000 tokens, and it is generated from the compacted summary. In an audit of 30 long cases, 9 lost details such as \"$212.40 outage credit promised for 3 June\" even though the block existed. The team lengthened the summarisation prompt to keep all figures, and losses fell only from 11 cases to 9. What should change, without adding new services to run?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Postpone compaction to 120,000 tokens so that fewer conversations ever reach the step that loses the details of the case.",
+          "correct": false,
+          "explanation": "A later threshold only hides the problem for shorter conversations; long cases would still build the block from a lossy summary. A bigger window helps when the full history genuinely must stay, but it does not fix where the facts are captured.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Update the block after every turn from the raw customer messages and tool results, but keep it inside the summarised history so it is condensed along with the other turns.",
+          "correct": false,
+          "explanation": "Capturing from raw turns is right, but a block that lives inside the history is condensed by the next summary like any other text. It has to be sent with each request outside the summarised history.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add a second Claude instance that checks the block against the summary after each compaction and corrects any mismatch it finds.",
+          "correct": false,
+          "explanation": "Both the block and the summary derive from already-condensed text, so the checker has no raw source to compare with. It adds a component without fixing where the facts are captured.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Update the block after every turn from the raw customer messages and tool results, before any compaction, and send it with each request outside the summarised history.",
+          "correct": true,
+          "explanation": "The block is built at the wrong point: from a summary that has already lost the figures. Extracting facts from the raw turns as they appear means compaction can never remove them, which the longer summary prompt could not guarantee.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Capture case facts from raw turns as they occur and carry them in every prompt, never rebuild them from a summary.",
+      "studyRef": "§3 Task 5.1; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S1-D5-004",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "5.2",
+      "secondaryTasks": [],
+      "stem": "A Riverbend customer opens a chat with \"I want to talk to a person about my bill, not a bot.\" The agent replies that it will first pull `get_account` and `get_meter_reads` to see whether it can help, and will offer a human only if the issue looks complex. 20% of chats that begin like this end with the customer abandoning the conversation, though the team still wants a high first-contact resolution rate. How should the agent respond to this request?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Acknowledge the frustration, offer to resolve the bill query in this chat, and call `escalate_to_agent` only if the customer repeats the request for a person.",
+          "correct": false,
+          "explanation": "Acknowledge-and-resolve suits a frustrated customer who has not asked for a person. Here the customer asked outright, so making them repeat the request ignores a clear instruction and adds to the abandonment.",
+          "trap": "FAILURE_TO_ESCALATE"
+        },
+        {
+          "id": "b",
+          "text": "Run the account and meter-read lookups, then call `escalate_to_agent` with the findings so that the human receives a pre-investigated case.",
+          "correct": false,
+          "explanation": "Handing over a prepared case is helpful, but an explicit request for a human is a trigger in its own right. Investigating first keeps the customer waiting on a bot they declined, which is the cause of the abandoned chats.",
+          "trap": "FAILURE_TO_ESCALATE"
+        },
+        {
+          "id": "c",
+          "text": "Acknowledge the request and call `escalate_to_agent` straight away, passing the account reference and the stated billing issue, without running any lookups first.",
+          "correct": true,
+          "explanation": "An explicit request for a human is an escalation trigger in its own right. Honouring it at once, with the case handed over, respects the customer's choice and removes the abandonment caused by making them wait.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Read the sentiment of the message and escalate only when it is strongly negative, otherwise treat it as a normal billing query.",
+          "correct": false,
+          "explanation": "Sentiment does not tell you whether someone wants a human. A calm, polite request for a person is still a request, and would be missed.",
+          "trap": "UNRELIABLE_PROXY"
+        }
+      ],
+      "keyConcept": "When a customer explicitly asks for a human, escalate immediately; do not investigate first or judge whether they mean it.",
+      "studyRef": "§3 Task 5.2; §5 Key decision frameworks",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S1-D5-005",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "5.2",
+      "secondaryTasks": [],
+      "stem": "Your team is writing escalation criteria for Riverbend's support agent, whose policy lets it grant credits up to $250 and which resolves about 75% of contacts alone. Transcript review shows it currently escalates 31% of contacts, many of them routine, but the human queue must stay manageable. Which two situations should trigger `escalate_to_agent` rather than autonomous handling? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Escalate when the customer's message reads as angry about a $38 late fee that policy lets the agent waive once.",
+          "correct": false,
+          "explanation": "Tone signals emotion, not complexity. A waivable $38 fee is within the agent's authority, so the right move is to acknowledge the frustration and resolve it.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "b",
+          "text": "Escalate when the first `get_meter_reads` call for an estimated-read dispute returns a timeout error, since the data is unavailable.",
+          "correct": false,
+          "explanation": "A single timeout is a transient failure that a retry usually clears. Escalation fits when repeated attempts leave the agent unable to make progress, not after one failed call.",
+          "trap": "PREMATURE_ESCALATION"
+        },
+        {
+          "id": "c",
+          "text": "Escalate when a customer asks Riverbend to match a rival supplier's cheaper tariff, because the written policy only covers adjustments to Riverbend's own tariffs.",
+          "correct": true,
+          "explanation": "A request the policy does not address is a gap, not something the agent should improvise. Escalation puts the decision with a person who can interpret or extend the policy.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Escalate when the customer disputes an estimated read and the correct credit is $120, since a person should approve any credit.",
+          "correct": false,
+          "explanation": "Only credits above $250 need a human approver. A $120 credit is within the agent's limit, so escalating it adds a queue for something the agent can resolve.",
+          "trap": "PREMATURE_ESCALATION"
+        },
+        {
+          "id": "e",
+          "text": "Escalate when two attempts to correct the same estimated read leave `get_meter_reads` returning identical data and the dispute has not moved.",
+          "correct": true,
+          "explanation": "Inability to make meaningful progress is an escalation trigger. Repeating the same call a third time spends the customer's time without any change in what the agent can do.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Escalate on explicit criteria: a request for a human, a policy gap, or no progress; not on tone, one-off errors or amounts within authority.",
+      "studyRef": "§3 Task 5.2; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S1-D5-006",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "5.2",
+      "secondaryTasks": ["1.4"],
+      "stem": "A caller says \"I'm A. Okafor at 12 Birchway Road.\" `get_account` returns three matching accounts (separate flats at that address), one of them on the vulnerable-customer register. The agent picks the account with the most recent payment, and in a sample of 200 such calls it acted on the wrong account 14 times. The team added a prompt rule to prefer the account with an open billing dispute, which cut errors only from 14 to 11, but the team does not want to hand every ambiguous call to a person. What should the agent do?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Rank the three matches with a similarity measure on name, street and payment history, and proceed with the top one when it clears 0.9.",
+          "correct": false,
+          "explanation": "A scoring layer is still a heuristic, only a heavier one. It will err on look-alike accounts, which is what the 11 remaining errors already are.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "b",
+          "text": "Ask the caller for an additional identifier, such as the account number from a bill or the flat number, and act only once a single account matches.",
+          "correct": true,
+          "explanation": "With several matches, any choice by heuristic risks the wrong customer, and the errors in the sample show it. Asking for another identifier turns an ambiguous lookup into a verified one before any account action.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Ask the caller for their flat number, then act on the match with the latest payment if several accounts still remain.",
+          "correct": false,
+          "explanation": "Asking is the right instinct, but keeping the recent-payment fallback means the agent still guesses whenever the answer does not separate the accounts. The agent should keep asking until one account matches.",
+          "trap": "FAILURE_TO_ESCALATE"
+        },
+        {
+          "id": "d",
+          "text": "Escalate each call where `get_account` returns several matches to a human agent, so that no heuristic is involved in the choice.",
+          "correct": false,
+          "explanation": "The ambiguity is something the agent can resolve itself by asking a question. Escalation would fit if the caller could not supply any identifier.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "When a lookup returns several matching customers, ask for another identifier instead of choosing by heuristic.",
+      "studyRef": "§3 Task 5.2; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S1-D5-007",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "5.2",
+      "secondaryTasks": ["1.4"],
+      "stem": "A Riverbend customer says a rival supplier's tariff is $0.04 per kWh cheaper and asks for a $60 credit to make up the difference. Written policy covers adjustments to Riverbend's own tariffs and says nothing about competitor prices. The agent may call `apply_bill_credit` for amounts up to $250 without approval, so the credit check passes, and it has granted such credits in 7 of 40 reviewed cases. The team does not want routine credits sent to a person. What is the best change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Cut the autonomous credit limit for `apply_bill_credit` from $250 to $50, so that requests like this one go to `escalate_to_agent` with the case facts for approval.",
+          "correct": false,
+          "explanation": "A smaller limit would catch this $60 request but also queue the many routine credits between $50 and $250, and still miss a policy-silent request for $40. The amount is the wrong signal for a gap in policy.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Add a rule with a worked example to the system prompt: a request outside written policy is declined with the policy reason, without `escalate_to_agent`.",
+          "correct": false,
+          "explanation": "The rule is built like the right fix, but it makes the agent refuse where policy is silent. Silence is not a ban, so the decision belongs to a person with the case facts, and a refusal could turn away a credit the company would grant. A decline rule would be right where policy forbids the request.",
+          "trap": "FAILURE_TO_ESCALATE"
+        },
+        {
+          "id": "c",
+          "text": "Add an escalation criterion with a worked example to the system prompt: a request outside written policy is passed to `escalate_to_agent` together with its case facts.",
+          "correct": true,
+          "explanation": "The $250 threshold guards the amount, not the question of whether policy permits the credit. Explicit criteria with a few-shot example teach the agent to recognise a policy gap and hand it to a person, while routine credits stay automatic.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Keep granting goodwill credits within the $250 limit, since that threshold already covers the money risk and policy gaps are rare.",
+          "correct": false,
+          "explanation": "The threshold only decides who approves large amounts. A policy-silent request still needs a person to decide, and here the agent grants the credit itself on its own reading of the gap. Keeping the agent as sole decider continues the problem.",
+          "trap": "FAILURE_TO_ESCALATE"
+        }
+      ],
+      "keyConcept": "Escalate when policy is silent on a request, even if the amount is within the agent's authority; teach this with explicit criteria and examples.",
+      "studyRef": "§3 Task 5.2; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    }
+  ]
+}

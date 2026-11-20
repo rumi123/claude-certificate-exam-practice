@@ -1,0 +1,2212 @@
+{
+  "domain": "D2",
+  "lessons": [
+    {
+      "questionId": "S1-D2-001",
+      "explanation": "The model picks a tool from its definition alone, and the two definitions here, 'Gets account data' and 'Gets meter data', say almost nothing. The tools do different jobs: one returns profile, tariff and balance, the other returns dated readings with their read type. So the fix is to rewrite both descriptions to say what each returns and which question it answers. That leaves both tools in place and works for every agent that uses them.",
+      "options": {
+        "a": {
+          "reasoning": "Forcing a tool on a keyword is a blunt rule. It sends every message that contains the word 'estimated' to the readings tool, including ones that need the profile, and it leaves the vague descriptions untouched, so the same confusion appears on every other kind of question.",
+          "tempting": "It is quick and the keyword seems to match the symptom, but it hard-codes one case instead of fixing the cause."
+        },
+        "b": {
+          "reasoning": "A paragraph in one system prompt helps only that agent. The same two tools also serve a billing assistant with its own prompt, which would still see the vague descriptions. The description travels with the tool, and it is the primary mechanism for tool selection.",
+          "tempting": "It does explain the tools, so it feels like the same fix in a different place."
+        },
+        "c": {
+          "reasoning": "This fixes the cause. Claude never sees the code behind a tool, only its name, description and schema, so the description is where the difference has to be written. Stating what each tool returns and which question it answers lets the model tell the profile tool from the readings tool, in every agent that uses them."
+        },
+        "d": {
+          "reasoning": "The two tools do different jobs: one returns the profile, tariff and balance, the other returns dated readings. Tools that overlap can be combined, but these do not overlap. A single tool that returns both on every call hands the model more data than most questions need, and it still needs a good description.",
+          "tempting": "Fewer tools reduce ambiguity, which is a documented idea, so merging looks like the tidy answer."
+        }
+      },
+      "concept": [
+        "Claude sees only the definition you send, meaning the name, description and input schema, and the results you return. It never sees the code behind a tool, so when a tool is misused the definition is the first thing to check. The exam guide calls descriptions the primary mechanism for tool selection, and says minimal descriptions make selection unreliable.",
+        "A good description covers what the tool does, when to use it and when not to, what each parameter means and what it does not return. The documented advice is at least 3 to 4 sentences, more for complex tools. The Academy lesson adds that you fix only the part at fault: a wrong tool chosen is a description problem.",
+        "Combining tools is for tools that overlap, such as several tools that each return one fact about the same record. Tools that do different jobs stay separate, so the answer is not 'merge whenever two tools are confused'."
+      ],
+      "conceptTable": {
+        "headers": ["Symptom", "First fix"],
+        "rows": [
+          ["Wrong tool chosen", "Rewrite the description; rename or combine tools that overlap"],
+          [
+            "Wrong value or format passed",
+            "Fix the parameter description and add `input_examples`"
+          ],
+          ["Tools that do different jobs", "Keep them separate and describe each one's output"]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "`get_account`, described as \"Gets account data\"",
+          "meaning": "A description that could cover almost anything. This is the weak part of the definition."
+        },
+        {
+          "phrase": "`get_meter_reads`, described as \"Gets meter data\"",
+          "meaning": "Another vague description, so the two overlap on paper even though they do different jobs."
+        },
+        {
+          "phrase": "profile, tariff and balance from one, dated readings with their read type from the other",
+          "meaning": "The tools have distinct outputs, which is what the new descriptions should say."
+        },
+        {
+          "phrase": "also serve a billing assistant that has its own system prompt",
+          "meaning": "A fix in one prompt does not reach the other agent. The fix must live with the tools."
+        },
+        {
+          "phrase": "without changing either tool's code",
+          "meaning": "The change is to the definitions, not the implementation."
+        }
+      ],
+      "lookFor": [
+        "A fix that states, for each tool, what it returns and which question it answers.",
+        "A fix placed in the tool definitions, so every agent that uses the tools gets it.",
+        "Different jobs kept as separate tools, not merged."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It hard-codes one keyword and leaves the vague descriptions in place."
+        },
+        {
+          "option": "b",
+          "reason": "It helps one agent only; the billing assistant still sees the vague descriptions."
+        },
+        {
+          "option": "d",
+          "reason": "It merges tools that do different jobs and returns both outputs on every call."
+        }
+      ],
+      "rule": "Fix tool confusion in the descriptions first: say what each tool returns and which question it answers. Merge tools only when they overlap, not when they do different jobs.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Writing effective tools for agents",
+          "url": "https://www.anthropic.com/engineering/writing-tools-for-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Creating tools that Claude picks",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/creating-tools-that-claude-picks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S1-D2-002",
+      "explanation": "The good description is being overridden by the system prompt. The rule 'if a customer mentions a disconnection notice, use `escalate_to_agent`' attaches the tool to a keyword, and many ordinary billing chats begin with 'I got a notice about my bill'. Three 'do not use when' examples in the description moved the rate only from 31% to 29%, so the prompt wins. The most effective next step is to rewrite the prompt rule so it names the real conditions, a vulnerable-customer registration or an explicit request for a person, and to drop the keyword trigger.",
+      "options": {
+        "a": {
+          "reasoning": "Rewriting the description to name the real conditions is sensible, but keeping the prompt rule keeps the cause. The rule still fires on the word 'notice', and the team has already seen a description change barely move the rate. Both places must agree, and the prompt rule is the one overriding the description.",
+          "tempting": "The description is the right place for conditions, and the real conditions are correct, but leaving the keyword rule makes it half a fix."
+        },
+        "b": {
+          "reasoning": "A hook that blocks the tool unless the message contains 'agent' or 'person' replaces one keyword rule with another. A registered vulnerable customer who never says either word would be blocked, and the stem says those escalations must keep working.",
+          "tempting": "A hook is deterministic, which sounds stronger than wording, but a keyword check is just another keyword trigger."
+        },
+        "c": {
+          "reasoning": "A sentiment check swaps the trigger for a third proxy. A calm customer who is registered as vulnerable, or who asks for a person politely, would not escalate. The real conditions are the registration and the request, not the tone.",
+          "tempting": "Calm versus upset sounds like a fair test for whether a person is needed, but it ignores the stated conditions."
+        },
+        "d": {
+          "reasoning": "This removes the cause. The system prompt rule created a keyword association, so the fix is to state the real conditions there, a vulnerable-customer registration or an explicit request for a person, and to drop the keyword trigger. Vulnerable customers still escalate because their condition is named."
+        }
+      },
+      "concept": [
+        "System-prompt wording can create keyword-sensitive tool associations that override good tool descriptions. When a well-written description is being ignored, review the system prompt for instructions that tie a tool to a keyword. The exam guide lists this as a skill in the tool interfaces task.",
+        "Fix the root cause in proportion. The guide prefers a root-cause fix to an added layer, and the cause here is one prompt sentence. The stem's own evidence, that adding description examples barely helped, points at the prompt rule."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "use `escalate_to_agent`",
+          "meaning": "The prompt names a tool after a keyword. That is the keyword association."
+        },
+        {
+          "phrase": "\"I got a notice about my bill\"",
+          "meaning": "Many ordinary chats contain the trigger word, so the rule fires on the wrong conversations."
+        },
+        {
+          "phrase": "moved the rate only from 31% to 29%",
+          "meaning": "Evidence that the description is not the main cause."
+        },
+        {
+          "phrase": "Escalations for registered vulnerable customers must keep working",
+          "meaning": "The fix must keep the real conditions, so a blanket reduction is wrong."
+        },
+        {
+          "phrase": "most effective next step",
+          "meaning": "Pick the change at the cause, not a layer on top."
+        }
+      ],
+      "lookFor": [
+        "A fix that edits the prompt rule that created the keyword trigger.",
+        "The real conditions named: a vulnerable-customer registration or an explicit request for a person.",
+        "No new keyword or proxy trigger such as sentiment."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It keeps the prompt rule that causes the over-escalation."
+        },
+        {
+          "option": "b",
+          "reason": "It swaps one keyword trigger for another and could block registered vulnerable customers."
+        },
+        {
+          "option": "c",
+          "reason": "Sentiment is a different proxy for the real conditions, so it would miss both of them."
+        }
+      ],
+      "rule": "When a good tool description is ignored, look in the system prompt for a keyword rule that steers to the tool. Rewrite it to name the real conditions and drop the keyword.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Writing effective tools for agents",
+          "url": "https://www.anthropic.com/engineering/writing-tools-for-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Creating tools that Claude picks",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/creating-tools-that-claude-picks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S1-D2-003",
+      "explanation": "The tool tells the agent only 'Request denied', so the agent treats a policy block as a glitch: it retries two or three times and then says the system is having trouble. A credit above $250 needs human approval, and retrying never changes that. The fix is a structured error that marks it as a business-rule failure that is not retryable, with a plain reason the agent can pass on: credits above $250 need approval, so offer escalation.",
+      "options": {
+        "a": {
+          "reasoning": "This gives the agent what it needs. A business category with `isRetryable: false` tells it not to retry, and the plain note about the $250 limit lets it explain the situation and offer `escalate_to_agent`. The error says what went wrong and what to try next, instead of a bare refusal."
+        },
+        "b": {
+          "reasoning": "Capping retries at one saves a few calls but keeps the message 'Request denied', so the agent still cannot tell a policy block from a fault. It will still say the system is having trouble. The cap treats the symptom, and the customer still gets no honest explanation.",
+          "tempting": "It is a cheap loop change that reduces wasted retries."
+        },
+        "c": {
+          "reasoning": "Returning a success with 'pending' hides the rule from the agent, and the agent is told nothing about approval. It may tell the customer the credit is done, and no person will be offered to the customer. A failed call should look like a failure so the agent can respond to it.",
+          "tempting": "A pending state sounds helpful because a person will handle the credit in the background."
+        },
+        "d": {
+          "reasoning": "A prompt rule to treat 'Request denied' as final stops the retries but leaves the error opaque. The agent still cannot say why, and it cannot tell this failure from one that is worth retrying. The information belongs in the tool's error result, where each call can carry its own reason.",
+          "tempting": "It is quick to write and it does stop the loop."
+        }
+      },
+      "concept": [
+        "MCP has two error mechanisms. Protocol errors are JSON-RPC errors, for example an unknown tool. Tool execution errors are returned in the tool result with `isError: true`, so the model can see and handle them. A policy rejection like this one is a tool execution error.",
+        "The exam guide separates transient (timeouts), validation (invalid input), business (policy violations) and permission errors, and says a uniform 'Operation failed' response prevents the right recovery. For a business-rule violation it asks for a non-retryable flag and a customer-friendly explanation.",
+        "Note that `errorCategory` and `isRetryable` are the guide's pattern for the content of an error result. They are not fields defined by the MCP specification, which has only `isError` and the result content. Write instructive errors: say what went wrong and what to try next."
+      ],
+      "conceptTable": {
+        "headers": ["Error kind", "What the response should say"],
+        "rows": [
+          ["Transient (a timeout)", "Retryable: trying again may work"],
+          ["Validation (invalid input)", "Which field failed and what was expected"],
+          ["Business (a policy violation)", "Not retryable, with a customer-friendly reason"],
+          ["Permission", "Not retryable by the same caller; say access was refused"]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "returns `{\"isError\": true, \"message\": \"Request denied\"}`",
+          "meaning": "The error flag is set, but the message gives no reason and no next step."
+        },
+        {
+          "phrase": "retried the same call two or three times",
+          "meaning": "The agent cannot tell this is a policy block that retries will not change."
+        },
+        {
+          "phrase": "above $250 until a human approver signs off",
+          "meaning": "A business rule: only a person can approve, so the right response is a handoff."
+        },
+        {
+          "phrase": "Credits of $250 or less are unaffected",
+          "meaning": "The tool works for small credits, so the problem is the error response, not the tool."
+        }
+      ],
+      "lookFor": [
+        "A business-rule error marked as not retryable.",
+        "A plain reason in the message, so the agent can explain and offer a person.",
+        "The fix in the tool's response, not only in the loop or the prompt."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It limits retries but keeps the opaque message, so the agent still gives a wrong explanation."
+        },
+        {
+          "option": "c",
+          "reason": "It hides the policy block as a success, so the agent never learns approval is needed."
+        },
+        {
+          "option": "d",
+          "reason": "It only stops retries; the agent still cannot say why or offer escalation."
+        }
+      ],
+      "rule": "Return a business-rule failure as a structured, non-retryable error with a plain reason, so the agent stops retrying and hands the case to a person.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "MCP specification: tools (2025-06-18)",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Handle tool calls",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Writing effective tools for agents",
+          "url": "https://www.anthropic.com/engineering/writing-tools-for-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Tool functions",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/tool-functions"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S1-D2-004",
+      "explanation": "Two different situations are reaching the agent as the same `{\"reads\": []}`: a timeout during maintenance, and a new meter with no readings yet. The fix is to separate them at the tool. A call that gets no answer from the metering system returns `isError: true` with a message that it timed out, and a genuine empty list stays an ordinary success. Then the agent can say 'readings are temporarily unavailable' in one case and 'readings begin after the first scheduled read' in the other.",
+      "options": {
+        "a": {
+          "reasoning": "Retrying three times with a five-second pause covers 15 seconds of a 20-minute window, so it will not help during maintenance. It also keeps the flaw: if every attempt fails, the tool returns an empty list again, and the agent cannot tell a failure from a new meter.",
+          "tempting": "Retrying looks like the standard answer to a timeout, but the window is far longer than the retries."
+        },
+        "b": {
+          "reasoning": "This makes the failure visible. A tool execution error with `isError: true` and a message that the call timed out tells the agent the call failed, not that there is nothing to read. It can say readings are temporarily unavailable and avoid saying the meter was never read. This is a working fix that needs no human step."
+        },
+        "c": {
+          "reasoning": "A new meter with no readings is a valid result: the call worked and there is nothing to return. Making every empty list an error would tell the agent that something broke when nothing did, and would send healthy chats down the failure path.",
+          "tempting": "It looks like the cautious way to avoid a false 'never read' claim, but it turns a valid empty result into an error."
+        },
+        "d": {
+          "reasoning": "The prompt line already cut wrong statements only from 34% to 29%, and adding window times asks the agent to guess the cause from the clock. The fix has to come from the tool's answer, not from a guess, and a prompt change cannot tell a new meter from a timeout.",
+          "tempting": "Giving the agent the maintenance times seems to hand it the missing fact."
+        },
+        "e": {
+          "reasoning": "A new meter's empty list is a true result, so it should stay a success. Returning it as `{\"reads\": []}` lets the agent explain that readings begin after the first scheduled read. Together with an error for the timeout, the two cases are now different signals."
+        }
+      },
+      "concept": [
+        "The exam guide asks you to tell access failures apart from valid empty results. A failed call, such as a timeout, must reach the agent as an error. A call that worked and found nothing is a success with an empty result. If both look the same, the agent will guess, and here it guessed that a meter had never been read.",
+        "In MCP, tool execution errors are returned in the tool result with `isError: true`, so the model can see and handle them. Write the message so it says what went wrong and what to try next. Claude can often correct or explain when the error says what happened."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "both reach the agent as `{\"reads\": []}`",
+          "meaning": "The failure and the true empty look the same. That is the defect to fix."
+        },
+        {
+          "phrase": "wrong in one of three such contacts",
+          "meaning": "The agent is guessing between two causes."
+        },
+        {
+          "phrase": "cut wrong statements only from 34% to 29%",
+          "meaning": "A prompt line is not enough. The signal must change at the tool."
+        },
+        {
+          "phrase": "cannot wait out the window",
+          "meaning": "Retrying later is not an option for live chats, so the agent must explain at once."
+        },
+        {
+          "phrase": "Select 2",
+          "meaning": "One answer for the failure and one for the true empty."
+        }
+      ],
+      "lookFor": [
+        "The timeout returned as a tool execution error with a message.",
+        "The valid empty list left as a success.",
+        "Two signals the agent can tell apart, with no prompt guessing."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "The retries cover seconds of a 20-minute window and still end in an empty list."
+        },
+        {
+          "option": "c",
+          "reason": "A true empty is not a failure; making it an error mislabels healthy calls."
+        },
+        {
+          "option": "d",
+          "reason": "The prompt cannot tell the two cases apart, and the earlier prompt line barely helped."
+        }
+      ],
+      "rule": "Make a failed call an error and keep a true empty a success, so the agent can tell 'unavailable' from 'nothing there yet'.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "MCP specification: tools (2025-06-18)",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Handle tool calls",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Writing effective tools for agents",
+          "url": "https://www.anthropic.com/engineering/writing-tools-for-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Implementing multiple turns",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/implementing-multiple-turns"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S1-D2-005",
+      "explanation": "The step must always end with a tool call, and in about 6% of chats the model answers with a sentence instead. The setting that fixes this is `tool_choice: \"any\"`: the model must call one of the provided tools, but it still decides which one. That gives the dispatcher a tool call on every chat without forcing every chat into one queue. A prompt rule or a text scan is not a guarantee.",
+      "options": {
+        "a": {
+          "reasoning": "Forcing `route_to_billing` on every request guarantees a tool call, but it is always the same one. Outage and payments chats would all go to the billing queue, because the model no longer chooses. Forcing a single tool is for a case where one named tool must run, not where any of several may fit.",
+          "tempting": "A forced tool does guarantee a call, and billing is the biggest queue."
+        },
+        "b": {
+          "reasoning": "`auto` lets the model decide whether to call a tool at all, which is the setting that produced the sentence replies. A prompt rule only makes a tool call more likely, and this step must work without anyone watching. The guarantee has to come from the setting, not from wording.",
+          "tempting": "It keeps the model's choice and adds an instruction, which seems enough."
+        },
+        "c": {
+          "reasoning": "This is the right setting. With `any`, Claude must use one of the provided tools but is not told which, so each chat gets a tool call and the model still chooses among the three routing tools. The response starts with the tool call, so there is no sentence for the dispatcher to stall on."
+        },
+        "d": {
+          "reasoning": "Scanning the reply for the words billing, outage or payments works on prose the dispatcher was supposed to avoid. A sentence can mention more than one word, and the dispatcher would route on the first match. It builds routing on text that the tool call was meant to replace.",
+          "tempting": "It needs no change to the model call, which makes it cheap."
+        }
+      },
+      "concept": [
+        "`tool_choice` has four values. `auto` lets Claude decide whether to call a tool, and is the default when tools are provided. `any` makes it use one of the provided tools without naming which. `{\"type\": \"tool\", \"name\": ...}` forces that tool. `none` prevents tool use. With `any` or a forced tool, the response starts with the `tool_use` block, so no text comes before it.",
+        "Model caveat: on some current models, the docs list Opus 5.5, Sonnet 5.5 and the Fable and Mythos 5.x models, `any` and forced `tool` return a 400 error, and they also cannot be combined with manual extended thinking. The exam guide's `tool_choice` answers assume a model that supports them, so use these values as the exam intends.",
+        "Parallel tool use is on by default. `disable_parallel_tool_use: true` goes inside `tool_choice`; with `any` or `tool` it limits the response to exactly one call."
+      ],
+      "conceptTable": {
+        "headers": ["`tool_choice`", "What it does"],
+        "rows": [
+          ["`auto`", "Claude decides whether to call a tool; a text reply is possible"],
+          ["`any`", "Claude must call one of the provided tools, and chooses which"],
+          ["`{\"type\": \"tool\", \"name\": ...}`", "Claude must call that named tool"],
+          ["`none`", "No tool use"]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "hand every chat to a queue without a person watching",
+          "meaning": "A tool call must always happen. The setting must guarantee it."
+        },
+        {
+          "phrase": "reads only the tool call",
+          "meaning": "Text in the reply is no use to the dispatcher."
+        },
+        {
+          "phrase": "replies with a sentence ... and calls no tool",
+          "meaning": "The model chose text under `auto`. The fix is to remove that option."
+        },
+        {
+          "phrase": "three tools",
+          "meaning": "Any of several may fit, which points to `any` and not a forced tool."
+        }
+      ],
+      "lookFor": [
+        "A setting that forces a tool call but leaves the choice to the model.",
+        "No dependence on prompt wording or text scanning for a must-happen call.",
+        "More than one acceptable tool, so not a single forced tool."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It always calls billing, so outage and payments chats would be misrouted."
+        },
+        {
+          "option": "b",
+          "reason": "`auto` is the setting that allows a text reply, and a prompt rule is not a guarantee."
+        },
+        {
+          "option": "d",
+          "reason": "It routes on text, which is what the tool call was meant to replace."
+        }
+      ],
+      "rule": "When some tool must be called but any of several may fit, set `tool_choice` to `any`. Force a single named tool only when that one tool must run.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Parallel tool use",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/parallel-tool-use"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Strict tool use",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S1-D2-006",
+      "explanation": "The payment-plan subagent used a tool that is outside its role. It was given `apply_bill_credit` because 'both handle billing', so it used the tool to settle disputes it was never asked to handle. The hook never fired because the credits were below $250. The fix is to remove the tool from the payment-plan subagent, and have it hand any credit request to the coordinator, which routes it to the disputes subagent, the one whose role includes credits.",
+      "options": {
+        "a": {
+          "reasoning": "This is a scoped-tools fix. A subagent given only the tools its role needs cannot misuse a tool it does not have, and the handoff to the coordinator keeps credit requests flowing to the subagent whose job they are. It needs no new component."
+        },
+        "b": {
+          "reasoning": "Lowering the threshold to $25 would make the hook fire on these credits, but it keeps the underlying problem: the wrong subagent still holds the tool. It also queues every ordinary small credit for a human, which is a large new burden, and the hook is a threshold, not a role check.",
+          "tempting": "The hook is deterministic and already exists, so a lower threshold seems to reuse it."
+        },
+        "c": {
+          "reasoning": "A prompt rule allowing a credit only when the plan request mentions one makes misuse less likely, not impossible. The subagent still holds the tool, and a note about why is not a block. Giving a role only the tools it needs is the more reliable control.",
+          "tempting": "It adds a clear condition, and the note leaves a trail."
+        },
+        "d": {
+          "reasoning": "This gives the payment-plan subagent more tools outside its role, so it can do more of the disputes subagent's work. That widens the problem. The goal is fewer tools per role, not more.",
+          "tempting": "It sounds careful, since the agent could check the dispute before crediting."
+        }
+      },
+      "concept": [
+        "Limit a subagent's tools to what its job needs. It prevents side effects and makes each role clearer. The Academy example is a read-only research subagent that gets only Glob, Grep and Read. The exam guide adds that agents with tools outside their role misuse them, and that too many tools degrade selection.",
+        "For work that belongs to another role, give a scoped route and send it through the coordinator, not a copy of the tool. A rule in a prompt makes misuse less likely, while removing the tool makes it impossible."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "Both were given `apply_bill_credit` because both handle billing",
+          "meaning": "The tool was shared by topic, not by role. That is the root cause."
+        },
+        {
+          "phrase": "applied 23 credits of $40 to $180",
+          "meaning": "Misuse of a tool that the subagent should not hold."
+        },
+        {
+          "phrase": "hook ... never fired",
+          "meaning": "The hook's threshold does not detect a role problem."
+        },
+        {
+          "phrase": "without adding a new component",
+          "meaning": "The fix uses the tool list and the coordinator that already exist."
+        }
+      ],
+      "lookFor": [
+        "A fix that changes which tools the payment-plan subagent holds.",
+        "A route for credit requests through the coordinator to the role that owns them.",
+        "No new component and no extra tools."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It queues many ordinary credits and leaves the wrong subagent holding the tool."
+        },
+        {
+          "option": "c",
+          "reason": "A prompt rule lowers the odds of misuse but does not remove the tool."
+        },
+        {
+          "option": "d",
+          "reason": "It gives the subagent more tools outside its role."
+        }
+      ],
+      "rule": "Give each subagent only the tools its role needs. A tool in the wrong role gets used, so remove it and route the work to the role that owns it.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: Designing effective subagents",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/designing-effective-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S1-D2-007",
+      "explanation": "The assistant is spending five to eight calls on `search_tariffs` just to learn which codes exist, but the catalogue is stable, about 400 codes that change a few times a year. That is a good fit for an MCP resource: read-only data identified by a URI, which the agent can read when it needs the list instead of calling a search tool to discover it. Pasting all 400 codes into the prompt would waste a tight budget on codes most conversations never use.",
+      "options": {
+        "a": {
+          "reasoning": "Putting all 400 codes and descriptions in the system prompt spends the prompt budget on every conversation, and most conversations need only two or three codes. The stem says the budget is tight.",
+          "tempting": "The agent would have the list at the start, so no discovery calls."
+        },
+        "b": {
+          "reasoning": "A prompt line asking the agent to remember codes gives it nothing to read. The list is not in any new conversation until it is fetched, so the agent would still search for the codes it needs.",
+          "tempting": "It is a small change and does not add tokens."
+        },
+        "c": {
+          "reasoning": "Folding the catalogue into account lookups makes every `get_account` and `search_tariffs` response carry all 400 codes next to the customer's own tariff. That is the same budget cost as the prompt option, paid in every tool result, and it mixes customer data with catalogue data.",
+          "tempting": "The agent sees the codes without an extra call, and the tools it uses already exist."
+        },
+        "d": {
+          "reasoning": "This is the resource pattern. A resource exposes read-only data by URI, a client can list it and read it, and its content can be put in front of Claude so it does not need a tool call to discover what exists. A catalogue that changes only a few times a year is stable content suited to this."
+        }
+      },
+      "concept": [
+        "MCP servers expose tools, prompts and resources. Resources are read-only data identified by URIs, like GET handlers; a client can list them and read one by URI, and the content can be placed in the prompt so Claude does not have to call a tool to fetch it. A resource can be direct (a fixed URI) or templated (a URI with parameters).",
+        "The exam guide's use of resources is as content catalogues, to reduce exploratory tool calls. In the MCP spec, tools are model-controlled and resources are application-driven. In Claude Code, `@` lists resources from connected servers and attaches one by `@server:protocol://path`."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "calls `search_tariffs` five to eight times to find out which codes exist",
+          "meaning": "Exploratory calls whose only job is discovery."
+        },
+        {
+          "phrase": "changes only when the regulator approves new rates",
+          "meaning": "A stable catalogue, which suits a resource."
+        },
+        {
+          "phrase": "Most conversations need only two or three codes",
+          "meaning": "Loading all 400 into every conversation is wasteful."
+        },
+        {
+          "phrase": "the prompt budget is tight",
+          "meaning": "Rules out solutions that put the whole list into the prompt."
+        }
+      ],
+      "lookFor": [
+        "The catalogue exposed as read-only data the agent can fetch when needed.",
+        "No cost of all 400 codes in every conversation or every tool result.",
+        "A removal of the discovery calls."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It spends the tight prompt budget on 400 codes in every conversation."
+        },
+        {
+          "option": "b",
+          "reason": "A prompt line gives the agent nothing to read, so it would still search."
+        },
+        {
+          "option": "c",
+          "reason": "It adds all 400 codes to every lookup result, which costs the same budget."
+        }
+      ],
+      "rule": "Expose a stable catalogue as an MCP resource so the agent can see what exists without exploratory tool calls or a bloated prompt.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "MCP specification: resources (2025-06-18)",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/resources"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to Model Context Protocol: Defining resources",
+          "url": "https://academy.claude.com/courses/introduction-to-model-context-protocol/defining-resources"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: connect to MCP servers",
+          "url": "https://code.claude.com/docs/en/mcp"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S3-D2-001",
+      "explanation": "The subagent builds each call from the `fetch_dataset` definition, which says only 'Fetches a government dataset.' Nothing there says where a `series` slug comes from or that `period` must be `YYYY-MM`, so it guesses and 31% of calls fail. The fix is to put the slug source, the format, a sample call and the fiscal-year edge case into the parameter descriptions, where they are in view every time a call is built. The coordinator's prompt guide did not help much because it is not part of the tool the subagent is calling.",
+      "options": {
+        "a": {
+          "reasoning": "A retry loop that reformats arguments with a second model call adds the extra model call the stem rules out. It also repairs the errors after they happen, instead of preventing them with a clear definition.",
+          "tempting": "It would catch bad values, and the failure rate would fall."
+        },
+        "b": {
+          "reasoning": "Copying the format guide into every delegation prompt is the same approach that took the error rate only from 31% to 27%. Adding the full series list makes each prompt longer without changing the tool's definition.",
+          "tempting": "It puts the format in front of the subagent more often."
+        },
+        "c": {
+          "reasoning": "This puts the knowledge where the call is built. Each parameter has its own description in the input schema, so the slug source, the `YYYY-MM` format and the fiscal-year edge case go there, with a sample call as an input example that must itself validate against the schema. It adds no model call and no component."
+        },
+        "d": {
+          "reasoning": "A free-text `ask_data` tool moves the work of finding the series and period into the tool, which is a new component that the stem rules out. The subagent would be sending vague requests to something that still has to guess the same values.",
+          "tempting": "Plain language is easier for the subagent, so it looks like a simplification."
+        }
+      },
+      "concept": [
+        "Claude never sees the code behind a tool, only the definition you send, and Claude builds each call from it. The exam guide says descriptions should include input formats, example queries, edge cases and boundaries. Put formats in each parameter's own description in `input_schema`, for example 'MEG-YYYY-NNNN'.",
+        "`input_examples` show Claude what a valid input looks like, for complex or format-sensitive inputs. Each example must validate against `input_schema`, or the API returns a 400. When the wrong value or format is passed, fix the parameter description and the examples, then measure the change with an eval."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "\"Fetches a government dataset.\"",
+          "meaning": "A description with no format, no source and no edge case."
+        },
+        {
+          "phrase": "a `period` in `YYYY-MM` form",
+          "meaning": "A format that belongs in the parameter description."
+        },
+        {
+          "phrase": "\"emissions 2019\" or \"FY2020\"",
+          "meaning": "Values that show the model does not know the format or the fiscal-year rule."
+        },
+        {
+          "phrase": "only fell to 27%",
+          "meaning": "A coordinator prompt guide is a weak place for it."
+        },
+        {
+          "phrase": "no extra model call and no new component",
+          "meaning": "Rules out retry and rewriting layers."
+        }
+      ],
+      "lookFor": [
+        "Formats, sources, a sample and edge cases in the parameter descriptions.",
+        "A fix that adds no model call and no new tool.",
+        "The information in the definition the subagent reads when building a call."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It adds a second model call, which the stem forbids, and repairs errors afterwards."
+        },
+        {
+          "option": "b",
+          "reason": "It repeats the prompt-guide approach that already barely helped."
+        },
+        {
+          "option": "d",
+          "reason": "It adds a new tool and moves the guessing into it."
+        }
+      ],
+      "rule": "Document input formats, sources, sample calls and edge cases in the tool's own parameter descriptions and `input_examples`, where the model reads them when building a call.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Writing effective tools for agents",
+          "url": "https://www.anthropic.com/engineering/writing-tools-for-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Creating tools that Claude picks",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/creating-tools-that-claude-picks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S3-D2-002",
+      "explanation": "Most failures here are timeouts that succeed on a second try, and the subagent sends them all upward as 'fetch failed', so the coordinator re-delegates the whole series and loses about 40 seconds each time. The better design handles a transient failure where it happens: the subagent retries a timed-out call itself, a couple of times with a short pause, and passes up only failures that survive, with a note of the attempts made. The 9 bad region codes are not transient, so they are not worth retrying.",
+      "options": {
+        "a": {
+          "reasoning": "Sending every failure up with a category and a retry flag is better than 'fetch failed', but the coordinator still has to handle all 70. The 61 timeouts could have been fixed inside the subagent in seconds. This still costs the re-delegation time for each of them.",
+          "tempting": "Structured errors are good practice, so it feels like the polished answer."
+        },
+        "b": {
+          "reasoning": "Retrying everything five times with a ten-second pause wastes time on the 400 responses for region codes that are not in the catalogue. Those will fail the same way every time, so the retries add delay and no success. Retries should be capped and kept for failures that can change.",
+          "tempting": "It looks thorough, since every failure gets many chances."
+        },
+        "c": {
+          "reasoning": "This recovers locally and escalates only what cannot be resolved. Timeouts that clear after a few seconds are retried by the subagent, with a small cap, so the coordinator never sees them. The failures that survive go up with the record of what was attempted."
+        },
+        "d": {
+          "reasoning": "An empty dataset reads as a valid result, which hides the failure. The coordinator would carry on as if the series had no data, and the report would be wrong without any sign of the gap. A failure must not look like an empty success.",
+          "tempting": "It keeps the work moving and avoids re-delegation delay."
+        }
+      },
+      "concept": [
+        "The exam guide asks for local recovery in subagents. Transient failures such as timeouts are handled where they happen, and only errors the subagent cannot resolve are passed up. Retryable and non-retryable metadata prevents wasted retries: a validation failure such as an unknown region code will not succeed on a second try.",
+        "After an error the model may call the tool again, so cap retries in your loop. A failed call must still be reported as a failure, not as an empty result, because access failures and valid empty results mean different things. `errorCategory` and `isRetryable` are the guide's pattern for an error result, not MCP spec fields."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "61 of the 70 failures were timeouts that succeeded when tried again",
+          "meaning": "Transient failures that a local retry would clear."
+        },
+        {
+          "phrase": "The other 9 were 400 responses",
+          "meaning": "Failures that cannot succeed on a retry."
+        },
+        {
+          "phrase": "adding about 40 seconds",
+          "meaning": "Each upward pass costs time, so handling it locally saves budget."
+        },
+        {
+          "phrase": "10-minute budget",
+          "meaning": "The fix must be cheap in time, which rules out long retry waits."
+        }
+      ],
+      "lookFor": [
+        "A local retry for timeouts with a small cap and a short pause.",
+        "Only unresolved failures passed up, with what was attempted.",
+        "A real error for failures, not an empty result."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It sends all 70 failures to the coordinator, including the timeouts the subagent could clear."
+        },
+        {
+          "option": "b",
+          "reason": "It retries 400 responses that can never succeed, with long pauses."
+        },
+        {
+          "option": "d",
+          "reason": "An empty dataset hides the failure behind an apparent success."
+        }
+      ],
+      "rule": "Recover transient errors inside the subagent with a small retry cap, and pass up only failures it cannot resolve, together with what was attempted.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "MCP specification: tools (2025-06-18)",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Handle tool calls",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Writing effective tools for agents",
+          "url": "https://www.anthropic.com/engineering/writing-tools-for-agents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S3-D2-003",
+      "explanation": "'Dataset unavailable' gives the coordinator no way to decide between retrying, using another source or recording a gap. Two fields change that. An error category, here permission, with `isRetryable` set to false tells it that retrying a 403 is pointless. The series and period requested, together with any partial results already retrieved, tell it exactly what is missing, so it can record the gap in the briefing instead of dropping the series without a note.",
+      "options": {
+        "a": {
+          "reasoning": "A permission category with `isRetryable: false` says what kind of failure this is and that a retry will not help. The coordinator can then try another source or record a gap without calling the subagent again. These two fields are the guide's pattern for the content of an error response, not fields defined by the MCP specification."
+        },
+        "b": {
+          "reasoning": "`isRetryable: true` with a 60-second wait is wrong for a 403 on a restricted dataset. Permission does not change in a minute, so the coordinator would retry and fail again, and the stem asks for a decision without another call.",
+          "tempting": "Retry hints are part of the standard error pattern, so a wait hint looks helpful."
+        },
+        "c": {
+          "reasoning": "A self-rated number for how likely the dataset is to become available is a guess, not a fact. It tells the coordinator neither what was attempted nor whether to retry, and a number from the model that failed to get the dataset is not a basis for a decision.",
+          "tempting": "A probability seems to give the coordinator something to act on."
+        },
+        "d": {
+          "reasoning": "The series and period requested, with any partial results already retrieved, tell the coordinator what is missing and what it already has. With that, it can note the gap in the briefing and carry on with the data it holds, instead of leaving the series out silently."
+        },
+        "e": {
+          "reasoning": "A single 'Dataset unavailable' string is the current problem. It gives the coordinator neither a category nor a retry signal, so it cannot choose between retry, another source or a recorded gap.",
+          "tempting": "It is short and easy to log."
+        }
+      },
+      "concept": [
+        "The exam guide separates transient, validation, business and permission errors, and asks for structured metadata: an error category, whether it is retryable, and a human-readable description. A uniform failure message prevents the right recovery. A permission failure is not retryable by the same caller.",
+        "`errorCategory` and `isRetryable` are the guide's pattern, not spec fields. The MCP spec defines `isError` and the result content. Write errors that say what went wrong and what to try next.",
+        "When an error has to cross from a subagent to a coordinator, include what was requested and what was already retrieved, so the coordinator can decide without asking again."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "passes the coordinator only the text \"Dataset unavailable\"",
+          "meaning": "No category, no retry signal and no detail."
+        },
+        {
+          "phrase": "a 403",
+          "meaning": "A permission failure. Retrying will not change it."
+        },
+        {
+          "phrase": "one briefing ... left the series out without a note",
+          "meaning": "The coordinator needs enough detail to record a gap."
+        },
+        {
+          "phrase": "without calling the subagent again",
+          "meaning": "The error must carry the decision inputs."
+        },
+        {
+          "phrase": "Select 2",
+          "meaning": "One field for the kind of failure and one for what was requested and retrieved."
+        }
+      ],
+      "lookFor": [
+        "A category and a retry flag that match a 403.",
+        "The request and any partial results in the error.",
+        "No guessed probabilities and no retry hint for a permission failure."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A 60-second retry hint is wrong for a permission failure."
+        },
+        {
+          "option": "c",
+          "reason": "A self-rated probability is a guess and not an actionable fact."
+        },
+        {
+          "option": "e",
+          "reason": "A bare message string is the current, insufficient response."
+        }
+      ],
+      "rule": "Return an error with a category, a retryable flag and what was requested and retrieved, so the coordinator can choose retry, another source or a recorded gap.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "MCP specification: tools (2025-06-18)",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Handle tool calls",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Writing effective tools for agents",
+          "url": "https://www.anthropic.com/engineering/writing-tools-for-agents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S3-D2-004",
+      "explanation": "A general `fetch_url` tool can reach any address, so the subagent fetched blog posts and twice tried an intranet admin address. The requirement is that an intranet request must be impossible, not just unlikely. The fix is a constrained tool: `fetch_dataset(series_id)` that rejects any ID not in the catalogue, so every fetch stays inside the approved list. A rule or a later check can only make bad fetches less likely.",
+      "options": {
+        "a": {
+          "reasoning": "A prompt rule listing approved domains and forbidding others lowers the odds, but the tool still accepts any address. The stem asks for 'impossible, not just unlikely', and a rule is a request to the model, not a limit on the tool.",
+          "tempting": "Naming the intranet range explicitly looks as strong as a rule can get."
+        },
+        "b": {
+          "reasoning": "A coordinator check after the fetch happens too late: the subagent has already reached the address. Discarding the result does not undo the request, and it adds a second step to keep in line with the first.",
+          "tempting": "It puts a check in front of what reaches the report."
+        },
+        "c": {
+          "reasoning": "A `web_search` tool adds reach, not limits. The subagent would find more pages and still fetch from anywhere. It works against the aim of keeping the subagent inside the catalogue.",
+          "tempting": "Finding official datasets first sounds like it improves the sources."
+        },
+        "d": {
+          "reasoning": "This replaces a generic tool with a constrained one. `fetch_dataset(series_id)` validates the input against the catalogue, so a blog, a social page or an intranet address cannot be passed at all. A constrained tool makes out-of-scope calls impossible, where a prompt rule only makes them less likely."
+        }
+      },
+      "concept": [
+        "The exam guide's example of a constrained tool is replacing `fetch_url` with `load_document` that validates URLs. A tool that validates its input, for example against approved document IDs, makes out-of-scope calls impossible. A rule in a prompt makes them less likely.",
+        "Give each agent only the tools its role needs. A subagent that has a broad tool will sometimes use it beyond its role, and more tools do not always give better outcomes."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "a general `fetch_url` tool",
+          "meaning": "A tool broader than the role needs."
+        },
+        {
+          "phrase": "blog posts and social-media pages as if they were datasets",
+          "meaning": "Misuse of a broad tool."
+        },
+        {
+          "phrase": "twice tried an intranet admin address",
+          "meaning": "The wider the tool, the more it can reach."
+        },
+        {
+          "phrase": "impossible, not just unlikely",
+          "meaning": "A requirement that rules out rules and after-the-fact checks."
+        },
+        {
+          "phrase": "each with a series ID",
+          "meaning": "The catalogue gives a natural validation list."
+        }
+      ],
+      "lookFor": [
+        "A narrow tool that validates its input against the approved list.",
+        "A limit built into the tool, not a rule or a later check.",
+        "No wider tool added."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A rule lowers the odds but the tool still accepts any address."
+        },
+        {
+          "option": "b",
+          "reason": "A check after the fetch comes too late; the request already happened."
+        },
+        {
+          "option": "c",
+          "reason": "It widens the subagent's reach instead of narrowing it."
+        }
+      ],
+      "rule": "When a role needs only a narrow capability, replace the generic tool with a constrained one that validates its input, so out-of-scope calls are impossible.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: Designing effective subagents",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/designing-effective-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S3-D2-005",
+      "explanation": "Forcing `load_document` on every request means the model must call it every time, so it never gets to analyse: 14 loads and no output for 3 sources. A forced tool is for the request where it must run first. The fix is to force `load_document` on the first request for each source, then set `tool_choice` back to `auto` for the rest of that source's loop, so the model can move on to the analysis and the loop can end.",
+      "options": {
+        "a": {
+          "reasoning": "Each source gets its own forced load on its first request, so loading is guaranteed for every source. After that, `auto` lets the model analyse and finish. It meets both the requirement that loading happens for each source and the need for the loop to end."
+        },
+        "b": {
+          "reasoning": "Forcing only the first request of the whole briefing guarantees that the first source is loaded. The other two sources then depend on the model choosing to load them, so the requirement that loading must happen for each source is no longer guaranteed.",
+          "tempting": "It stops the endless loading, which was the visible failure."
+        },
+        "c": {
+          "reasoning": "A prompt rule asking for exactly one call per source makes it likely, not certain. Loading must happen, and the team already chose a forced tool for that reason. A rule also leaves the forcing in place on every request unless the setting is changed.",
+          "tempting": "It needs no change to the loop code."
+        },
+        "d": {
+          "reasoning": "Stopping after six iterations is an iteration cap used as the main control. It would end the briefing with whatever exists, and the sources not reached would have no analysis. It treats the symptom, not the cause, which is `tool_choice` staying on the forced tool.",
+          "tempting": "It guarantees the briefing ends within the budget."
+        }
+      },
+      "concept": [
+        "`tool_choice` can be `auto`, `any` or a forced tool, `{\"type\": \"tool\", \"name\": ...}`. With a forced tool, the response starts with that `tool_use` block. If the setting stays on a forced tool for every request, the model can never move on, so force it only on the request where the tool must run first, and return to `auto` after.",
+        "Model caveat: on some current models, the docs list Opus 5.5, Sonnet 5.5 and the Fable and Mythos 5.x models, `any` and forced `tool` return a 400 error, and they cannot be combined with manual extended thinking. The exam guide's answers assume a model that supports forcing."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`tool_choice` to `{\"type\": \"tool\", \"name\": \"load_document\"}` on every request",
+          "meaning": "The setting never changes, so the model can only load."
+        },
+        {
+          "phrase": "14 `load_document` calls and no analysis output",
+          "meaning": "The symptom of a forced tool that is never switched off."
+        },
+        {
+          "phrase": "Loading must still happen for each source",
+          "meaning": "Forcing is still needed, once per source."
+        },
+        {
+          "phrase": "10-minute budget",
+          "meaning": "Rules out waiting on an iteration cap."
+        }
+      ],
+      "lookFor": [
+        "Forcing limited to the first request of each source.",
+        "A return to `auto` so the loop can end.",
+        "A guarantee, not a prompt request, that loading happens for every source."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It forces loading only once, so later sources are no longer guaranteed to be loaded."
+        },
+        {
+          "option": "c",
+          "reason": "A prompt rule is not a guarantee and does not change the forced setting."
+        },
+        {
+          "option": "d",
+          "reason": "An iteration cap leaves sources unanalysed and ignores the real cause."
+        }
+      ],
+      "rule": "Force a tool only on the request where it must run first, then set `tool_choice` back to `auto` so the loop can end. Repeat the forcing for each unit of work that needs it.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Parallel tool use",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/parallel-tool-use"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Strict tool use",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S4-D2-001",
+      "explanation": "The two descriptions are nearly identical, so the model cannot tell them apart, even though the tools do different jobs: one indexes tickets with IDs such as `RTE-4821`, the other indexes architecture pages. Half of the misrouted questions name no ID at all, so a rule keyed on an ID would miss them. The fix is to rewrite both descriptions to show what each indexes, which questions it should answer and when to use it instead of the other.",
+      "options": {
+        "a": {
+          "reasoning": "This fixes the cause. The descriptions overlap on paper, and the model chooses by description. Saying what each tool indexes, which questions it answers and when to use it instead of the other gives it the boundary it is missing, and it works for questions that name no ID, such as 'the depot sync ticket from last week'."
+        },
+        "b": {
+          "reasoning": "A rule that routes on a ticket ID keys on a keyword, and half of the misrouted questions contain no ID. 'The depot sync ticket from last week' would still go to the wiki. A rule in `CLAUDE.md` also leaves the vague descriptions in place.",
+          "tempting": "A clear rule sounds like a clear route, and IDs are easy to spot."
+        },
+        "c": {
+          "reasoning": "Forcing a tool on 'any request that contains a number' is a keyword rule in a different form, and it breaks for wiki questions that contain a number and for ticket questions that have none. A forced tool is also the wrong control when the model should choose between two tools.",
+          "tempting": "It is deterministic, so it looks safer than wording."
+        },
+        "d": {
+          "reasoning": "The tools overlap in how they are described, not in what they do: one searches tickets and the other searches architecture pages. Merging them returns ten hits from each source for every query, which fills the context with results from the source that was not needed.",
+          "tempting": "Fewer tools reduce ambiguity, and a single search tool removes the choice."
+        }
+      },
+      "concept": [
+        "Overlapping or vague descriptions cause misrouting. The exam guide asks you to differentiate each tool's purpose, inputs, outputs and when to use it instead of the alternatives. Saying when not to use a tool, and naming the tool to use instead, helps Claude avoid the wrong one.",
+        "Combine tools that overlap, such as several tools returning one fact about the same record. Tools that do different jobs stay separate. Here the two tools have overlapping descriptions but different jobs, so the fix is in the descriptions, not in merging."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "described as \"Searches for information about the route service\"",
+          "meaning": "A description that fits both tools."
+        },
+        {
+          "phrase": "indexes tickets with IDs ... the second indexes architecture pages",
+          "meaning": "Two different jobs, so they should stay separate."
+        },
+        {
+          "phrase": "about 40% of cases",
+          "meaning": "The vague description causes frequent misrouting."
+        },
+        {
+          "phrase": "half of those questions name no ID",
+          "meaning": "A keyword or ID rule would miss half of the misrouted cases."
+        }
+      ],
+      "lookFor": [
+        "Both descriptions rewritten with what each indexes and when to use it instead of the other.",
+        "A fix that works without an ID in the question.",
+        "Tools with different jobs kept separate."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It routes on an ID, and half the misrouted questions have none."
+        },
+        {
+          "option": "c",
+          "reason": "It routes on a number, which is another keyword trigger and forces a tool where the model should choose."
+        },
+        {
+          "option": "d",
+          "reason": "It merges tools that do different jobs and returns ten hits from each source every time."
+        }
+      ],
+      "rule": "When similar tools are confused, rewrite each description with what it covers, its input and when to use it instead of the other. Do not merge tools that do different jobs.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Writing effective tools for agents",
+          "url": "https://www.anthropic.com/engineering/writing-tools-for-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Creating tools that Claude picks",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/creating-tools-that-claude-picks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S4-D2-002",
+      "explanation": "The engineer's premise is wrong. Claude Code connects to every configured MCP server, discovers each server's tools, and makes them available together in one session. The tools are named `mcp__<server>__<tool>`, so tracker tools and wiki tools can be used side by side. A gateway would cost weeks of capacity that the release does not have, for a limit that does not exist.",
+      "options": {
+        "a": {
+          "reasoning": "The premise that a session loads the tools of only one MCP server is false, so the gateway solves a problem that does not exist. The six free weeks do not change that, and the assistant is needed in two weeks.",
+          "tempting": "Six weeks of free capacity makes building it seem affordable."
+        },
+        "b": {
+          "reasoning": "The sources describe no per-session switch between servers. The point is that all connected servers' tools are available together, so there is nothing to switch off. Adding a setting to make only one server active would create the limitation the engineer fears.",
+          "tempting": "A settings entry is a small change compared with a gateway."
+        },
+        "c": {
+          "reasoning": "This is accurate. Tools from all configured servers are discovered at connection and are available together in one session. Tool search, which is on by default, defers loading the full definitions until they are needed, but it does not stop any server's tools from being available. No gateway is needed."
+        },
+        "d": {
+          "reasoning": "Running the tracker and the wiki in separate sessions and pasting output between them is manual work that gives up the point of having both servers. Both can be used in one session.",
+          "tempting": "It avoids building anything, which is cheap and quick."
+        }
+      },
+      "concept": [
+        "Each connected server's tools are discovered at connection, and all of them are available together in the session. MCP tools are named `mcp__<server>__<tool>`. With tool search, which is on by default, only the names load at the start and Claude loads full definitions when it needs them. That changes when definitions load, not which tools are available.",
+        "Each connected server adds tool names and instructions to the context, so disable servers you are not using. The exam guide's point is that tools from all configured servers are available together, so you do not need to combine them yourself."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "\"the assistant can only use one server's tools per session\"",
+          "meaning": "A claim to check against how MCP servers connect."
+        },
+        {
+          "phrase": "both configured for the assistant",
+          "meaning": "Both servers are already set up, so their tools are available."
+        },
+        {
+          "phrase": "about six weeks of capacity",
+          "meaning": "Capacity is available, but that does not make the work needed."
+        },
+        {
+          "phrase": "needed for the next release in two weeks",
+          "meaning": "Time is short, so avoid unneeded work."
+        }
+      ],
+      "lookFor": [
+        "Both servers kept, with their tools used together in one session.",
+        "A response that corrects the premise instead of building around it.",
+        "No gateway, no per-session switch and no manual copying."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It accepts a false premise and spends weeks on a gateway that is not needed."
+        },
+        {
+          "option": "b",
+          "reason": "It adds a switch that creates the limit the engineer fears."
+        },
+        {
+          "option": "d",
+          "reason": "It splits the work across sessions and relies on copying."
+        }
+      ],
+      "rule": "Tools from all configured MCP servers are available together in one session, so keep the servers and do not build a gateway to combine them.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: connect to MCP servers",
+          "url": "https://code.claude.com/docs/en/mcp"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: MCP",
+          "url": "https://academy.claude.com/courses/claude-code-101/mcp"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S4-D2-003",
+      "explanation": "The task is to find files by path, without opening any of them. Glob matches file paths by pattern, and `src/**/V*__*.sql` matches names such as `V12__add_index.sql` at any depth. The other `.sql` files, such as seed data, do not start with `V<number>__`, so a pattern on the name leaves them out.",
+      "options": {
+        "a": {
+          "reasoning": "Grep searches inside files, and the task is to list paths without opening any file. Searching for `CREATE TABLE` finds files by their content, so it would miss migrations that do not contain it and it would pick up other files that do.",
+          "tempting": "Migrations often contain table definitions, so a content search seems close."
+        },
+        "b": {
+          "reasoning": "This uses the right tool for the job. Glob finds files by path pattern, and `**` matches at any depth, so `src/**/V*__*.sql` returns every file whose name fits the migration pattern, wherever it sits, without reading any of them."
+        },
+        "c": {
+          "reasoning": "`src/**/*.sql` returns every SQL file, including seed data, and keeping every path would put non-migrations in the list. The stem says the other `.sql` files exist. The pattern must use the naming convention.",
+          "tempting": "It is broad and easy, and the SQL files look like migrations."
+        },
+        "d": {
+          "reasoning": "A Bash loop that lists each directory does a job that Glob does directly. Bash needs permission by default, and Read, Glob and Grep do not inside the working directory, so Glob is also the lighter option.",
+          "tempting": "Bash can do anything, so it looks like a safe general choice."
+        }
+      },
+      "concept": [
+        "Glob finds files by path pattern, for example `**/*.js` matches `.js` files at any depth. Grep searches file contents with regular expressions. The exam guide's rule: Grep for content (function names, error messages, imports), Glob for file paths (names, extensions).",
+        "Bash runs shell commands. Bash, Edit and Write need permission by default, while Read, Glob and Grep do not inside the working directory."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "list every Liquibase migration file",
+          "meaning": "A list of paths, so it is a Glob task."
+        },
+        {
+          "phrase": "`V<number>__<description>.sql`",
+          "meaning": "A naming pattern, which Glob can match."
+        },
+        {
+          "phrase": "alongside other `.sql` files such as seed data",
+          "meaning": "A broad `*.sql` pattern would include files that are not migrations."
+        },
+        {
+          "phrase": "without opening any file",
+          "meaning": "Rules out Grep and Read, which look at contents."
+        }
+      ],
+      "lookFor": [
+        "A tool that matches by path, not by content.",
+        "A pattern that uses the naming convention, not just the extension.",
+        "No file opened."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Grep searches content, but the task is to list files by name."
+        },
+        {
+          "option": "c",
+          "reason": "It includes seed data and other SQL files that are not migrations."
+        },
+        {
+          "option": "d",
+          "reason": "Bash does by hand what Glob does directly, and it needs permission."
+        }
+      ],
+      "rule": "Use Glob to match file paths by name or extension, and Grep to search what is inside files. Put the naming convention in the Glob pattern.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: tools reference",
+          "url": "https://code.claude.com/docs/en/tools-reference"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S4-D2-004",
+      "explanation": "The server is personal and experimental, it uses her own credentials, and it must not change what the other engineers get. User scope fits: a server in `~/.claude.json` at user level applies to all of her projects, and only to her, and is not shared through git. Project `.mcp.json` is the shared file, checked in so that everyone gets the same servers.",
+      "options": {
+        "a": {
+          "reasoning": "A `.mcp.json` on an unmerged branch is a workaround for what user scope already does. The project file is shared through version control, so it risks being merged or copied, and it only helps in that repository when she checks the branch out.",
+          "tempting": "A branch keeps it out of the main line, so it appears private."
+        },
+        "b": {
+          "reasoning": "A team-wide server entry that wraps her sandbox database would change what the other 119 engineers get, which she wants to avoid. It also makes the platform team maintain a prototype that depends on her personal credentials.",
+          "tempting": "A shared entry means the platform team takes over the upkeep."
+        },
+        "c": {
+          "reasoning": "A note in `CLAUDE.md` is guidance for the assistant, not a place where servers are configured. The sources configure servers in `.mcp.json` or `~/.claude.json`, and a note with her credentials in a project file would also be shared.",
+          "tempting": "It would tell the assistant how to start the server."
+        },
+        "d": {
+          "reasoning": "This matches the need. User scope applies to all of her projects and only to her, and it is stored in `~/.claude.json`, so it is not shared through git and the other engineers see no change."
+        }
+      },
+      "concept": [
+        "Claude Code has three scopes for MCP servers. Local (the default) is the current project and only you, stored in `~/.claude.json` under that project. Project is `.mcp.json` at the project root, checked into version control, so everyone gets the same servers. User is all your projects and only you, stored in `~/.claude.json`.",
+        "The exam guide's rule is shared team tooling in project `.mcp.json`, and personal or experimental servers in user-level `~/.claude.json`. If the same server is defined twice, local wins over project, and project wins over user."
+      ],
+      "conceptTable": {
+        "headers": ["Scope", "Where and who"],
+        "rows": [
+          ["Local (default)", "The current project, only you; stored in `~/.claude.json`"],
+          ["Project", "`.mcp.json` at the project root; shared through version control"],
+          ["User", "All your projects, only you; stored in `~/.claude.json`"]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "prototyping an MCP server",
+          "meaning": "Experimental, so not team tooling."
+        },
+        {
+          "phrase": "sandbox database only she can reach",
+          "meaning": "Personal access, so personal scope."
+        },
+        {
+          "phrase": "her own Claude Code sessions in any repository",
+          "meaning": "All projects, which is user scope."
+        },
+        {
+          "phrase": "without changing what the other 119 engineers get",
+          "meaning": "Rules out any shared file."
+        }
+      ],
+      "lookFor": [
+        "A personal scope that covers every repository.",
+        "No change to the shared project file or team configuration.",
+        "Credentials kept out of git."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It uses the shared project file with a branch workaround."
+        },
+        {
+          "option": "b",
+          "reason": "It makes the prototype a team-wide server for all 119 engineers."
+        },
+        {
+          "option": "c",
+          "reason": "A `CLAUDE.md` note does not configure a server, and it would be shared."
+        }
+      ],
+      "rule": "Put shared team servers in project `.mcp.json`; put personal or experimental servers in user-level `~/.claude.json`.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: connect to MCP servers",
+          "url": "https://code.claude.com/docs/en/mcp"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: MCP",
+          "url": "https://academy.claude.com/courses/claude-code-101/mcp"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S4-D2-005",
+      "explanation": "The engineer has a logged message and a large code base. The assistant should search for the fixed part of that message, `No feasible route for vehicle`, because the vehicle ID and the relaxation count change from run to run. That finds the code that produces the message, and then it reads only the file that Grep points to. Searching for the whole logged line looks like the same step, but it contains values that exist only in that log, not in the source.",
+      "options": {
+        "a": {
+          "reasoning": "Reading the largest solver file from the top is a guess, and it moves on to the Python modules if that fails. In a repository of about 1.4 million lines, reading files in turn is slow, when a search for the message text points straight to the file.",
+          "tempting": "The largest solver file seems the likeliest place for the logic."
+        },
+        "b": {
+          "reasoning": "The full line includes `V-17` and `3`, which are filled in at run time, so the source contains a template, not that exact text. A search for the whole line would find nothing. The search should use only the fixed part.",
+          "tempting": "It is exact, and an exact match seems more precise."
+        },
+        "c": {
+          "reasoning": "This is the incremental approach. Grep for content, here an error message, to find the entry point, using the fixed text, then Read the file it points to. The assistant sees only what it needs, and it follows the code from there."
+        },
+        "d": {
+          "reasoning": "The stem says the failure cannot be reproduced locally, so running the planner and following a stack trace is not available. Even if it were, searching for the message is faster than reproducing.",
+          "tempting": "A stack trace would lead to the exact line."
+        }
+      },
+      "concept": [
+        "Build understanding incrementally. Use Grep to find entry points, such as a function name, an error message or an import, then Read the files it points to and follow their imports. The exam guide prefers this to reading everything, and the sources note that broad searches can go to the Explore subagent to keep noisy output out of the main context.",
+        "Grep searches file contents with regular expressions, so a search for the fixed text of a message finds where it is produced. Text that is filled in at run time, such as an ID or a count, is not in the source in that form."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "quotes a production log line",
+          "meaning": "A message to search for."
+        },
+        {
+          "phrase": "`V-17` and `3 relaxations`",
+          "meaning": "Values that vary between runs; they are not in the source as written."
+        },
+        {
+          "phrase": "about 1.4 million lines across Java and Python",
+          "meaning": "Too large to read in turn."
+        },
+        {
+          "phrase": "cannot be reproduced locally",
+          "meaning": "Rules out running the code to find the line."
+        }
+      ],
+      "lookFor": [
+        "A Grep on the fixed text of the message.",
+        "A Read of only the file that the search points to.",
+        "No reproduction and no file-by-file reading."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It reads files in turn through a very large code base."
+        },
+        {
+          "option": "b",
+          "reason": "The full line contains run-time values, so it would not match the source."
+        },
+        {
+          "option": "d",
+          "reason": "The failure cannot be reproduced locally."
+        }
+      ],
+      "rule": "Search by the fixed part of a message with Grep to find the entry point, then Read only the file it points to.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: tools reference",
+          "url": "https://code.claude.com/docs/en/tools-reference"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S4-D2-006",
+      "explanation": "The description is good, and the model still ignores it, because the project's `CLAUDE.md` tells it to search `docs/incidents/` first for anything about incidents. That is a keyword-sensitive instruction that overrides the tool description. The fix is to change the instruction so questions about past incidents go to `search_incidents` and the folder is kept for current runbooks. That also keeps the runbooks available to responders during live incidents.",
+      "options": {
+        "a": {
+          "reasoning": "The description already says what the tool covers, with two example questions, and it did not change the behaviour. Five more examples add to a description that is not the cause. The instruction in `CLAUDE.md` is what sends the assistant to Grep.",
+          "tempting": "More examples sound like more guidance for the model."
+        },
+        "b": {
+          "reasoning": "This removes the cause. The `CLAUDE.md` instruction tied incident questions to the folder, so rewriting it to send past incidents to `search_incidents`, and keep the folder for current runbooks, makes the instruction agree with the description. The runbooks stay usable for live work."
+        },
+        "c": {
+          "reasoning": "Renaming the tool to `grep_incidents` works at the label and leaves the instruction in place, and the label would also suggest it searches files. The description already says what it covers. Names help, but they are not the cause here.",
+          "tempting": "A familiar name might make the assistant treat it like Grep."
+        },
+        "d": {
+          "reasoning": "A `PreToolUse` hook that blocks Grep on `docs/incidents/` would also stop responders from searching the runbooks that live in that folder during a live incident. It forces the tool by blocking another one, and does not fix the instruction.",
+          "tempting": "A hook is deterministic, and it guarantees the tool is used."
+        }
+      },
+      "concept": [
+        "The exam guide asks you to improve MCP tool descriptions so agents do not prefer built-ins such as Grep, and to review system prompts for keyword instructions that override good descriptions. The same applies to project instructions in `CLAUDE.md`: when a good description is ignored, check the wording that steers the model elsewhere.",
+        "Fix the cause in proportion. Here the cause is one instruction, so edit it, rather than adding a hook that also blocks a legitimate use of the folder."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "description was rewritten last week to say exactly that",
+          "meaning": "The description is already good."
+        },
+        {
+          "phrase": "still uses Grep ... in about 60% of incident questions",
+          "meaning": "Something else steers it."
+        },
+        {
+          "phrase": "\"search the `docs/incidents/` folder first\"",
+          "meaning": "A keyword-style instruction that sends incident questions to Grep."
+        },
+        {
+          "phrase": "the folder also holds the runbooks",
+          "meaning": "Blocking the folder would harm live responders."
+        }
+      ],
+      "lookFor": [
+        "A fix to the `CLAUDE.md` instruction that overrides the description.",
+        "Past incidents routed to the MCP tool, with the folder kept for runbooks.",
+        "No blocking of a path that responders still need."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It adds to a description that is not the cause."
+        },
+        {
+          "option": "c",
+          "reason": "Renaming leaves the instruction that sends the assistant to Grep."
+        },
+        {
+          "option": "d",
+          "reason": "It blocks the folder that holds runbooks needed during live incidents."
+        }
+      ],
+      "rule": "When a well-described MCP tool is ignored, check the CLAUDE.md or prompt wording that steers the model to a built-in tool, and fix that wording.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: connect to MCP servers",
+          "url": "https://code.claude.com/docs/en/mcp"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: MCP",
+          "url": "https://academy.claude.com/courses/claude-code-101/mcp"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S4-D2-007",
+      "explanation": "Edit needs `old_string` to match exactly once, and `maxStops: 25` appears in 31 blocks. The exam guide's fallback is Read plus Write: read the file, change the value inside the LHR block only, and write the whole file back. Adding surrounding context to `old_string`, such as the LHR block's header line, to make it unique is also a documented way to make Edit work, but the options do not offer it. The second task is a content search, so Grep finds where `MAX_STOPS_LEGACY` is read, and Glob, which matches file names, does not.",
+      "options": {
+        "a": {
+          "reasoning": "A `sed` command that changes the number everywhere is the opposite of the requirement that the other 30 blocks stay at 25, and restoring them from git is a roundabout repair. It also bypasses the targeted edit that the task asks for.",
+          "tempting": "Bash can change the file in one command."
+        },
+        "b": {
+          "reasoning": "Glob matches file paths. A constant that is used inside files will not show up in file names, so a pattern on the name misses the readers. Finding where a name is used is a content search, which is Grep's job.",
+          "tempting": "Searching with a name pattern seems like a quick way to find uses."
+        },
+        "c": {
+          "reasoning": "This follows the guide's fallback when Edit has no unique anchor. Read gives the whole file, the value is changed inside the LHR block only, and Write saves the full content. Write overwrites the file with what it is given, so the other 30 blocks must be carried over unchanged."
+        },
+        "d": {
+          "reasoning": "Adding a leading space gives a string that still appears in every block, so it is still not unique and Edit fails again. Guessing at variations is not a method. A different `old_string` helps only if it includes context that exists once, such as the header line of the LHR block.",
+          "tempting": "It is a small change to the failed call, and it keeps the targeted edit."
+        },
+        "e": {
+          "reasoning": "A search for the constant's name across the codebase, followed by reading the hits, is the right tool for tracing where something is used. Grep searches contents, so it finds every reader of `MAX_STOPS_LEGACY` that the engineer wants to check."
+        }
+      },
+      "concept": [
+        "Edit replaces an exact string. `old_string` must match character for character and appear exactly once. If it appears more than once, add surrounding context to make it unique, or set `replace_all: true`. The exam's fallback when no unique anchor is available is Read plus Write. Write creates a file or overwrites it with the full content given; it does not merge.",
+        "Grep searches file contents with ripgrep regular expressions, and Glob finds files by path pattern. To find where a name is used, use Grep for the content. Glob matches paths and does not look inside files."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "the same line `maxStops: 25`",
+          "meaning": "The anchor is not unique, which is why Edit fails."
+        },
+        {
+          "phrase": "LHR depot only",
+          "meaning": "Only one of 31 blocks may change."
+        },
+        {
+          "phrase": "An Edit attempt fails",
+          "meaning": "The usual fallback is Read plus Write."
+        },
+        {
+          "phrase": "check that nothing else ... still reads the old constant",
+          "meaning": "A search of contents, so Grep and not Glob."
+        },
+        {
+          "phrase": "Select 2",
+          "meaning": "One answer for the change and one for the search."
+        }
+      ],
+      "lookFor": [
+        "Read plus Write for the one block when Edit has no unique anchor.",
+        "Grep, not Glob, for the readers of a constant.",
+        "No change to the other 30 blocks."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It changes the number everywhere and needs a repair from git."
+        },
+        {
+          "option": "b",
+          "reason": "Glob matches file names, not the contents where the constant is used."
+        },
+        {
+          "option": "d",
+          "reason": "The new string still appears in every block, so it is not unique."
+        }
+      ],
+      "rule": "When Edit has no unique anchor, use Read plus Write, or add surrounding context to make the string unique. Use Grep, not Glob, to find where a name is used.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: tools reference",
+          "url": "https://code.claude.com/docs/en/tools-reference"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S4-D2-008",
+      "explanation": "Grep for the name returns 3 hits, but the traces show about 40 call sites, so the function is being called under other names. One hit is an import with an alias: `compute_eta as estimate_arrival`. The next step is to take that alias and Grep for it, and to repeat for any other names the function is re-exported under. This is how usage is traced across wrapper modules: find the exported names, then search for each of them.",
+      "options": {
+        "a": {
+          "reasoning": "Searching for the partial words `compute` and `eta` returns a very long list of unrelated hits that must be sorted by hand. It is noisy and slow, and it still might not catch a call made under an unrelated alias.",
+          "tempting": "A loose search seems to cast a wide net."
+        },
+        "b": {
+          "reasoning": "Listing every `.py` file with Glob and reading each in turn is the read-everything approach. It is slow for a code base of this size, and the hour is short. A search for the alias finds the same calls directly.",
+          "tempting": "It is exhaustive, so it would find everything in the end."
+        },
+        "c": {
+          "reasoning": "Three hits are not a complete list when the traces show about 40 calls. A different name hides calls from a search for `compute_eta`, so the result is incomplete, not complete. Reporting it would leave out most callers.",
+          "tempting": "Grep covers the whole repository, so its answer seems final."
+        },
+        "d": {
+          "reasoning": "The alias is a name that the function is called by. Searching for `estimate_arrival`, and for any other re-exported names, finds the calls that a search for `compute_eta` misses. This is incremental: one new name from the hits, then one more search."
+        }
+      },
+      "concept": [
+        "To trace usage across wrapper and alias modules, find the exported names first, then search the codebase for each of them. Grep searches contents, and a function called under another name does not match its original name.",
+        "Build understanding incrementally: Grep for entry points, Read to follow imports. The aim is to avoid reading everything and to avoid trusting a first search whose count does not match other evidence."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "returns 3 hits",
+          "meaning": "A count to compare against other evidence."
+        },
+        {
+          "phrase": "Runtime traces show ... about 40 places",
+          "meaning": "The search is missing most calls."
+        },
+        {
+          "phrase": "`from fleetway.eta import compute_eta as estimate_arrival`",
+          "meaning": "An alias, which is a second name to search for."
+        },
+        {
+          "phrase": "retried with a case-insensitive search and a word-boundary pattern",
+          "meaning": "Variants of the same name do not help."
+        }
+      ],
+      "lookFor": [
+        "A search for the alias taken from the import.",
+        "Repeating for other re-exported names.",
+        "No reading of every file."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It returns a huge, noisy list and still depends on guessing names."
+        },
+        {
+          "option": "b",
+          "reason": "It reads every Python file instead of searching for the alias."
+        },
+        {
+          "option": "c",
+          "reason": "Three hits against about 40 real calls means the list is incomplete."
+        }
+      ],
+      "rule": "To trace usage through aliases and wrappers, find the exported names first, then Grep for each of them.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: tools reference",
+          "url": "https://code.claude.com/docs/en/tools-reference"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S4-D2-009",
+      "explanation": "Two decisions are being made together. First, build or adopt: a maintained community MCP server already covers the operations needed, and pull requests and review comments from a hosted Git service are a standard integration, so use it instead of writing one. Second, how to handle the token: `.mcp.json` supports `${VAR}` expansion, so the shared config can contain `${GIT_TOKEN}` while each engineer supplies the real value from their environment, and no secret is committed.",
+      "options": {
+        "a": {
+          "reasoning": "Writing an in-house server means writing and maintaining an integration that a maintained community server already covers. The exam guide prefers existing community servers for standard integrations. Control of the code is not worth that work here.",
+          "tempting": "Owning the code gives the platform team control."
+        },
+        "b": {
+          "reasoning": "Using the maintained community server is the guide's advice for a standard integration. Providers often publish servers too, so you do not have to write and maintain the integration yourself. Before connecting, verify that a server is trustworthy, as Claude Code warns."
+        },
+        "c": {
+          "reasoning": "Having each engineer add the server to their own `~/.claude.json` removes the shared configuration, so 120 setups can drift apart. It also has each of them hold a copy of the shared token. The shared `.mcp.json` with `${VAR}` expansion does the sharing without copying a secret.",
+          "tempting": "It keeps the token out of git, so it seems safe."
+        },
+        "d": {
+          "reasoning": "The project `.mcp.json` is checked into version control so everyone gets the same servers, and `${GIT_TOKEN}` expands from each person's environment. That shares the setup and keeps the secret out of the repository. An unset variable with no default triggers a warning."
+        },
+        "e": {
+          "reasoning": "Committing the literal token puts a secret in git history, readable by everyone with access, and hard to take back. A private repository is not a reason to store credentials in it, when `${VAR}` expansion exists.",
+          "tempting": "Only employees can read the repository, so the risk seems small."
+        }
+      },
+      "concept": [
+        "`.mcp.json` supports `${VAR}` and `${VAR:-default}` in `command`, `args`, `env`, `url` and `headers`, so a team shares one config and each person supplies secrets and machine-specific paths from their own environment. An unset variable with no default triggers a warning. Project scope is checked into version control, so everyone gets the same servers.",
+        "MCP servers expose tools, prompts and resources, and often the service provider publishes an official server. The exam guide prefers existing community servers for standard integrations. Claude Code points to reviewed connectors in the Anthropic directory and warns to verify that a server is trustworthy before connecting."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "a maintained community MCP server ... covers the operations needed",
+          "meaning": "A standard integration that is already built."
+        },
+        {
+          "phrase": "for all 120 engineers",
+          "meaning": "A shared setup, so the project file."
+        },
+        {
+          "phrase": "without exposing credentials",
+          "meaning": "No literal secret in a committed file."
+        },
+        {
+          "phrase": "pasting the service's access token straight into the committed `.mcp.json`",
+          "meaning": "A secret in git, which `${VAR}` expansion avoids."
+        },
+        {
+          "phrase": "Select 2",
+          "meaning": "One answer for build or adopt, and one for the credential."
+        }
+      ],
+      "lookFor": [
+        "An existing maintained server, not a new in-house one.",
+        "The shared project file with an environment variable for the token.",
+        "No literal secret in git and no per-person copy of the shared token."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It builds and maintains what a community server already provides."
+        },
+        {
+          "option": "c",
+          "reason": "It drops the shared configuration and spreads copies of the token."
+        },
+        {
+          "option": "e",
+          "reason": "It commits a literal secret to git."
+        }
+      ],
+      "rule": "Prefer a maintained community server for a standard integration, and keep secrets out of git with `${VAR}` expansion in the shared `.mcp.json`.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: connect to MCP servers",
+          "url": "https://code.claude.com/docs/en/mcp"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: MCP",
+          "url": "https://academy.claude.com/courses/claude-code-101/mcp"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to Model Context Protocol: Introducing MCP",
+          "url": "https://academy.claude.com/courses/introduction-to-model-context-protocol/introducing-mcp"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D2-001",
+      "explanation": "The model chooses between `get_claim` and `get_claim_details` from two vague descriptions, 'Gets a claim' and 'Gets details of a claim', and the names do not say what each returns. They do different jobs: one returns the header record, the other the line items. The fix is to rename them by purpose, `get_claim_header` and `get_claim_line_items`, and rewrite each description to state what it returns, which requests it serves and which it does not.",
+      "options": {
+        "a": {
+          "reasoning": "Forcing `get_claim_details` on every request breaks the header lookups that need `get_claim`, so one error would replace another. A forced tool is also a blunt control when the model should choose between two tools by their purpose.",
+          "tempting": "Line items are what most documents need, so forcing them seems practical."
+        },
+        "b": {
+          "reasoning": "Better names help, but the descriptions, 'Gets a claim' and 'Gets details of a claim', stay vague. The description is the primary mechanism for selection, so the model still has little to go on beyond the name.",
+          "tempting": "Renaming is part of the right answer, which makes this look nearly complete."
+        },
+        "c": {
+          "reasoning": "This fixes both parts. Names that say header and line items separate the purposes, and descriptions that state what each returns, which requests it serves and which it does not, give the model the boundary. The tools stay separate because they do different jobs, and nothing about what they return changes."
+        },
+        "d": {
+          "reasoning": "A third tool that returns both adds another overlapping choice and leaves the two vague tools as they are. The aim is to remove overlap, not to add a tool that overlaps with both.",
+          "tempting": "It looks like a safe option, since one call would give everything."
+        }
+      },
+      "concept": [
+        "The exam guide's skills for this task are to rename tools and rewrite descriptions to remove overlap, and to split generic tools into purpose-specific ones with defined contracts. Unambiguous names help: the guidance is to use a clear name such as `user_id` rather than `user`. Namespacing related tools by service and resource keeps boundaries clear.",
+        "Descriptions are the primary mechanism for tool selection. State what the tool returns, when to use it and when not to, and name the other tool for the other case. Tools that do different jobs stay separate, and overlapping tools can be combined."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`get_claim`, described as \"Gets a claim\"",
+          "meaning": "A vague name and description."
+        },
+        {
+          "phrase": "`get_claim_details`, described as \"Gets details of a claim\"",
+          "meaning": "Almost the same wording, so the model cannot separate the two."
+        },
+        {
+          "phrase": "header record ... line items",
+          "meaning": "Different outputs, so the tools stay separate."
+        },
+        {
+          "phrase": "when it needs line items in about 25% of documents",
+          "meaning": "The model picks the wrong tool because of the vague text."
+        },
+        {
+          "phrase": "without changing what either tool returns",
+          "meaning": "The fix is in names and descriptions."
+        }
+      ],
+      "lookFor": [
+        "Names that say what each tool returns.",
+        "Descriptions that state what each returns and when it applies.",
+        "No forced tool and no extra overlapping tool."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It forces one tool and breaks the header lookups."
+        },
+        {
+          "option": "b",
+          "reason": "It keeps the vague descriptions, which are the main selection signal."
+        },
+        {
+          "option": "d",
+          "reason": "It adds a third tool that overlaps with both."
+        }
+      ],
+      "rule": "Rename overlapping tools by purpose and rewrite their descriptions with outputs and boundaries. Do not force a tool or add another overlapping one.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Writing effective tools for agents",
+          "url": "https://www.anthropic.com/engineering/writing-tools-for-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Creating tools that Claude picks",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/creating-tools-that-claude-picks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D2-002",
+      "explanation": "'Invalid payload' tells the agent that something is wrong and nothing else, so it resubmits the same payload and burns a model call each time. The cause is usually one field. The fix is an error that names the field, what was expected and what was received, for example `claim.loss_date: expected YYYY-MM-DD, got \"03/04\"`. Claude can usually correct an invalid call on the next attempt when the error says what was wrong.",
+      "options": {
+        "a": {
+          "reasoning": "This is what an instructive error does. It says which field failed, the type expected and the value received, so the agent can change that field in one attempt, instead of resubmitting blind. That cuts the wasted retries and the model calls on a 30-second budget."
+        },
+        "b": {
+          "reasoning": "A `validation` category and `isRetryable: true` tell the agent a retry can succeed, but with the same 'Invalid payload' message it has nothing to change. It would keep resubmitting the same payload. The category and flag are the guide's pattern, not spec fields, and they do not replace a message that says what is wrong.",
+          "tempting": "Marking it retryable looks correct, since a corrected payload can succeed."
+        },
+        "c": {
+          "reasoning": "Marking the error non-retryable and handing the document to the review team treats a one-field mistake as final. The agent could fix the date and succeed in one more call. This sends avoidable work to people.",
+          "tempting": "It stops the retry loop immediately."
+        },
+        "d": {
+          "reasoning": "Coercing a bad date inside the tool and reporting success hides the failing value from the agent. The tool may guess a wrong date, and nothing in the result tells anyone that a value was changed. The error should be returned with the details so the agent can correct it.",
+          "tempting": "No error means no retries, so the problem seems solved."
+        }
+      },
+      "concept": [
+        "A failed tool call still returns a `tool_result` with `is_error: true`, and the model sees the message. Write instructive errors: say what went wrong and what to try next, not just 'failed'. After an error the model may call the tool again, and it can usually correct an invalid call on the next attempt when the error says what was missing.",
+        "Validation errors are one of the guide's error types: invalid input. `errorCategory` and `isRetryable` are the guide's pattern for the content of an error result, not fields defined by the MCP specification. A flag helps the agent decide whether to retry, and a specific message tells it what to change."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "returns `{\"isError\": true, \"message\": \"Invalid payload\"}`",
+          "meaning": "The error is flagged but says nothing about the cause."
+        },
+        {
+          "phrase": "resubmits the same payload three or four times",
+          "meaning": "The agent has no information to change the payload."
+        },
+        {
+          "phrase": "a single field, such as a date written as `03/04`",
+          "meaning": "The cause is small and fixable from the message."
+        },
+        {
+          "phrase": "30-second per-document budget",
+          "meaning": "Each blind retry costs a model call."
+        }
+      ],
+      "lookFor": [
+        "A message that names the field, the expected form and the value received.",
+        "An error returned to the agent, not hidden.",
+        "A flag or category that is not used in place of a useful message."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The message is still empty of detail, so a retry flag leaves the agent guessing."
+        },
+        {
+          "option": "c",
+          "reason": "It stops a fixable error and sends a one-field mistake to people."
+        },
+        {
+          "option": "d",
+          "reason": "It hides the failing value instead of reporting it."
+        }
+      ],
+      "rule": "A validation error should say which field failed and what was expected, so the agent can correct it instead of resubmitting blind.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "MCP specification: tools (2025-06-18)",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Handle tool calls",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Writing effective tools for agents",
+          "url": "https://www.anthropic.com/engineering/writing-tools-for-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Tool functions",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/tool-functions"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D2-003",
+      "explanation": "A prompt rule already tells the agent to open only the current claim's folder, and it still crossed into another claimant's file in 2 of 1,400 runs. Privacy rules require that crossing be impossible, not rare. The fix is a constrained tool: `load_claim_document(claim_id, doc_id)` that checks in code that the document belongs to the claim being processed. A tool that validates its input makes out-of-scope calls impossible, where a prompt rule only makes them less likely.",
+      "options": {
+        "a": {
+          "reasoning": "More examples in the system prompt strengthen a rule that has already failed twice in 1,400 runs. A prompt makes crossing less likely, not impossible, and the stem requires impossible.",
+          "tempting": "Examples are concrete, so they might make the rule stick."
+        },
+        "b": {
+          "reasoning": "A `PostToolUse` hook that strips data after the read tries to clean up after the file was already opened. The generic tool can still open another claim's file, and the filtering must work every time. A constrained tool prevents the read instead of repairing it.",
+          "tempting": "It is deterministic and logs each attempt, which sounds strong."
+        },
+        "c": {
+          "reasoning": "A `search_all_claims` tool gives the agent a sanctioned way to look across claims, which widens the crossing the privacy rules forbid. It adds a tool outside the role instead of narrowing the one it has.",
+          "tempting": "It would stop the agent guessing at paths when a report is missing."
+        },
+        "d": {
+          "reasoning": "This is the constrained-tool pattern. `load_claim_document(claim_id, doc_id)` checks in code that the document belongs to the claim being processed, so a file from another claim cannot be opened at all. It replaces the generic `read_file`, which accepts any path."
+        }
+      },
+      "concept": [
+        "When a prompt rule leaves occasional misuse of a generic tool, replace the tool with a constrained one that validates its inputs. The exam guide's example is replacing a generic `fetch_url` with a `load_document` that validates URLs. A constrained tool makes out-of-scope calls impossible, where a prompt rule only makes them less likely.",
+        "Give each agent only the tools its role needs. A tool that accepts any path is wider than the role, and adding more reach, such as a search across all claims, makes the problem larger."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "a general `read_file(path)` tool",
+          "meaning": "A tool broader than the role."
+        },
+        {
+          "phrase": "the system prompt already says to open only files in the current claim's folder",
+          "meaning": "A rule that has not been enough."
+        },
+        {
+          "phrase": "2 of 1,400 runs",
+          "meaning": "A small rate that is still not allowed."
+        },
+        {
+          "phrase": "impossible, not rare",
+          "meaning": "Only a limit inside the tool meets this."
+        }
+      ],
+      "lookFor": [
+        "A narrow tool that checks claim ownership in code.",
+        "A limit in the tool, not in the prompt or after the read.",
+        "No added cross-claim reach."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "More prompt examples only lower the odds of crossing."
+        },
+        {
+          "option": "b",
+          "reason": "A hook after the read repairs the result and does not stop the file being opened."
+        },
+        {
+          "option": "c",
+          "reason": "It adds a tool that searches across claims, which widens the problem."
+        }
+      ],
+      "rule": "When a prompt rule leaves occasional misuse of a generic tool, replace the tool with a constrained one that checks its inputs in code.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: Designing effective subagents",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/designing-effective-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D2-004",
+      "explanation": "The assistant cannot hold the repository in context, so it should build understanding in steps. The engineer remembers `field_confidence`, so Grep for it across the repository to find the files that set or read it, which are the entry points. Then Read the file where the threshold is applied and follow its imports one at a time to see how a claim reaches the queue. Reading every file, matching on file names, or guessing a starting class would not do this.",
+      "options": {
+        "a": {
+          "reasoning": "Grep searches contents, so a search for `field_confidence` finds each file that sets or reads it. Those hits are the entry points, and they cost far less context than reading the repository. This is the first step in building understanding step by step."
+        },
+        "b": {
+          "reasoning": "Listing every `.py` file and reading each in order, with a summary of each, is the read-everything approach. The stem says the context cannot hold the whole code base, and 400 files would overflow it before the flow is understood.",
+          "tempting": "It is systematic and leaves no file unread."
+        },
+        "c": {
+          "reasoning": "A Glob on file names containing 'confidence' matches paths, not contents. The code that routes claims may live in files with other names, so the file names are not a complete list. Treating the matches as complete would miss code that uses the field.",
+          "tempting": "The name pattern mirrors the field the engineer remembers."
+        },
+        "d": {
+          "reasoning": "Guessing that the queue's client class is the place to start, and asking the engineer to confirm each file, replaces a search with guesswork, and the engineer remembers only one field name. It is slow and may start from a file that does not decide the routing.",
+          "tempting": "The queue is the end of the flow, so it seems a natural place to begin."
+        },
+        "e": {
+          "reasoning": "Once the entry point is known, reading the file where the threshold is applied, and following its imports one at a time, shows how a claim reaches the review queue. It reads only the files that matter, in the order the code uses them."
+        }
+      },
+      "concept": [
+        "Build understanding incrementally. Use Grep to find entry points, such as function names, error messages or imports, then Read to follow imports from there. The exam guide's skill is to avoid reading everything, which is not possible when the context cannot hold the code base.",
+        "Glob matches file paths and Grep searches contents. A name pattern gives a list of files with that name, not of the files that use a concept."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "the assistant's context cannot hold the whole codebase",
+          "meaning": "Rules out reading every file."
+        },
+        {
+          "phrase": "nobody has written down the flow",
+          "meaning": "The assistant must find the flow in the code."
+        },
+        {
+          "phrase": "remembers only that a field called `field_confidence` is involved",
+          "meaning": "A name to search for."
+        },
+        {
+          "phrase": "Select 2",
+          "meaning": "One step to find the entry points and one to follow the code from them."
+        }
+      ],
+      "lookFor": [
+        "A content search for a known name to find entry points.",
+        "A Read of one file, then its imports in turn.",
+        "No reading of every file, no name-only matching and no guessing."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It reads every file, which the context cannot hold."
+        },
+        {
+          "option": "c",
+          "reason": "File names are not a complete list of the code that uses the field."
+        },
+        {
+          "option": "d",
+          "reason": "It replaces a search with guesses that the engineer must confirm."
+        }
+      ],
+      "rule": "Build understanding step by step: Grep for a known name to find entry points, then Read and follow imports instead of reading everything.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: tools reference",
+          "url": "https://code.claude.com/docs/en/tools-reference"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The explore → plan → code → commit workflow",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    }
+  ]
+}

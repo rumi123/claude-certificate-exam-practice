@@ -9,9 +9,11 @@ const CHOICES: { value: Confidence; label: string }[] = [
 export default function ConfidencePicker({
   value,
   onChange,
+  disabled = false,
 }: {
   value: Confidence | null;
   onChange: (value: Confidence) => void;
+  disabled?: boolean;
 }) {
   return (
     <fieldset className="mt-4 flex flex-wrap items-center gap-2">
@@ -19,11 +21,12 @@ export default function ConfidencePicker({
       {CHOICES.map((c) => (
         <label
           key={c.value}
-          className="flex cursor-pointer items-center gap-2 rounded-full border border-border px-3 py-1 text-sm hover:bg-surface-2 has-[:checked]:border-accent has-[:checked]:bg-accent-soft"
+          className={`flex items-center gap-2 rounded-full border border-border px-3 py-1 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-soft ${disabled ? '' : 'cursor-pointer hover:bg-surface-2'}`}
         >
           <input
             type="radio"
             name="confidence"
+            disabled={disabled}
             checked={value === c.value}
             onChange={() => onChange(c.value)}
           />

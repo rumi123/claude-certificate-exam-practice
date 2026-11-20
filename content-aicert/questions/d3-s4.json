@@ -1,0 +1,139 @@
+{
+  "scenario": "S4",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S4-D3-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "3.1",
+      "secondaryTasks": [],
+      "stem": "At Fleetway, two engineers in `services/routing/` get different Java style from the assistant: one gets JDK 8 syntax, the other modern syntax. Nobody remembers adding a JDK 8 rule. For the first engineer, `/memory` lists `~/.claude/CLAUDE.md`, the root `CLAUDE.md` and `services/routing/CLAUDE.md`. The second engineer's project files are identical, but the team does not want to change files both engineers share. How should the platform team find where the JDK 8 rule comes from?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Compare the two engineers' `~/.claude/CLAUDE.md` files, since the project files are the same for both and only the user-level file can differ.",
+          "correct": true,
+          "explanation": "The project and directory files are the same for both, so the difference must come from a layer that is personal. The user-level file is not shared through version control, and a diff shows the JDK 8 line quickly.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Ask the assistant in the chat which instruction made it choose JDK 8 syntax, then delete whatever it names.",
+          "correct": false,
+          "explanation": "The model's account of why it behaved a certain way is not a reliable record of the loaded files. `/memory` shows what is actually loaded, and the answer might blame the wrong file.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "c",
+          "text": "Delete every CLAUDE.md file in the repository and rebuild them from scratch so that no stale rule can survive.",
+          "correct": false,
+          "explanation": "This destroys guidance that both engineers share and does nothing for a rule in a personal file. The rule differs between two people with identical project files, so it is not in the repository.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "d",
+          "text": "Search the committed project files, the root `CLAUDE.md` and `services/routing/CLAUDE.md`, for a JDK 8 rule and any `@import` lines, then fix whatever is found.",
+          "correct": false,
+          "explanation": "These files are identical for both engineers, so a rule in them would affect both the same way. Fixing them would change behaviour for the engineer who is already fine and leave the real source untouched.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "When two people with identical project files get different behavior, diagnose the user-level files, which only affect one person.",
+      "studyRef": "§3 Task 3.1",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S4-D3-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "3.4",
+      "secondaryTasks": [],
+      "stem": "Fleetway's platform team will split the 1.4-million-line route-planning service into four Maven modules. Three candidate boundaries exist, each would touch about 400 files, and each changes the public API between modules that four other teams depend on. Nobody has chosen a boundary yet, but reviewers want to see the reasoning before files move. An engineer asks the assistant which working mode to use for the restructuring. What should the engineer choose?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Use plan mode to explore the code and compare all three boundaries before any file changes, then execute the chosen one.",
+          "correct": true,
+          "explanation": "Several valid boundaries, 400 files each and a changing public API make this an architectural decision. Plan mode allows safe exploration and a reviewable comparison before committing to one.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Use direct execution on the boundary most engineers prefer, reviewing the full diff once all 400 files have changed and the build is green.",
+          "correct": false,
+          "explanation": "A passing build says nothing about whether the boundary is the right one. Finding a poor choice after 400 files change means redoing the work, and reviewers never saw the reasoning.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Use an Explore subagent, which can carry out the whole restructuring while keeping the main conversation small.",
+          "correct": false,
+          "explanation": "An Explore subagent isolates verbose discovery and returns a summary. It helps inside plan mode, but it does not choose a boundary or perform the edits, so it cannot replace the planning step.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Use plan mode for the first module only, then switch to direct execution for the other three modules without a new plan.",
+          "correct": false,
+          "explanation": "The open question is which boundary to use across all four modules, and each changes the public API. Planning one module settles part of it, and the rest would be done without the comparison.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Choose plan mode for large, multi-file changes with several valid approaches, then execute the chosen one directly.",
+      "studyRef": "§3 Task 3.4",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S4-D3-003",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 3,
+      "primaryTask": "3.4",
+      "secondaryTasks": ["3.5"],
+      "stem": "An engineer is hunting why ETA values in `eta/` drift by about 4% after a library upgrade. In plan mode she had the assistant read some 150 files. After 90 minutes the conversation holds so much file text that answers have become vague, and a 3-file fix is still needed. She has until the end of the day, but must keep the findings from the investigation. Which two changes get the work back on track? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Send each broad question, such as where rounding is applied, to the Explore subagent so only a short summary returns to the main conversation.",
+          "correct": true,
+          "explanation": "The subagent reads the files in its own context and returns a summary, so the main conversation stops filling with file text. The agreed findings stay available.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Run `/compact` after each file read so that the conversation holds a summary instead of the raw file text, then keep reading.",
+          "correct": false,
+          "explanation": "Compacting after every read is constant overhead, and each summary can drop details the investigation still needs. It treats the symptom of a full context rather than moving the reading elsewhere.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Once the cause is agreed, leave plan mode and make the 3-file fix by direct execution, since the scope is now small and clear.",
+          "correct": true,
+          "explanation": "Plan mode suited the open investigation. With the cause known and only three files to change, direct execution is faster and needs no further exploration.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Ask the assistant for shorter answers from here on so each reply uses less of the remaining context, and keep exploring as before.",
+          "correct": false,
+          "explanation": "Replies are a small part of the context; the 150 files of text are the bulk. Shorter answers barely change that, and the exploration would continue to fill the conversation.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "e",
+          "text": "Repeat the 150-file exploration inside plan mode separately for each of the 3 files that need a fix, to confirm each change.",
+          "correct": false,
+          "explanation": "The cause is already found, so three more full explorations would consume far more context for no new information. The files to change are known and the fix is small.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Keep verbose exploration in an Explore subagent, and once the cause is clear, switch from plan mode to direct execution.",
+      "studyRef": "§3 Task 3.4",
+      "sources": ["exam-guide"]
+    }
+  ]
+}

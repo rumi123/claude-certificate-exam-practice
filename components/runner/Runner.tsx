@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Flag, X } from 'lucide-react';
+import { ChevronRight, Flag, X } from 'lucide-react';
 import {
   abandonSessionAction,
   finishSessionAction,
@@ -52,6 +52,7 @@ export default function Runner(props: {
   const [feedback, setFeedback] = useState<FeedbackData | null>(props.initialFeedback);
   // Study mode locks an answered question; test mode keeps it editable until the end.
   const [done, setDone] = useState(item.answered && !test);
+  const [reasoningOpen, setReasoningOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [dialog, setDialog] = useState<'finish' | 'abandon' | null>(null);
@@ -72,6 +73,14 @@ export default function Runner(props: {
 
   const summaryUrl = `/practice/${sessionId}/summary`;
   const unanswered = answered.filter((a) => !a).length;
+  const finishLabel = test ? 'Submit exam' : 'Finish session';
+  const allAnswered = test && unanswered === 0;
+  // The saved answer on screen has not been edited since it was stored.
+  const unchanged =
+    item.answered &&
+    confidence === item.confidence &&
+    selected.length === (item.selected ?? []).length &&
+    selected.every((k) => item.selected?.includes(k));
 
   function toggleOption(index: number) {
     const o = item.options[index];
@@ -164,7 +173,8 @@ export default function Runner(props: {
     onEnter: () => {
       if (pending || dialog) return;
       if (done) goNext();
-      else if (ready) submit();
+      else if (ready && !(allAnswered && unchanged)) submit();
+      else if (allAnswered && unchanged) confirmFinish();
     },
     onMark: () => {
       if (!dialog) mark();
@@ -178,7 +188,7 @@ export default function Runner(props: {
   }));
 
   return (
-    <div className="max-w-3xl space-y-4">
+    <div className="space-y-4">
       <Card as="header" className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="min-w-0 text-xl font-bold">{item.scenario.name}</h1>
         <div className="flex items-center gap-3">
@@ -190,49 +200,75 @@ export default function Runner(props: {
         </div>
       </Card>
       {test && <QuestionNavigator sessionId={sessionId} items={navItems} current={item.position} />}
-      <ScenarioPanel
-        scenario={item.scenario}
-        defaultOpen={item.scenario.id !== previousScenarioId}
-      />
-      <p className="whitespace-pre-wrap text-lg">
-        <InlineText text={item.stem} />
-      </p>
+      <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start lg:gap-4 lg:space-y-0">
+        <div className="lg:sticky lg:top-16 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
+          <ScenarioPanel
+            scenario={item.scenario}
+            defaultOpen={item.scenario.id !== previousScenarioId}
+          />
+        </div>
+        <div className="min-w-0 space-y-4">
+          <p className="whitespace-pre-wrap text-lg">
+            <InlineText text={item.stem} />
+          </p>
 
-      {done && feedback ? (
-        <>
-          <FeedbackPanel feedback={feedback} />
-          <Button type="button" variant="primary" onClick={goNext}>
-            {next === null ? 'Finish' : 'Next'}
-          </Button>
-        </>
-      ) : done ? (
-        <>
-          <p>This question is already answered.</p>
-          <Button type="button" variant="primary" onClick={goNext}>
-            {next === null ? 'Finish' : 'Next'}
-          </Button>
-        </>
-      ) : (
-        <>
           <OptionList
             options={item.options}
             type={item.type}
             selectCount={item.selectCount}
             selected={selected}
             onChange={setSelected}
+            disabled={done}
+            results={done ? feedback?.options : undefined}
           />
-          <ConfidencePicker value={confidence} onChange={setConfidence} />
+          <ConfidencePicker value={confidence} onChange={setConfidence} disabled={done} />
+          {/* Everything above keeps its size after a submit, so Next lands where Submit was. */}
+          <div className="flex h-10 items-center gap-2">
+            {done ? (
+              <Button type="button" variant="primary" onClick={goNext}>
+                {next === null ? 'Finish' : 'Next'}
+              </Button>
+            ) : (
+              <Button type="button" variant="primary" onClick={submit} disabled={!ready || pending}>
+                Submit
+              </Button>
+            )}
+            {done && feedback && (
+              <Button
+                type="button"
+                variant="secondary"
+                aria-expanded={reasoningOpen}
+                onClick={() => setReasoningOpen((v) => !v)}
+                icon={
+                  <ChevronRight
+                    size={16}
+                    aria-hidden="true"
+                    className={`shrink-0 transition-transform ${reasoningOpen ? 'rotate-90' : ''}`}
+                  />
+                }
+              >
+                {reasoningOpen ? 'Hide reasoning' : 'Show reasoning'}
+              </Button>
+            )}
+          </div>
           {error && (
             <p role="alert" className="text-sm text-weak">
               {error}
             </p>
           )}
-          <Button type="button" variant="primary" onClick={submit} disabled={!ready || pending}>
-            Submit
-          </Button>
-          {saved && <p className="text-sm">Answer saved.</p>}
-        </>
-      )}
+          {allAnswered && (
+            <div data-testid="all-answered" role="status" className="space-y-2">
+              <p>All {total} answered. Submit to see your results.</p>
+              <Button type="button" variant="primary" onClick={confirmFinish} disabled={pending}>
+                Submit exam
+              </Button>
+            </div>
+          )}
+          {saved && !allAnswered && <p className="text-sm">Answer saved.</p>}
+          {done && !feedback && <p>This question is already answered.</p>}
+          {done && feedback && <FeedbackPanel feedback={feedback} reasoningOpen={reasoningOpen} />}
+        </div>
+      </div>
       <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
         {test && (
           <>
@@ -263,16 +299,17 @@ export default function Runner(props: {
           </>
         )}
         <Button type="button" variant="secondary" onClick={mark} aria-pressed={marked}>
-          {marked ? 'Marked for review' : 'Mark for review'}
+          {marked ? 'Marked to learn later' : 'Mark to learn later'}
         </Button>
         <Button
           type="button"
-          variant="ghost"
+          variant={allAnswered ? 'primary' : 'ghost'}
           icon={<Flag size={16} aria-hidden="true" />}
           onClick={finish}
           disabled={pending}
+          data-testid="finish-button"
         >
-          Finish session
+          {finishLabel}
         </Button>
         <Button
           type="button"
@@ -286,9 +323,9 @@ export default function Runner(props: {
       </div>
       <ConfirmDialog
         open={dialog === 'finish'}
-        title="Finish session?"
+        title={test ? 'Submit exam?' : 'Finish session?'}
         body={`${unanswered} unanswered. ${finishDetail}`}
-        confirmLabel="Finish"
+        confirmLabel={test ? 'Submit' : 'Finish'}
         onConfirm={confirmFinish}
         onCancel={() => setDialog(null)}
       />

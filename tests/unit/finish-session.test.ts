@@ -215,6 +215,19 @@ describe('setMarked', () => {
   });
 });
 
+describe('setMarked on a finished session', () => {
+  it('marks an item of a completed session', () => {
+    const id = start('test');
+    finishSession(id, 'user');
+    setMarked(id, 1, true);
+    expect(items(id)[1].marked).toBe(1);
+    setMarked(id, 1, false);
+    expect(items(id)[1].marked).toBe(0);
+    expect(() => setMarked(id, 9, true)).toThrow('Question not in this session');
+    expect(() => setMarked('missing', 0, true)).toThrow();
+  });
+});
+
 describe('getSummary and createMistakesSession', () => {
   it('is hidden while the session is in progress', () => {
     const id = start('test');

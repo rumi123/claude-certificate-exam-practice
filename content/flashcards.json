@@ -870,6 +870,14 @@
       "front": "A synthesis agent is given full web search to check facts, and starts doing its own research. What's better?",
       "back": "Give it a narrow scoped tool such as `verify_fact`, and route complex lookups through the coordinator.",
       "trap": "TOOL_OVERLOAD"
+    },
+    {
+      "id": "FC-A-031",
+      "deck": "anti-patterns",
+      "task": "1.2",
+      "front": "Every subagent covered its assigned topic in depth, yet the report misses most of what the question asked. The team blames the search subagent's queries. What's wrong?",
+      "back": "It blames a component the evidence clears. The subagents did their parts; the coordinator's decomposition never assigned the missing topics, so fix the split before delegating.",
+      "trap": "WRONG_COMPONENT"
     }
   ]
 }

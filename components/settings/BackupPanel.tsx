@@ -151,7 +151,7 @@ function Reset() {
 
 export default function BackupPanel() {
   return (
-    <div className="mt-4 space-y-4">
+    <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
       <Card aria-labelledby="backup-h">
         <CardHeader id="backup-h" title="Backup" />
         <p className="text-sm text-muted">Downloads all progress tables as one JSON file.</p>

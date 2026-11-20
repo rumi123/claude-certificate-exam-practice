@@ -1,0 +1,265 @@
+{
+  "scenario": "S6",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S6-D5-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "5.5",
+      "secondaryTasks": [],
+      "stem": "Harlow Mutual's 12 reviewers can check about 1,800 extractions a night out of roughly 30,000 documents, but no reviewers can be added. The model returns a confidence for each field, and the pipeline sends a document to review when any field is under 0.90, which currently queues 4,200 documents a night, so the backlog grows daily. A labeled validation set of 8,000 documents is available. What is the best way to focus reviewers on the cases that need them?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Send only handwritten and scanned documents to review, whatever their confidence, since those are the hardest to read.",
+          "correct": false,
+          "explanation": "Document type is a weak filter: clean scans pass and many typed documents with uncertain fields are never seen. Review should follow measured uncertainty, with type as one thing to check.",
+          "trap": "PREMATURE_ESCALATION"
+        },
+        {
+          "id": "b",
+          "text": "Calibrate a single cutoff across all fields, such as `repair_total` and the dates, on the labeled set, then queue documents under it, most uncertain first, up to reviewer capacity.",
+          "correct": false,
+          "explanation": "Calibrating on the labeled set is right, but fields differ: a score of 0.85 on `repair_total` can be reliable while 0.85 on a date is not. Thresholds need to be set per field.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Calibrate a threshold for each field on the labeled set, then queue documents below any field's threshold, most uncertain first, up to the 1,800 daily reviews.",
+          "correct": true,
+          "explanation": "Field-level thresholds calibrated against labeled data reflect each field's real error rate, and ordering by uncertainty spends the 1,800 daily reviews where errors are most likely.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Set the cutoff to 0.70 for every field so that the queue shrinks to about 1,800 documents.",
+          "correct": false,
+          "explanation": "A cutoff picked to fit the queue size has no link to error rates, so risky fields would go unchecked while capacity is used by chance. The threshold should be calibrated, not chosen to fit capacity.",
+          "trap": "UNRELIABLE_PROXY"
+        }
+      ],
+      "keyConcept": "Calibrate field-level confidence thresholds on a labeled validation set, then prioritise review by uncertainty within reviewer capacity.",
+      "studyRef": "§3 Task 5.5; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S6-D5-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "5.5",
+      "secondaryTasks": [],
+      "stem": "Harlow Mutual adds scanned, handwritten repair invoices, about 6% of volume, to its pipeline. On the labeled validation set the overall field accuracy is 97%, but handwritten invoices were a small part of that set. The claims lead proposes reducing human review for all invoices on the strength of that figure, but a wrong payout is costly. What should the team do before reducing review?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Label more handwritten invoices, then measure accuracy by type and field, and cut review only for segments that hold up.",
+          "correct": true,
+          "explanation": "Overall accuracy can hide a weak segment. With enough labeled handwritten invoices, per-type and per-field figures show where review can safely be cut.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Measure accuracy by document type on the existing labeled set and cut review for any type whose accuracy is above 95%.",
+          "correct": false,
+          "explanation": "Breaking results down by type is right, but the handwritten sample is small, so its figure is noisy, and a type average can still hide a weak field. More labeled handwritten invoices and per-field figures are needed.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Accept the 97% overall figure, since it is well above the 90% target set by the adjudication team for automated approval.",
+          "correct": false,
+          "explanation": "A strong average can hide a poor segment. Handwritten invoices were a small part of the labeled set, so the 97% says little about them.",
+          "trap": "AGGREGATE_METRIC_MASKING"
+        },
+        {
+          "id": "d",
+          "text": "Rely on the schema validation pass rate of 99.8% as evidence that the extracted values are correct, and cut review for all invoices.",
+          "correct": false,
+          "explanation": "Schema validity shows that values have the right shape, not that they are right. A wrong amount in a valid number field passes every check.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "Validate accuracy by document type and field before reducing human review; overall accuracy can mask a poor segment.",
+      "studyRef": "§3 Task 5.5; §5 The 10 critical anti-patterns",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S6-D5-003",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "5.5",
+      "secondaryTasks": [],
+      "stem": "Harlow Mutual auto-approves extractions whose fields all score above 0.95, about 22,000 documents a night. Each week 2% of these are sampled at random for a human check, and the measured error rate is 0.8%. Police reports are 3% of volume, and a day-and-month swap in dates affecting about 40% of them went unnoticed for five weeks, though reviewer time is fixed. What change would have caught it?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep the weekly random 2% sample but report its error rate by document type and field each week, so that each segment is visible.",
+          "correct": false,
+          "explanation": "A breakdown is the right idea, but a proportional sample holds only a handful of police reports and date fields, too few to measure their error rate reliably. The sample has to be allocated per segment.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Sample only extractions that scored below 0.95, where the model is least sure, and treat all the rest as correct.",
+          "correct": false,
+          "explanation": "The swapped dates were in documents that scored high, so removing high-confidence items from checking hides exactly the errors that were missed. Auto-approved items need sampling to find new patterns.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "c",
+          "text": "Track the schema validation pass rate by week, since a malformed date would fail the date field's pattern check, and alert on any drop.",
+          "correct": false,
+          "explanation": "A day-and-month swap is a well-formed date that passes the pattern. Schema checks cannot see semantic errors.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Stratify the weekly sample by document type and field, so that every segment, including police reports, gets enough items to measure its own error rate.",
+          "correct": true,
+          "explanation": "Stratified random sampling guarantees each segment enough items to measure, so a 40% error in one field of a small segment shows up in the first week instead of hiding in the overall 0.8%.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Sample high-confidence extractions with stratified random sampling by document type and field to measure error rates and find new patterns.",
+      "studyRef": "§3 Task 5.5; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S6-D5-004",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "5.5",
+      "secondaryTasks": [],
+      "stem": "Harlow Mutual's pipeline records a field-level confidence for every extracted field. The team has calibrated review thresholds on a labeled validation set, and its 12 reviewers have limited capacity each night, so the queue must stay small. Which two cases should be routed to the human review queue? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "A scanned police report whose fields are all above their calibrated thresholds, because scans are harder to read.",
+          "correct": false,
+          "explanation": "If every field clears its calibrated threshold, the report has already been judged reliable. Document type alone should not spend limited reviewer capacity.",
+          "trap": "PREMATURE_ESCALATION"
+        },
+        {
+          "id": "b",
+          "text": "A claim whose `repair_total` scores 0.55, below the 0.80 threshold calibrated for that field on the labeled set.",
+          "correct": true,
+          "explanation": "A field under its calibrated threshold is the main trigger for review, since the labeled set shows that such scores correspond to a high error rate.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "A medical bill where the model's accompanying note says it is quite sure about every value.",
+          "correct": false,
+          "explanation": "Free-text self-assurance is not calibrated against outcomes. Field confidences judged against validated thresholds are the signal.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "d",
+          "text": "A claim whose `repair_total` scores 0.82, just above the 0.80 threshold calibrated for that field on the labeled set.",
+          "correct": false,
+          "explanation": "The threshold was calibrated to separate reliable from unreliable scores, so a field above it should pass. Routing near-misses would fill the queue with items that are probably correct.",
+          "trap": "PREMATURE_ESCALATION"
+        },
+        {
+          "id": "e",
+          "text": "A claim whose repair invoice and police report give different loss dates, so the source documents contradict each other.",
+          "correct": true,
+          "explanation": "Contradictory sources cannot be resolved by the extractor, however confident each field looks. A reviewer needs to decide which document to trust.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Route low-confidence fields, judged against calibrated thresholds, and contradictory source documents to human review within capacity.",
+      "studyRef": "§3 Task 5.5; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S6-D5-005",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "5.3",
+      "secondaryTasks": ["4.3"],
+      "stem": "In Harlow's pipeline an extraction step for medical bills returns `{\"fields\": null}` when a scanned page cannot be read or the OCR service times out, and the same value when a bill legitimately lists no itemised charges. The adjudication system books both as \"no charges\", which has led to incorrect payouts on 150 claims this month. The nightly run must keep going for the other bills. What should the extraction step return?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A guessed set of typical charges for the bill type, so that adjudication always receives populated fields.",
+          "correct": false,
+          "explanation": "Invented charges are worse than a gap: they look like real data and lead to payouts on figures nobody extracted.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "b",
+          "text": "A status that separates a failed read (error type, document ID, retryable flag) from a valid empty bill.",
+          "correct": true,
+          "explanation": "A structured status lets adjudication retry or hold a failed read and book a legitimately empty bill correctly, while the run keeps going for the other documents.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "A `null` for an unreadable page and an empty `fields` list for a bill that lists no charges, with no other fields.",
+          "correct": false,
+          "explanation": "The two cases are now different values, but the distinction rests on a convention that is easy to lose, and a failure carries no error type, retryable flag or partial fields to act on.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "An exception that stops the nightly run whenever any document ID cannot be read, so that none is silently booked as empty.",
+          "correct": false,
+          "explanation": "One unreadable page would halt every other bill. A failure should be reported for that document while the rest of the run continues.",
+          "trap": "TOTAL_FAILURE"
+        }
+      ],
+      "keyConcept": "Distinguish a failed read from a valid empty result with structured status fields so downstream systems handle each correctly.",
+      "studyRef": "§3 Task 5.3; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S6-D5-006",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "5.6",
+      "secondaryTasks": [],
+      "stem": "A Harlow claim includes a repair invoice stating $4,820 and a photo-based estimate stating $3,950. The extraction schema has a single `repair_total` field, and the pipeline keeps the invoice value, so adjudication cannot see that a second figure existed. The team re-ran extraction with a stricter prompt, and the same two values came back each time. But adjudicators need to see where each figure came from. What is the best change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Extend the schema to keep both values with source document, page and date, and flag the conflict so the case goes to human review.",
+          "correct": true,
+          "explanation": "Both figures survive with their provenance, and the flag makes the disagreement visible, so a person decides which one to pay on.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Extend the schema to keep both values with source document, page and date, and have the pipeline put the later-dated value into `repair_total` automatically.",
+          "correct": false,
+          "explanation": "Keeping both values is right, but filling `repair_total` by a date rule hides that the conflict is unresolved, and a later date is not proof of the final cost. The conflict should be flagged.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Average the two values into one `repair_total` of $4,385 so that adjudication sees a single middle figure, and note that it was derived from two documents.",
+          "correct": false,
+          "explanation": "An average is a number no document states, and it hides the discrepancy that someone should investigate.",
+          "trap": "AGGREGATE_METRIC_MASKING"
+        },
+        {
+          "id": "d",
+          "text": "Switch to a larger model and keep re-running extraction until the two documents give the same figure for the total.",
+          "correct": false,
+          "explanation": "The documents genuinely disagree, so no extraction run can make them match. A stronger model would only choose between them silently.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Keep conflicting values with their sources and dates, flag the conflict, and let a human or coordinator reconcile, rather than choosing one.",
+      "studyRef": "§3 Task 5.6; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    }
+  ]
+}

@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { startMistakesReview } from '@/app/practice/actions';
 import FeedbackPanel from '@/components/feedback/FeedbackPanel';
-import { Button, Card, CardHeader, InlineText, Meter, Ring } from '@/components/ui';
+import MarkToggle from '@/components/results/MarkToggle';
+import { Button, Card, CardHeader, Chip, InlineText, Meter, Ring } from '@/components/ui';
 import type { Tone } from '@/components/ui';
 import {
   getFeedback,
@@ -68,8 +69,20 @@ function RowTable({ title, label, rows }: { title: string; label: string; rows: 
   );
 }
 
-export default async function SummaryPage({ params }: { params: Promise<{ sessionId: string }> }) {
+const FILTER_TAB = 'rounded-full px-3 py-1 text-sm font-medium';
+const FILTER_ON = 'bg-accent text-accent-fg';
+const FILTER_OFF = 'text-fg hover:bg-surface';
+
+export default async function SummaryPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ sessionId: string }>;
+  searchParams: Promise<{ show?: string }>;
+}) {
   const { sessionId } = await params;
+  const { show: showParam } = await searchParams;
+  const show = showParam === 'wrong' || showParam === 'marked' ? showParam : 'all';
   const summary = getSummary(sessionId);
   if (!summary) {
     // Unknown id, or a session still in progress.
@@ -78,6 +91,15 @@ export default async function SummaryPage({ params }: { params: Promise<{ sessio
   }
   const { total, answered, correct, calibration } = summary;
   const wrong = summary.items.filter((i) => !i.isCorrect).length;
+  const markedCount = summary.items.filter((i) => i.marked).length;
+  const shown = summary.items.filter((i) =>
+    show === 'wrong' ? !i.isCorrect : show === 'marked' ? i.marked : true,
+  );
+  const filterTabs = [
+    { id: 'all', label: `All ${summary.items.length}`, href: '?' },
+    { id: 'wrong', label: `Wrong ${wrong}`, href: '?show=wrong' },
+    { id: 'marked', label: `Marked ${markedCount}`, href: '?show=marked' },
+  ];
 
   async function reviewMistakes() {
     'use server';
@@ -85,8 +107,10 @@ export default async function SummaryPage({ params }: { params: Promise<{ sessio
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <h1 className="text-2xl font-bold">Session summary</h1>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">
+        {summary.session.mode === 'test' ? 'Exam results' : 'Session summary'}
+      </h1>
       <Card className="flex flex-wrap items-center gap-5">
         <Ring
           value={total > 0 ? correct / total : 0}
@@ -114,42 +138,66 @@ export default async function SummaryPage({ params }: { params: Promise<{ sessio
         </div>
       </Card>
 
-      <RowTable title="By domain" label="Domain" rows={summary.byDomain} />
-      <RowTable title="By task" label="Task" rows={summary.byTask} />
+      <div className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
+        <RowTable title="By domain" label="Domain" rows={summary.byDomain} />
+        <RowTable title="By task" label="Task" rows={summary.byTask} />
+      </div>
 
-      <Card>
-        <CardHeader title="Traps you picked" />
-        {summary.traps.length === 0 ? (
-          <p className="text-sm">None.</p>
-        ) : (
-          <ul className="list-disc pl-5 text-sm">
-            {summary.traps.map((tr) => (
-              <li key={tr.id}>
-                <Link href={`/cheatsheet#trap-${tr.id}`} className="hover:underline">
-                  {tr.name}
-                </Link>{' '}
-                × {tr.count}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      <div className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
+        <Card>
+          <CardHeader title="Traps you picked" />
+          {summary.traps.length === 0 ? (
+            <p className="text-sm">None.</p>
+          ) : (
+            <ul className="list-disc pl-5 text-sm">
+              {summary.traps.map((tr) => (
+                <li key={tr.id}>
+                  <Link href={`/cheatsheet#trap-${tr.id}`} className="hover:underline">
+                    {tr.name}
+                  </Link>{' '}
+                  × {tr.count}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
 
-      <Card className="space-y-1 text-sm">
-        <CardHeader title="Calibration" />
-        <p>Blind spots (Sure but wrong): {calibration.blindSpots}</p>
-        <p>Lucky guesses (Guess but right): {calibration.luckyGuesses}</p>
-        <p>Unsure answers: {calibration.unsure}</p>
-        <p>Added to the review queue: {summary.reviewEntered}</p>
-      </Card>
+        <Card className="space-y-1 text-sm">
+          <CardHeader title="Calibration" />
+          <p>Blind spots (Sure but wrong): {calibration.blindSpots}</p>
+          <p>Lucky guesses (Guess but right): {calibration.luckyGuesses}</p>
+          <p>Unsure answers: {calibration.unsure}</p>
+          <p>Added to the review queue: {summary.reviewEntered}</p>
+        </Card>
+      </div>
 
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">Questions</h2>
+        <div
+          className="flex w-fit max-w-full flex-wrap gap-1 rounded-full bg-surface-2 p-1"
+          role="tablist"
+          aria-label="Question filter"
+          data-testid="results-filter"
+        >
+          {filterTabs.map((x) => (
+            <Link
+              key={x.id}
+              href={x.href}
+              role="tab"
+              aria-selected={x.id === show}
+              className={`${FILTER_TAB} ${x.id === show ? FILTER_ON : FILTER_OFF}`}
+            >
+              {x.label}
+            </Link>
+          ))}
+        </div>
+        {shown.length === 0 && <p>No questions in this filter.</p>}
         <ul className="space-y-2">
-          {summary.items.map((i) => (
+          {shown.map((i) => (
             <li key={i.position}>
               <details
                 data-testid="summary-item"
+                data-marked={i.marked}
                 className="rounded-xl border border-border bg-surface p-3"
               >
                 <summary className="cursor-pointer text-sm">
@@ -162,9 +210,15 @@ export default async function SummaryPage({ params }: { params: Promise<{ sessio
                   {i.answered ? (i.isCorrect ? 'Correct' : 'Wrong') : 'No answer'}
                   {i.confidence && <> · {i.confidence}</>}
                   {i.timeMs !== null && <> · {Math.round(i.timeMs / 1000)} s</>}
-                  {i.marked && <> · marked</>} ·{' '}
-                  <InlineText text={i.stem.slice(0, 90) + (i.stem.length > 90 ? '…' : '')} />
+                  {i.marked && (
+                    <>
+                      {' '}
+                      · <Chip tone="accent">Marked</Chip>
+                    </>
+                  )}{' '}
+                  · <InlineText text={i.stem.slice(0, 90) + (i.stem.length > 90 ? '…' : '')} />
                 </summary>
+                <MarkToggle sessionId={sessionId} position={i.position} marked={i.marked} />
                 <FeedbackPanel feedback={getFeedback(i.questionId, i.selected, i.optionOrder)} />
               </details>
             </li>
@@ -180,6 +234,9 @@ export default async function SummaryPage({ params }: { params: Promise<{ sessio
             </Button>
           </form>
         )}
+        <Button variant="secondary" href="/exams">
+          Back to Exams
+        </Button>
         <Button variant="secondary" href="/report">
           Open full report
         </Button>

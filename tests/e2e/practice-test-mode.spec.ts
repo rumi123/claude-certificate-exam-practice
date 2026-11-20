@@ -10,11 +10,11 @@ async function startSession(page: Page, query: string) {
 }
 
 async function finishWithConfirm(page: Page): Promise<string> {
-  await page.getByRole('button', { name: 'Finish session' }).click();
+  await page.getByTestId('finish-button').click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   const message = await dialog.innerText();
-  await dialog.getByRole('button', { name: 'Finish', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Submit', exact: true }).click();
   await page.waitForURL(/\/summary$/);
   return message;
 }
@@ -36,7 +36,7 @@ test('test mode hides feedback, tracks answers in the navigator and ends in a su
     await page.getByRole('radio').first().check();
     await page.getByRole('radio', { name: 'Sure', exact: true }).check();
     const response = page.waitForResponse((r) => r.request().method() === 'POST');
-    await page.getByRole('button', { name: 'Submit' }).click();
+    await page.getByRole('button', { name: 'Submit', exact: true }).click();
     const body = await (await response).text();
     for (const e of explanations) expect(body).not.toContain(e);
     await expect(page.getByTestId('progress')).toHaveText(`${n + 1} / 5`);

@@ -1,0 +1,566 @@
+{
+  "scenario": "S6",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S6-D4-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "4.3",
+      "secondaryTasks": ["4.5"],
+      "stem": "Harlow Mutual's nightly pipeline sends claim forms, repair invoices, medical bills and police reports through one prompt and one wide extraction schema. The four types share almost no fields and each has its own extraction rules, so values leak between them: a repair invoice gets a `billing_code` taken from a part number, and a police report gets `labour_hours`. The prompt already holds 12 examples, field descriptions are clear, and the pipeline handles 30,000 documents a night, so cost matters. What should the team change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a classifier call that returns the document type, then route each document to the prompt and extraction schema written for that type.",
+          "correct": true,
+          "explanation": "The types need different schemas and rules, so separating them removes the cross-type fields by construction. A short classification call costs little next to a long combined prompt, and each type-specific prompt stays small and testable.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Keep the one prompt and extend its examples to cover each document type, with the unrelated fields left null in every example.",
+          "correct": false,
+          "explanation": "Examples are the right tool for ambiguous formats, but this prompt already has 12 and the wide schema still invites every field on every document. The types need separate schemas and rules, not another layer in one prompt.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Set `tool_choice` to `\"any\"` so the model always calls the extraction tool, and expect that to stop it filling fields with text from the wrong place.",
+          "correct": false,
+          "explanation": "`\"any\"` guarantees that some tool is called, not that the right fields are filled. The leakage comes from one schema covering four document types, and forcing a tool call doesn't change that.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Run the combined extraction twice per document and keep the fields on which both runs agree, leaving the others null for review.",
+          "correct": false,
+          "explanation": "Both runs share the same prompt and schema, so they leak the same fields and agree with each other. It doubles the cost on 30,000 documents without separating the types.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "When document types need different schemas and rules, classify first and route to a type-specific prompt and schema.",
+      "studyRef": "§3 Task 4.3",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S6-D4-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "4.1",
+      "secondaryTasks": ["5.5"],
+      "stem": "Harlow Mutual asks its pipeline to flag claims for the fraud team while extracting them. The prompt says \"flag claims that look suspicious\". It flags about 30% of nightly claims, so the 12 reviewers can't keep up, and the fraud team says most flags are ordinary claims with a late filing or a high repair bill, while some claims they care about are missed. The team wants the queue to shrink without losing real cases. What is the most effective change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Tell the model to flag only claims it is very sure are fraudulent, and to rate its confidence in each flag so the fraud team can sort them.",
+          "correct": false,
+          "explanation": "Self-reported confidence is poorly calibrated, and \"very sure\" gives the model no definition of fraud to be sure about. Concrete criteria would work where a confidence rating cannot.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "b",
+          "text": "Add criteria to the prompt: flag a late filing, a high repair bill on an invoice or a repeat claimant, and skip claims that show none of those indicators.",
+          "correct": false,
+          "explanation": "Listing indicators is the right kind of change, but these three are exactly what the fraud team calls ordinary. The criteria must name patterns that mark fraud and say which common features to skip.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Flag only the first 40 suspicious claims in each night's run, so the review queue stays within what the 12 reviewers can handle.",
+          "correct": false,
+          "explanation": "A fixed cap protects the reviewers' workload but selects by arrival order rather than by risk. It would drop genuine cases and keep ordinary ones.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Add to the prompt: flag an invoice dated before the loss, or one VIN on two open claims, and skip a late filing or a high repair cost alone.",
+          "correct": true,
+          "explanation": "Specific categories tell the model what counts as fraud-relevant and what to ignore, cutting the 30% of vague flags while catching the patterns the fraud team wants. \"Looks suspicious\" left each claim to the model's impression.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Give the model explicit, categorical criteria for what to flag instead of asking it to judge what looks suspicious.",
+      "studyRef": "§3 Task 4.1; §6c Domain 4 Q1",
+      "sources": ["exam-guide", "research", "research-6c-d4"]
+    },
+    {
+      "id": "S6-D4-003",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "4.4",
+      "secondaryTasks": ["4.3"],
+      "stem": "Harlow Mutual's repair-invoice tool uses a strict schema, so every output parses. Adjudicators still find invoices where the extracted `total` differs from the sum of the line items. They can't tell whether the invoice printed a wrong total or the model misread a figure, and the team wants these mismatches triaged without a person opening every scan. How should the schema and validation change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Tighten the schema so that `total` must equal the sum of the line items, and reject any output where the two figures differ.",
+          "correct": false,
+          "explanation": "Schema validity covers structure and types, not arithmetic between fields. A schema can't compare two values, and a rule that rejected a mismatch would hide printed-total errors rather than expose them.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "b",
+          "text": "Extract only a `calculated_total` summed by the model from the line items, and drop `stated_total` so that the field can't disagree with itself.",
+          "correct": false,
+          "explanation": "Capturing a calculated total is part of the fix, but dropping the printed figure hides the conflict. If a line item was misread, the wrong sum becomes the total, and if the invoice has an error, nobody learns of it.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "c",
+          "text": "Extract `stated_total` as printed, add a model-summed `calculated_total` and a `conflict_detected` boolean, and route every conflict to review with both figures.",
+          "correct": true,
+          "explanation": "Capturing both figures makes the disagreement visible and attributable, so a reviewer starts with the numbers instead of the scan. A boolean lets the pipeline route conflicts automatically.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Retry each mismatched invoice with the same prompt until the total and the sum of the line items agree with each other.",
+          "correct": false,
+          "explanation": "Retrying until two numbers agree rewards agreement, not accuracy, and if the printed total is wrong no retry will change it. It also adds calls for a problem that needs surfacing.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Add self-check fields such as `calculated_total` beside `stated_total` and a `conflict_detected` flag to expose semantic errors.",
+      "studyRef": "§3 Task 4.4",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S6-D4-004",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "4.2",
+      "secondaryTasks": ["4.3"],
+      "stem": "On repair invoices, Harlow Mutual's tool extracts `labour_hours`. Garages write it as \"2.5 hrs\", \"2h30\", \"150 min\", \"labour: 2 1/2\", or only as a charge plus an hourly rate. The field comes back null on 18% of invoices where the information is present in one of these forms. The schema already allows null and the prompt says \"extract labour hours as a number\", but the team can't afford a second extraction call. What should you add?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add three examples: \"2h30\" giving 2.5, a 180 charge at a 60 rate giving 3.0, and an invoice with no labour giving null.",
+          "correct": true,
+          "explanation": "Examples across the real formats show the model how to convert each one and when null is correct. They fix empty fields caused by varied layouts without risking invented values.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add three examples that all use the \"hrs\" layout, such as \"2.5 hrs\", \"4 hrs\" and \"1.5 hrs\", each giving the number as a decimal.",
+          "correct": false,
+          "explanation": "Three examples is the right count, but they are all one layout, so the model learns nothing about \"2h30\", minutes or a charge at a rate. Varied formats are what teach it to generalise, and the null cases stay.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Change `labour_hours` to a string and let downstream code parse whatever format the model returns for each garage's invoice, handling nulls there.",
+          "correct": false,
+          "explanation": "A free string moves the inconsistency downstream, where adjudication expects consistent fields. The null cases remain and nothing signals that the model missed information it could have read.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Strengthen the instruction to say the field must be a number whenever labour appears on the invoice, and null only when labour is not mentioned.",
+          "correct": false,
+          "explanation": "A firmer instruction is still prose, and the prompt already said to extract a number. Showing the conversions is what teaches the model the formats it has been missing.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        }
+      ],
+      "keyConcept": "Use a few examples with varied document formats to fix empty or null extraction fields caused by layout differences.",
+      "studyRef": "§3 Task 4.2",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S6-D4-005",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "4.3",
+      "secondaryTasks": ["4.4", "5.5"],
+      "stem": "Harlow Mutual's medical-bill schema requires `billing_code` and `service_date`. About 3% of documents are cover sheets or statements with no itemised services, and for those the model returns `\"UNKNOWN\"` and `1970-01-01` to satisfy the schema. The placeholder values reach adjudication and cause rejections, and the team must stop that without dropping those documents from the pipeline. Which two changes should the team make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Make `billing_code` and `service_date` nullable, so a document that has no such values can be represented honestly as null.",
+          "correct": true,
+          "explanation": "Required fields push the model to invent a value when the document has none. A nullable field gives it a truthful way to report absence, which is the root of the placeholders.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Retry each such document with the validation error appended until the model finds a real billing code and service date for it.",
+          "correct": false,
+          "explanation": "Retries with feedback help with format errors but cannot recover information that isn't in the document. The model would only invent a plausible code to satisfy the retry.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Force `tool_choice` to the medical-bill tool, so the model is obliged to find the values in every document it receives.",
+          "correct": false,
+          "explanation": "Forcing a tool makes the model call it; it doesn't create information. The model would still fill the required fields with something.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Add a validator rule that rejects placeholders such as `1970-01-01`, and route documents with null service data to the 12 reviewers, not a retry.",
+          "correct": true,
+          "explanation": "The information is not in these documents, so a retry would only pressure the model to guess again. Routing them to the reviewers deals with the gap, and a rule against placeholders catches slips.",
+          "trap": null
+        },
+        {
+          "id": "e",
+          "text": "Change the placeholder defaults to empty strings and zero amounts, which look less suspicious when the records reach adjudication.",
+          "correct": false,
+          "explanation": "Disguising the placeholder as a plausible blank hides the missing data from adjudication, so nobody knows the document had no services.",
+          "trap": "SILENT_FAILURE"
+        }
+      ],
+      "keyConcept": "Make fields nullable so absence is honest, and route documents lacking the information to review instead of retrying.",
+      "studyRef": "§3 Task 4.3; §3 Task 4.4",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S6-D4-006",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "4.5",
+      "secondaryTasks": ["1.1"],
+      "stem": "Harlow Mutual extracts about 30,000 claim documents a night in bulk, and also about 200 documents a day uploaded by customers through the mobile app, who wait on screen for the extracted claim summary. Finance wants to lower extraction costs without making customers wait. How should the team use the Message Batches API?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Send both streams to the Batches API, since the 50% saving applies to every request and the app volume is small.",
+          "correct": false,
+          "explanation": "The discount comes with a processing window of up to 24 hours and no latency guarantee. A customer waiting on screen can't be kept waiting that long, however small the volume.",
+          "trap": "WRONG_LATENCY_MODE"
+        },
+        {
+          "id": "b",
+          "text": "Send the nightly bulk to the Batches API, and put the app uploads there too in small separate batches so they finish ahead of the bulk.",
+          "correct": false,
+          "explanation": "Splitting the uploads into their own batches doesn't shorten the window. There is no promised completion time other than the 24-hour limit, so a customer on screen could still wait hours.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Keep every call synchronous so the pipeline stays simple, since the nightly job already runs overnight and nobody is waiting on it.",
+          "correct": false,
+          "explanation": "A nightly bulk job of 30,000 documents is exactly the work that tolerates a batch window. Staying synchronous leaves the largest cost saving unused.",
+          "trap": "WRONG_LATENCY_MODE"
+        },
+        {
+          "id": "d",
+          "text": "Send the nightly bulk to the Batches API for the saving, and keep every app upload on synchronous calls so customers get a summary while waiting.",
+          "correct": true,
+          "explanation": "Batch fits work nothing waits on and saves up to 50%, which is the nightly bulk. Customers staring at a screen need a reply in seconds, so the uploads stay synchronous.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Use the Batches API for latency-tolerant bulk work and synchronous calls where a user or process is waiting.",
+      "studyRef": "§3 Task 4.5; §6a Q11",
+      "sources": ["exam-guide", "research", "research-6a-q11"]
+    },
+    {
+      "id": "S6-D4-007",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.4",
+      "secondaryTasks": ["4.3"],
+      "stem": "Harlow Mutual's pipeline validates extracted medical bills and retries failures. On a retry it sends the failed JSON and the validator message, for example `total 4810 does not equal line items 4180`, but not the scanned bill. The retried records now always pass validation, yet adjudicators find the retried totals wrong about 40% of the time, usually because a line item or the total was quietly changed. The fix must keep working without sending every failure to people. What is the root cause and the right fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "The validator message is too short to guide a correction; make it much longer, quote every line item and the `total`, and add a reminder to be careful.",
+          "correct": false,
+          "explanation": "Longer validator messages don't give the model the missing evidence. A reminder to be careful adds no information, and the cause is the absent source.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "The model edits figures to pass the check without seeing the source; send the document, the failed output and the errors on retry.",
+          "correct": true,
+          "explanation": "Without the document, the model can only make the numbers agree, not check them against the bill. A retry prompt with the source, the failed output and the exact errors lets it correct the actual misreading.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Resend the failed JSON and the validator message with the scanned bill attached, but have the model change only the `total` and leave the line items.",
+          "correct": false,
+          "explanation": "Attaching the scan is right, but fixing the line items in place isn't: the stem says a line item or the total was changed, so the misread may be in either. Locking the line items would force the total to match a wrong sum.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "Discard the failed extraction and rerun the original prompt unchanged until one attempt passes validation for the bill.",
+          "correct": false,
+          "explanation": "Dropping the failed output and the validation errors throws away the feedback that guides a correction. An unchanged prompt can repeat its error, and a pass is no proof of accuracy.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "Retry with the original document, the failed extraction and the specific validation errors, not just the error message.",
+      "studyRef": "§3 Task 4.4",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S6-D4-008",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "4.3",
+      "secondaryTasks": ["4.1"],
+      "stem": "Harlow Mutual's repair-invoice tool returns each invoice as JSON with a required `line_items` array. Invoices with about 150 line items come back cut off mid-array, so the JSON doesn't parse, and the response has `stop_reason` set to `\"max_tokens\"`. The request sets `max_tokens` to 4096, the whole invoice fits easily in the model's context window, but adjudication needs every line item. What should the team change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Increase `max_tokens` on these requests so the largest invoice's line-item array fits, and treat any response that stops at `max_tokens` as a failure.",
+          "correct": true,
+          "explanation": "`max_tokens` caps the length of the response, and a `stop_reason` of `max_tokens` means the output was cut at that cap. The long array needs more output room, and the pipeline should reject a truncated response rather than parse it.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Tell the model to return only the invoice total and the five most expensive items, so the JSON stays under the current `max_tokens` limit and parses cleanly.",
+          "correct": false,
+          "explanation": "A shorter answer would fit, but adjudication needs every line item, so required data would be lost. The documents really do need a long output, so the limit has to change instead.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "c",
+          "text": "Move to a model with a bigger context window, since the invoice and its JSON together no longer fit in the current window for these long documents.",
+          "correct": false,
+          "explanation": "The context window limits the input and output together, but here the invoice fits with room to spare. The response stopped because of `max_tokens`, which controls the output length alone.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Treat the cut-off JSON as a validation failure and retry with the parse error appended, up to three times per invoice.",
+          "correct": false,
+          "explanation": "Retrying with feedback helps with format errors, but the same 4096-token cap truncates the same output on every attempt. The retries add cost and still produce unparseable JSON.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "A `stop_reason` of `max_tokens` means the output hit its cap; increase `max_tokens` when the full output is genuinely needed.",
+      "studyRef": "§3 Task 4.3",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S6-D4-009",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.2",
+      "secondaryTasks": ["4.1"],
+      "stem": "On multi-vehicle police reports, Harlow Mutual's tool sometimes records the other driver as the policyholder. The team already added a rule to the prompt and a sentence to the `policyholder_vehicle` field description saying that the policyholder is the person named on the Harlow policy, and the error rate only fell from 12% to 10%. The reports list drivers by number, with policy details in a separate box, and the prompt must stay short. What should be added?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add three examples from multi-vehicle reports, each showing why the driver matching the policy box is the policyholder, one with a blank box.",
+          "correct": true,
+          "explanation": "Ambiguous cases are where examples work best, because they show the decision and its reasoning. The prose rules have already been tried, so examples with a blank-box case give the model the next layer of guidance.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add three multi-vehicle report examples with the policy-box driver and the final `policyholder_vehicle` value, but no reasoning, including one blank-box report, so the prompt stays short.",
+          "correct": false,
+          "explanation": "Examples are the right tool, but without the reasoning the model sees an answer and not the rule that produced it. The decision to match the policy box rather than the driver number is the part that has to be shown.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add a third, longer rule describing the report layout of each of the 14 police forces in the region, with a note on where its policy box sits.",
+          "correct": false,
+          "explanation": "Further prose has already moved the rate only two points, and 14 layouts of description make the prompt harder to follow. The model needs to see decisions made, not just layouts described.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Ask the model for a confidence score on the `policyholder_vehicle` choice and send low scores to the review queue.",
+          "correct": false,
+          "explanation": "Model confidence is poorly calibrated, so wrong choices would often score high and skip review. It routes errors to people without fixing why they happen.",
+          "trap": "UNRELIABLE_PROXY"
+        }
+      ],
+      "keyConcept": "Use a few examples with shown reasoning for ambiguous cases once written rules alone have not fixed the error.",
+      "studyRef": "§3 Task 4.2",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S6-D4-010",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "4.4",
+      "secondaryTasks": ["4.5", "5.5"],
+      "stem": "Harlow Mutual's validator rejects about 6% of extracted documents each night. Each retry costs a call and the 12 reviewers have little spare time, so the team must decide which failures deserve an automatic retry with the specific errors appended, and which need something else. Which two failure types are worth an automatic retry? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "A police report whose `tow_company` is null because the report does not mention a tow, retried with the field name emphasised.",
+          "correct": false,
+          "explanation": "The information is not in the source, so a retry can't find it and may prompt an invented company name. A null here can be a correct answer.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "A repair invoice whose `invoice_date` came back as `04/05/25` where the schema requires `YYYY-MM-DD`, with the date clearly printed on the page.",
+          "correct": true,
+          "explanation": "This is a format mismatch with the information present in the source. The error message says exactly what to change, and the model has the evidence to fix it.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "A claim form with a smudged policy number that can't be read, retried at a higher temperature to sample other readings.",
+          "correct": false,
+          "explanation": "Temperature changes randomness, not the legibility of the scan. A different reading would be a guess; unreadable fields belong with the human reviewers.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Any first-time validation failure of any kind, sent straight to the 12 human reviewers without a retry.",
+          "correct": false,
+          "explanation": "Format and arithmetic errors can usually be fixed automatically at low cost, and 12 reviewers can't absorb 1,800 documents a night. Escalate what a retry can't resolve.",
+          "trap": "PREMATURE_ESCALATION"
+        },
+        {
+          "id": "e",
+          "text": "A medical bill whose extracted `total` differs from the sum of its itemised lines, where both figures are legible in the scan.",
+          "correct": true,
+          "explanation": "The correct values are on the page, so a retry with the document, the failed extraction and the arithmetic error gives the model what it needs to find the misread figure.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Retry validation failures when the source holds the information; route missing or unreadable information to a human.",
+      "studyRef": "§3 Task 4.4",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S6-D4-011",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.5",
+      "secondaryTasks": ["4.4"],
+      "stem": "Harlow Mutual must have each claim's documents extracted and in adjudication within 30 hours of receipt. Extraction runs on the Message Batches API, submitted as soon as documents arrive, and about 6% of results of a 30,000-document night fail validation. The team plans to send those failures back in a second batch with the errors appended. Each batch may take up to 24 hours. What should they do with the failures?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Retry only the failed documents through synchronous calls with the validation errors appended, because a second batch could take up to 24 more hours.",
+          "correct": true,
+          "explanation": "A first batch can take 24 hours, leaving 6 hours, which a second batch cannot be trusted to meet. About 1,800 failures are a small enough set to retry synchronously at full price.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Retry only the failed documents in a second batch with the validation errors appended, because each batch is expected to finish well inside its limit.",
+          "correct": false,
+          "explanation": "There is no latency guarantee, only a limit of 24 hours. Two rounds can take up to 48 hours, which breaks the 30-hour requirement.",
+          "trap": "WRONG_LATENCY_MODE"
+        },
+        {
+          "id": "c",
+          "text": "Resubmit the whole night's 30,000 documents in a second batch with a corrected prompt, so that every record is processed in the same way.",
+          "correct": false,
+          "explanation": "That reprocesses the 94% that passed, adds cost, and still has a 24-hour window. Only the failed items, identified by `custom_id`, need another attempt.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Skip the retry and send all the failures to the 12 human reviewers, who can finish them inside the window.",
+          "correct": false,
+          "explanation": "That is about 150 documents per reviewer, most of them with errors a retry can fix. Human review is for cases where the information is missing or unclear.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "Check that retry rounds fit inside the deadline; send a small failed set through synchronous calls when a second batch can't.",
+      "studyRef": "§3 Task 4.5; §3 Task 4.4",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S6-D4-012",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "4.4",
+      "secondaryTasks": ["4.3"],
+      "stem": "Some Harlow Mutual claim forms state the loss date twice, once in a header box and once in the written narrative, and the two disagree on roughly 2% of forms. The tool has one `loss_date` field, so the model quietly takes one of them, and adjudicators find the conflict only after a payout dispute. The team wants to catch these before adjudication without bouncing the claim back to the customer. What schema change does that?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Reject forms with two different dates at intake and ask the customer to resubmit the whole claim.",
+          "correct": false,
+          "explanation": "Rejecting the whole claim over a recoverable inconsistency delays a customer for a problem that a reviewer can resolve. The other extracted fields are still good.",
+          "trap": "TOTAL_FAILURE"
+        },
+        {
+          "id": "b",
+          "text": "Extract both dates into `loss_date_header` and `loss_date_narrative`, and have downstream code keep the earlier one before the claim reaches adjudication.",
+          "correct": false,
+          "explanation": "Capturing both values is right, but choosing the earlier date in code resolves the conflict silently. The earlier date is not always the correct one, and nobody learns that the form disagreed with itself.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "c",
+          "text": "Extract both dates into `loss_date_header` and `loss_date_narrative`, add a `conflict_detected` boolean, and route every flagged form to the review queue.",
+          "correct": true,
+          "explanation": "Capturing both values with an explicit conflict flag turns a hidden disagreement into a field the pipeline can act on. Reviewers receive the forms that need a decision.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Run each form through three independent extractions and take the date that most of them agree on.",
+          "correct": false,
+          "explanation": "Three runs triple the cost and still resolve the conflict silently. The disagreement lies in the document, so every run would see both dates.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Add a `conflict_detected` boolean and capture both conflicting values so contradictions surface instead of being picked silently.",
+      "studyRef": "§3 Task 4.4",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S6-D4-013",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "4.6",
+      "secondaryTasks": ["5.5"],
+      "stem": "For high-value claims, Harlow Mutual adds a second Claude instance to check each extraction. The checker receives the scanned documents and the first instance's extracted JSON and is asked to confirm each field. It confirms about 99% of fields, yet audits find errors in 1 claim in 20 that it approved. The team must not add work for the 12 reviewers. What should change in the design?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Give the checker the first instance's reasoning steps as well, so it understands why each value was chosen for the claim.",
+          "correct": false,
+          "explanation": "Passing the generator's reasoning makes the checker adopt the same assumptions, which weakens its independence further. An independent view needs less of the author's context.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "b",
+          "text": "Start a fresh checker instance for each claim, receiving the scans and the first instance's JSON, so that it carries no history from earlier claims.",
+          "correct": false,
+          "explanation": "A clean instance removes history, but it still reads the first instance's JSON and is asked to confirm it. The anchoring comes from seeing the first answer, so the checker stays biased toward approving it.",
+          "trap": "SELF_REVIEW"
+        },
+        {
+          "id": "c",
+          "text": "Keep the checker as it is, but have it report a confidence per field and auto-approve fields above 0.95 without human review.",
+          "correct": false,
+          "explanation": "An anchored checker's confidence is poorly calibrated, since it already agreed with 99% of fields. It would approve the same errors with less visibility than now.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "d",
+          "text": "Have the second instance extract fields on its own without seeing the first result, then compare outputs and send disagreements to the reviewers.",
+          "correct": true,
+          "explanation": "Seeing the first answer anchors the checker toward confirming it. An independent extraction has no stake in the first result, and the disagreements are the only items the 12 reviewers need to see.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Use an independent second instance that does not see the first result, then compare outputs and review only the disagreements.",
+      "studyRef": "§3 Task 4.6",
+      "sources": ["exam-guide", "research"]
+    }
+  ]
+}

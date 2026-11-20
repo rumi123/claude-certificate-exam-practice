@@ -1,0 +1,139 @@
+{
+  "scenario": "S2",
+  "version": 1,
+  "questions": [
+    {
+      "id": "S2-D5-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "5.4",
+      "secondaryTasks": [],
+      "stem": "An Ironpine engineer has spent two hours mapping how quests are triggered in `gameplay/`, so far finding 23 trigger types across 9 files. Early on Claude named `QuestGraph` and `TriggerVolume` precisely, but now it talks about \"typical Lua quest systems\" and contradicts an earlier finding about `OnEnter` handlers. Its answers finish well within their length limit, the session has used 60% of its context, and the notes will be of no use once the mapping is done. What is the most effective step to keep the exploration consistent?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Have Claude write key findings (classes, files, trigger types) to a notes file outside the repository, and check it before every later answer.",
+          "correct": true,
+          "explanation": "A notes file outside the repository persists the specific findings outside the drifting conversation, so later answers cite named classes and files instead of typical patterns. Nobody else loads it, and it is discarded when the mapping is done.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Have Claude write key findings (classes, files, trigger types) to the project CLAUDE.md, and check it before every later answer.",
+          "correct": false,
+          "explanation": "Recording findings is right, but CLAUDE.md is loaded by every session for all 45 engineers. Notes from one investigation would clutter shared guidance and go stale once the mapping ends. It would suit findings the whole team needs for good.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "c",
+          "text": "Ask Claude to re-read all nine files before each answer, so that the details stay fresh in the session.",
+          "correct": false,
+          "explanation": "Re-reading nine files pours more verbose output into a window that is already 60% used and speeds up the degradation. It would suit a short session on one small file, not a long exploration.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Set `max_tokens` to 8,000 instead of 2,000, so that answers about the 23 trigger types and the nine files can include more detail.",
+          "correct": false,
+          "explanation": "`max_tokens` caps only the length of Claude's output, and these answers end well inside the cap. The drift comes from early findings being diluted in a long context, so a bigger output allowance, or a bigger context window, would not bring back `QuestGraph` or the `OnEnter` finding.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "In long explorations, record key findings in a scratchpad file and refer back to it to counter context degradation.",
+      "studyRef": "§3 Task 5.4; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-D5-002",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "5.4",
+      "secondaryTasks": [],
+      "stem": "Two and a half hours into a crash investigation in `engine/`, an Ironpine session is at 85% of its context, mostly verbose search output. Claude still holds the three call chains it traced, a working hypothesis about a double free in `ResourcePool`, and 14 file paths, and the next steps depend on all of them. A colleague suggests either starting a new session or handing the rest to an Explore subagent, but the engineer does not want to re-derive the call chains. What is the best way to continue?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Run `/compact` with an instruction to keep the call chains, the hypothesis and the file paths, then continue in the same session.",
+          "correct": true,
+          "explanation": "Compaction shrinks the verbose search output while the instruction keeps the items the next steps need. The session continues with its findings intact.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Run `/compact` with no instruction, which keeps a general summary of the session, then continue in the same session.",
+          "correct": false,
+          "explanation": "The right command, but a generic summary decides for itself what to keep and may drop the 14 file paths or the hypothesis. Naming what to preserve is what makes it safe here.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Open a fresh session and describe the bug in one line, relying on Claude to rediscover the call chains quickly.",
+          "correct": false,
+          "explanation": "A new session starts with none of the traced chains or the hypothesis, so hours of work are redone. It would suit a new problem, not the continuation of this one.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "d",
+          "text": "Hand the remaining investigation to an Explore subagent, which will see the main session's call chains and hypothesis because it shares the whole conversation with it.",
+          "correct": false,
+          "explanation": "A subagent starts with isolated context and would see none of the chains or the hypothesis unless they were passed in its prompt. It suits a fresh broad search whose raw output should stay out of the main session.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        }
+      ],
+      "keyConcept": "When an extended session fills with verbose output but the reasoning must continue, use /compact to shrink context while keeping key findings.",
+      "studyRef": "§3 Task 5.4; §5 Patterns in the correct answers",
+      "sources": ["exam-guide", "research"]
+    },
+    {
+      "id": "S2-D5-003",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "5.1",
+      "secondaryTasks": ["5.4"],
+      "stem": "A gameplay engineer's Claude Code session searches Lua heavily: a `grep` for `Spawn` across `gameplay/` returns 640 lines, and Claude then opens 30 whole files to check usages. After 40 minutes the context is nearly full of discovery output the engineer will never need again, but the engineer wants to keep one continuous session for the task. Which two changes keep this verbose output out of the main session? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Load every Lua file under `gameplay/` at the start of the session so that later searches are unnecessary.",
+          "correct": false,
+          "explanation": "Loading the whole directory puts all the verbose content into the main window at once, which is the opposite of the goal. It would suit a tiny directory, not a large game codebase.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Search for the specific identifier first with Grep and open only the files that match it, instead of reading whole directories.",
+          "correct": true,
+          "explanation": "Targeted searches return only the lines that matter and avoid opening 30 whole files, so far less discovery output enters the window in the first place.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Delegate broad questions to a subagent that returns its complete list of every match with the surrounding code, for the main session to review.",
+          "correct": false,
+          "explanation": "Delegation is the right tool, but the subagent must return a short summary. Handing back every raw match pours the same verbose output into the main session.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Delegate broad questions, such as listing every spawner, to a subagent that returns a short summary rather than the raw output.",
+          "correct": true,
+          "explanation": "The subagent's search output stays in its own isolated context, and the main session receives only the summary it needs to keep coordinating.",
+          "trap": null
+        },
+        {
+          "id": "e",
+          "text": "Clear the session after each question and have the engineer re-explain the whole task from scratch each time.",
+          "correct": false,
+          "explanation": "Clearing throws away the findings so far and forces the engineer to repeat the task. The goal is to keep the session going while the noise stays out.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "Keep verbose exploration out of the main context by searching for known identifiers and delegating broad searches to subagents.",
+      "studyRef": "§3 Task 5.1; §3 Task 5.4",
+      "sources": ["exam-guide", "research"]
+    }
+  ]
+}

@@ -11,22 +11,32 @@ export type SeedAnswer = {
 };
 
 // Inserts one completed study session whose items are already answered.
-export function seedSession(answers: SeedAnswer[], finishedAt = Date.now()): string {
+export function seedSession(
+  answers: SeedAnswer[],
+  finishedAt = Date.now(),
+  opts: { mode?: 'study' | 'test'; status?: 'completed' | 'abandoned'; marked?: number[] } = {},
+): string {
   const db = new Database(E2E_DB);
   const id = `seed-${finishedAt}-${Math.random().toString(36).slice(2, 8)}`;
   try {
     db.transaction(() => {
       db.prepare(
         `insert into session (id, kind, mode, filters_json, status, started_at, finished_at)
-         values (?, 'practice', 'study', '{}', 'completed', ?, ?)`,
-      ).run(id, finishedAt - 60_000 * answers.length, finishedAt);
+         values (?, 'practice', ?, '{}', ?, ?, ?)`,
+      ).run(
+        id,
+        opts.mode ?? 'study',
+        opts.status ?? 'completed',
+        finishedAt - 60_000 * answers.length,
+        finishedAt,
+      );
       const options = db.prepare(
         `select key, is_correct, trap_id from question_option where question_id = ? order by position`,
       );
       const insert = db.prepare(
         `insert into session_item (session_id, position, question_id, option_order_json,
-           selected_json, is_correct, correct_selected, confidence, time_ms, answered_at)
-         values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           selected_json, is_correct, correct_selected, confidence, time_ms, answered_at, marked)
+         values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       );
       answers.forEach((a, position) => {
         const rows = options.all(a.questionId) as {
@@ -50,8 +60,35 @@ export function seedSession(answers: SeedAnswer[], finishedAt = Date.now()): str
           a.confidence === undefined ? 'sure' : a.confidence,
           a.timeMs ?? 60_000,
           finishedAt - 60_000 * (answers.length - position),
+          opts.marked?.includes(position) ? 1 : 0,
         );
       });
+    })();
+  } finally {
+    db.close();
+  }
+  return id;
+}
+
+// Inserts one in-progress session with one unanswered item in the given option order.
+export function seedOpenSession(
+  questionId: string,
+  optionOrder: string[],
+  mode: 'study' | 'test',
+): string {
+  const db = new Database(E2E_DB);
+  const startedAt = Date.now();
+  const id = `open-${startedAt}-${Math.random().toString(36).slice(2, 8)}`;
+  try {
+    db.transaction(() => {
+      db.prepare(
+        `insert into session (id, kind, mode, filters_json, status, started_at)
+         values (?, 'practice', ?, '{}', 'in_progress', ?)`,
+      ).run(id, mode, startedAt);
+      db.prepare(
+        `insert into session_item (session_id, position, question_id, option_order_json)
+         values (?, 0, ?, ?)`,
+      ).run(id, questionId, JSON.stringify(optionOrder));
     })();
   } finally {
     db.close();

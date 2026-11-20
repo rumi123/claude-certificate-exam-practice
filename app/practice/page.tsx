@@ -2,7 +2,8 @@ import SetupForm, { type SetupInitial } from '@/components/practice/SetupForm';
 import { getDomains, getScenarios, getTasks } from '@/lib/db/queries/catalog';
 import { getPreferences, type Preferences } from '@/lib/db/queries/preferences';
 import { getPresetContext } from '@/lib/db/queries/presets';
-import { getCandidates } from '@/lib/db/queries/sessions';
+import { getCandidates, getMockPools } from '@/lib/db/queries/sessions';
+import type { Candidate } from '@/lib/engine/selection';
 import { isPreset, PRESETS, presetSelection } from '@/lib/engine/presets';
 
 export const dynamic = 'force-dynamic';
@@ -42,6 +43,10 @@ function parseInitial(p: Params, prefs: Preferences): SetupInitial {
   };
 }
 
+function summary({ id, scenarioId, type, primaryTaskId, domainId, lastSeenAt }: Candidate) {
+  return { id, scenarioId, type, primaryTaskId, domainId, lastSeenAt };
+}
+
 export default async function PracticePage({ searchParams }: { searchParams: Promise<Params> }) {
   const initial = parseInitial(await searchParams, getPreferences());
   const all = getCandidates();
@@ -55,12 +60,10 @@ export default async function PracticePage({ searchParams }: { searchParams: Pro
       candidateIds: sel.cands.map((c) => c.id),
     };
   });
-  const candidates = all.map(({ id, scenarioId, type, primaryTaskId, domainId }) => ({
+  const candidates = all.map(summary);
+  const mockPools = getMockPools().map((id) => ({
     id,
-    scenarioId,
-    type,
-    primaryTaskId,
-    domainId,
+    candidates: getCandidates({}, id).map(summary),
   }));
   return (
     <>
@@ -72,6 +75,7 @@ export default async function PracticePage({ searchParams }: { searchParams: Pro
         tasks={getTasks().map((k) => ({ id: k.id, title: k.title }))}
         candidates={candidates}
         presets={presets}
+        mockPools={mockPools}
         initial={initial}
       />
     </>

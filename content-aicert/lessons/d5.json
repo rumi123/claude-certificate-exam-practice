@@ -1,0 +1,1969 @@
+{
+  "domain": "D5",
+  "lessons": [
+    {
+      "questionId": "S1-D5-001",
+      "explanation": "The summariser is choosing what to keep, and it keeps the gist, not the numbers: $184.30, 14 March and six instalments became \"a credit and a payment plan\". The summaries end well inside their output limit, so nothing was cut off. The facts have to live somewhere summarising cannot reach, which is a case-facts block sent with every prompt, outside the summarised history.",
+      "options": {
+        "a": {
+          "reasoning": "Facts held in a block that is added to every prompt, outside the history, are never passed through a summary. The exact amount, date and instalment count stay intact however many times older turns are condensed, and the chat continues."
+        },
+        "b": {
+          "reasoning": "Capturing the facts is right, but appending the block to the summary puts it inside the history. The next round of summarising condenses it like any other text, so the figures blur again after a few rounds.",
+          "tempting": "It already extracts the amounts and dates, so keeping the block with the summary looks tidy."
+        },
+        "c": {
+          "reasoning": "`max_tokens` caps only how long the output can be, and these summaries already finish well inside the cap. The figures were condensed away by the summariser's choice, so a bigger allowance changes nothing about what it keeps.",
+          "tempting": "The summary lost detail, so giving it more room looks like it should help."
+        },
+        "d": {
+          "reasoning": "A copy-exactly instruction is only a nudge, and a summary of a summary can still drift. Because an exact amount and instalment count must survive, the facts need to sit outside the summary altogether.",
+          "tempting": "A stricter prompt plus a weekly spot-check is cheap and leaves the architecture alone."
+        }
+      },
+      "concept": [
+        "Compaction summarises old turns and can lose details; being too aggressive can drop context whose importance only shows up later. Progressive summarisation blurs numbers, dates and customer-stated expectations, so those belong in a persistent case-facts block included in every prompt outside the summarised history.",
+        "Structured note-taking keeps notes outside the context window and pulls them back in when needed. The context window includes the response itself, and `max_tokens` caps only the length of the output, so it cannot change what a summary chooses to keep."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "replacing older turns with a model-written summary",
+          "meaning": "The history is being condensed by a model, which is where detail is lost."
+        },
+        {
+          "phrase": "\"a credit and a payment plan\"",
+          "meaning": "Exact figures were blurred into vague wording, the signature of progressive summarisation."
+        },
+        {
+          "phrase": "The summaries end normally, well inside their output limit",
+          "meaning": "Truncation is ruled out, so an output-length setting is not the cause."
+        }
+      ],
+      "lookFor": [
+        "Facts stored outside the summarised history and sent with each request.",
+        "A fix for where the facts live, not for how long or how carefully the summary is written.",
+        "No restart of the conversation required."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The block sits inside the history, so the next summary condenses it too."
+        },
+        {
+          "option": "c",
+          "reason": "`max_tokens` limits output length; the summaries were never cut off."
+        },
+        {
+          "option": "d",
+          "reason": "A prompt instruction is a nudge, not a guarantee, and summaries of summaries still drift."
+        }
+      ],
+      "rule": "Keep transactional facts (amounts, dates, stated expectations) in a case-facts block sent with every prompt outside the summarised history, so no summary can blur them.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Effective context engineering for AI agents",
+          "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Context windows",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Context management",
+          "url": "https://academy.claude.com/courses/claude-code-101/context-management"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S1-D5-002",
+      "explanation": "Ten `get_meter_reads` results, each with 45 fields per record, fill 70% of the window with detail the dispute never uses. The fix is to remove those tokens before they enter the conversation, keeping only the four fields needed. A `PostToolUse` hook is the place to do it, and it must select fields, not an arbitrary slice.",
+      "options": {
+        "a": {
+          "reasoning": "An instruction to ignore fields does not remove their tokens; the full 45-field records still fill the window. The vagueness about the first bill continues because the space is already taken.",
+          "tempting": "It is a one-line change and costs nothing to try."
+        },
+        "b": {
+          "reasoning": "The hook is in the right place, but cutting to the first 100 records keeps all 45 fields on every record kept and may drop the very months the dispute is about. It must choose the needed fields.",
+          "tempting": "A hook that shrinks the output looks like the right mechanism."
+        },
+        "c": {
+          "reasoning": "Clearing history discards the customer's stated facts along with the bloat, and makes the customer repeat themselves. Trimming the tool output removes only the waste and keeps the history.",
+          "tempting": "Starting clean regularly stops the window filling up."
+        },
+        "d": {
+          "reasoning": "The hook keeps only the read date, read type, value and estimate flag before the result enters the conversation. The tokens are removed at source, and the earlier statements stay in the history."
+        }
+      },
+      "concept": [
+        "Tool results pile up and use tokens out of proportion to their relevance, so verbose output should be trimmed to the fields that matter. A `PostToolUse` hook can replace what the model sees with `updatedToolOutput`, for built-in and MCP tools, which is how the exam guide transforms tool results before the model processes them.",
+        "Tool results count toward the context window, so an instruction to ignore fields removes no tokens; they are already in the window. Tool results are part of everything Claude sees each turn, so just-in-time context, loading what is needed now and letting tools pull in more when asked, keeps the window lean."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "about 45 fields per record",
+          "meaning": "Most of each result is irrelevant to the task, so it is bloat."
+        },
+        {
+          "phrase": "needs only the read date, read type, value and estimate flag",
+          "meaning": "The needed fields are known, so trimming by field is possible."
+        },
+        {
+          "phrase": "keep the customer's earlier statements",
+          "meaning": "Clearing history is ruled out because the earlier facts must stay."
+        }
+      ],
+      "lookFor": [
+        "A change that shrinks the tool output before it reaches the model.",
+        "Selection by the fields the task needs, not by position.",
+        "The earlier conversation left intact."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Ignored fields still occupy the window; no tokens are removed."
+        },
+        {
+          "option": "b",
+          "reason": "Truncating by position keeps every field and may drop the relevant months."
+        },
+        {
+          "option": "c",
+          "reason": "Clearing history throws away the customer's stated facts."
+        }
+      ],
+      "rule": "Trim verbose tool output to the fields the task needs before it enters context, for example with a `PostToolUse` hook; telling the model to ignore fields removes no tokens.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: hooks reference",
+          "url": "https://code.claude.com/docs/en/hooks"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Context windows",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Platform 101: Context management",
+          "url": "https://academy.claude.com/courses/claude-platform-101/context-management"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S1-D5-003",
+      "explanation": "The case-facts block exists, but it is rebuilt from the compacted summary, so it inherits whatever the summary already lost. A longer summarisation prompt only moved losses from 11 cases to 9. The facts have to be captured from the raw turns as they occur and carried outside the summarised history.",
+      "options": {
+        "a": {
+          "reasoning": "Raising the threshold to 120,000 tokens delays compaction, so shorter conversations escape it, but long cases still build the block from a lossy summary. It does not change where the facts are captured.",
+          "tempting": "A later threshold means fewer conversations reach the step that loses details."
+        },
+        "b": {
+          "reasoning": "Updating from raw turns is the right move, but a block kept inside the history is condensed by the next summary like any other text. It has to be sent with each request outside the summarised history.",
+          "tempting": "It captures from the raw turns, which is the key idea."
+        },
+        "c": {
+          "reasoning": "Both the block and the summary derive from text that is already condensed, so a checker has no raw source to compare against. It adds a component and leaves the capture point unchanged.",
+          "tempting": "A second model checking the first sounds like a safety net."
+        },
+        "d": {
+          "reasoning": "Extracting facts from raw customer messages and tool results after each turn means compaction can never remove them. Sending the block with each request outside the history keeps it exact, which a longer prompt could not guarantee."
+        }
+      },
+      "concept": [
+        "Compaction summarises old turns and can lose detail, and an over-aggressive summary can drop what turns out to matter. Facts must be recorded before that step, from the raw turns, not rebuilt from the summary afterwards.",
+        "Information kept outside the summarised history is not condensed by it: notes held outside the context window are pulled back in when needed, which is the idea behind a block sent with every prompt."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "rebuilt only when the history is compacted",
+          "meaning": "The facts are captured too late, after information has already been lost."
+        },
+        {
+          "phrase": "generated from the compacted summary",
+          "meaning": "The source of the block is lossy, so the block is too."
+        },
+        {
+          "phrase": "losses fell only from 11 cases to 9",
+          "meaning": "A prompt tweak helped little, pointing to a structural cause."
+        }
+      ],
+      "lookFor": [
+        "Facts extracted from the raw turns as they happen.",
+        "The block sent with each request, outside the summarised history.",
+        "No extra service added to run."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A later threshold hides the problem for short chats; long cases still build the block from a summary."
+        },
+        {
+          "option": "b",
+          "reason": "A block inside the history is condensed by the next summary."
+        },
+        {
+          "option": "c",
+          "reason": "The checker compares two already-condensed sources and adds a component."
+        }
+      ],
+      "rule": "Capture case facts from raw turns as they occur and send them with every request outside the summarised history; never rebuild them from a summary.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Context management",
+          "url": "https://academy.claude.com/courses/claude-code-101/context-management"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Effective context engineering for AI agents",
+          "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S1-D5-004",
+      "explanation": "The customer asked outright for a person. An explicit request for a human is an escalation trigger in its own right, so the agent should honour it at once and pass over the account reference and billing issue, not run lookups first or judge whether the customer means it. Making them wait is what drives the abandoned chats.",
+      "options": {
+        "a": {
+          "reasoning": "Acknowledge-and-resolve suits a frustrated customer who has not asked for a person. Here the request is explicit, so requiring a repeat ignores a clear instruction and adds to the abandonment.",
+          "tempting": "Offering to fix the problem protects first-contact resolution."
+        },
+        "b": {
+          "reasoning": "A prepared case is helpful, but an explicit request is a trigger on its own. Investigating first keeps the customer on a bot they declined, which is the cause of the abandoned chats.",
+          "tempting": "The human receives more complete information."
+        },
+        "c": {
+          "reasoning": "Acknowledging and handing over at once, with the account reference and stated issue, honours the request. It removes the wait that causes the abandonment."
+        },
+        "d": {
+          "reasoning": "Sentiment is an unreliable proxy for what someone wants. A calm, polite request for a person is still a request, and a sentiment test would miss it.",
+          "tempting": "Strongly negative tone seems a sensible signal for escalation."
+        }
+      },
+      "concept": [
+        "The exam guide's escalation triggers are a customer's explicit request for a human, a policy exception or gap, and inability to make meaningful progress. When a customer explicitly asks, escalate at once, without investigating first; offer to resolve only when the issue is simple and the customer has not asked.",
+        "Claude follows explicit instructions, so the system prompt should say exactly when to escalate instead of leaving it to inference. Sentiment and self-reported confidence are unreliable proxies for complexity."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "not a bot",
+          "meaning": "The customer states a clear preference for a human."
+        },
+        {
+          "phrase": "will first pull `get_account` and `get_meter_reads`",
+          "meaning": "Investigating first delays honouring the request."
+        },
+        {
+          "phrase": "20% of chats that begin like this end with the customer abandoning",
+          "meaning": "The cost of ignoring the request is already visible."
+        }
+      ],
+      "lookFor": [
+        "Immediate escalation on an explicit request.",
+        "The case handed over with its basic facts.",
+        "No lookups or sentiment judgement before acting."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Making the customer repeat an explicit request ignores it."
+        },
+        {
+          "option": "b",
+          "reason": "Investigating first delays an explicit request for a human."
+        },
+        {
+          "option": "d",
+          "reason": "Sentiment does not show whether someone wants a person."
+        }
+      ],
+      "rule": "Honour an explicit request for a human immediately, with the case handed over; do not investigate first, and do not use sentiment to decide.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (long context prompting)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S1-D5-005",
+      "explanation": "Two situations carry a real escalation trigger: a request outside written policy, and no progress after repeated attempts. An angry tone, a single timeout or a credit within the $250 limit are not triggers. Anything else sends routine contacts to people and keeps the queue large.",
+      "options": {
+        "a": {
+          "reasoning": "Tone signals emotion, not complexity. A $38 late fee the policy lets the agent waive once is within its authority, so the right move is to acknowledge the frustration and resolve it.",
+          "tempting": "An angry customer seems to need a person."
+        },
+        "b": {
+          "reasoning": "A single timeout is a transient failure that a retry usually clears. Escalation fits when repeated attempts leave the agent unable to make progress, not after one failed call.",
+          "tempting": "A tool failure means the agent cannot continue."
+        },
+        "c": {
+          "reasoning": "The policy covers only Riverbend's own tariffs, so a price-match request is a gap. Escalating puts the decision with a person who can interpret or extend the policy."
+        },
+        "d": {
+          "reasoning": "Only credits above $250 need a human approver. A $120 credit is within the agent's limit, so escalating it adds to the queue for something the agent can settle.",
+          "tempting": "A human sign-off sounds safe for any credit."
+        },
+        "e": {
+          "reasoning": "Inability to make meaningful progress is an escalation trigger. Two attempts that return the same data and leave the dispute unmoved show the agent cannot advance, so a third try wastes the customer's time."
+        }
+      },
+      "concept": [
+        "Escalate on explicit criteria: a request for a human, a policy exception or gap (not just a complex case), and inability to make meaningful progress. Do not use tone or self-reported confidence, which are unreliable proxies for complexity.",
+        "Examples are one of the most reliable ways to steer behaviour, so the system prompt should pair the criteria with few-shot examples that are relevant and diverse enough to cover edge cases such as a policy-silent request."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "escalates 31% of contacts, many of them routine",
+          "meaning": "Over-escalation is the problem, so triggers must be narrow."
+        },
+        {
+          "phrase": "lets it grant credits up to $250",
+          "meaning": "Credits within the limit are the agent's to handle."
+        },
+        {
+          "phrase": "policy only covers adjustments to Riverbend's own tariffs",
+          "meaning": "A request outside policy is a gap, a real trigger."
+        }
+      ],
+      "lookFor": [
+        "Triggers tied to policy gaps, explicit requests and lack of progress.",
+        "Routine cases within authority left to the agent.",
+        "No use of tone or one-off errors as a trigger."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Tone is not complexity, and the fee is within authority."
+        },
+        {
+          "option": "b",
+          "reason": "One timeout is transient and a retry usually clears it."
+        },
+        {
+          "option": "d",
+          "reason": "A $120 credit is below the $250 limit."
+        }
+      ],
+      "rule": "Escalate for an explicit request, a policy gap or no meaningful progress; do not escalate for tone, a single error or an amount within the agent's authority.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (long context prompting)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S1-D5-006",
+      "explanation": "Three accounts match, so any pick by heuristic risks acting on the wrong customer, and the 14 wrong actions in 200 calls show it does. The agent can resolve this itself by asking for another identifier, such as a bill account number or flat number, and acting only once a single account matches.",
+      "options": {
+        "a": {
+          "reasoning": "A similarity score is still a heuristic, just a heavier one. It will err on look-alike accounts, which is what the 11 remaining errors already are.",
+          "tempting": "A scored ranking with a cutoff looks more rigorous than a simple rule."
+        },
+        "b": {
+          "reasoning": "Asking for an additional identifier turns an ambiguous lookup into a verified one before any account action. It avoids guessing and avoids sending every such call to a person."
+        },
+        "c": {
+          "reasoning": "Asking is right, but keeping the recent-payment fallback means the agent still guesses whenever the answer does not separate the accounts. It should keep asking until one account matches.",
+          "tempting": "It asks first and only guesses as a last resort."
+        },
+        "d": {
+          "reasoning": "The agent can settle the ambiguity by asking a question. Escalation would fit if the caller could not supply any identifier, and the team does not want every ambiguous call handed off.",
+          "tempting": "No heuristic means no wrong-account risk."
+        }
+      },
+      "concept": [
+        "When a lookup returns several matching customers, ask for more identifiers instead of choosing by heuristic. A guess can act on the wrong person, and in this case one match is on the vulnerable-customer register.",
+        "Claude follows explicit instructions: state exactly what you want instead of leaving it to inference. The prompt should say to ask for another identifier whenever more than one account matches."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "returns three matching accounts",
+          "meaning": "The lookup is ambiguous, so the agent lacks the identity it needs."
+        },
+        {
+          "phrase": "acted on the wrong account 14 times",
+          "meaning": "Choosing by heuristic is already costing errors."
+        },
+        {
+          "phrase": "does not want to hand every ambiguous call to a person",
+          "meaning": "The fix must be one the agent can carry out itself."
+        }
+      ],
+      "lookFor": [
+        "A step that gathers a further identifier before any account action.",
+        "The agent acting only when exactly one account matches.",
+        "No heuristic or scoring used to pick among matches."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A scoring layer is still a heuristic that errs on look-alike accounts."
+        },
+        {
+          "option": "c",
+          "reason": "The recent-payment fallback still guesses when the answer is not enough."
+        },
+        {
+          "option": "d",
+          "reason": "The agent can resolve this by asking, so escalating every case is unnecessary."
+        }
+      ],
+      "rule": "When a lookup returns several matches, ask for another identifier and act only once exactly one matches; do not guess by heuristic.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (long context prompting)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S1-D5-007",
+      "explanation": "The $250 limit guards the amount, not the question of whether policy allows the credit. Policy is silent on competitor prices, so the agent should recognise a gap and pass the case to a person. The way to teach that is an explicit escalation criterion with a worked example, which leaves routine credits automatic.",
+      "options": {
+        "a": {
+          "reasoning": "A $50 limit would catch this $60 request but also queue the many routine credits between $50 and $250, and still miss a policy-silent request for $40. The amount is the wrong signal for a gap.",
+          "tempting": "A lower limit would send requests like this one to a person."
+        },
+        "b": {
+          "reasoning": "Silence is not a ban. Declining makes the agent refuse something the company might grant, where the decision belongs to a person with the case facts. A decline rule fits where policy forbids the request.",
+          "tempting": "A worked example in the prompt is the right style of fix."
+        },
+        "c": {
+          "reasoning": "An explicit criterion with a worked example teaches the agent to recognise a request outside written policy and hand it over with its case facts. Routine credits stay automatic."
+        },
+        "d": {
+          "reasoning": "The threshold only decides who approves large amounts. A request policy does not cover still needs a person, and here the agent grants it on its own reading of the gap.",
+          "tempting": "The threshold already covers the money risk."
+        }
+      },
+      "concept": [
+        "A policy gap, where the written rules are ambiguous or silent, is an escalation trigger even when the amount is small. The exam guide's example is competitor price matching when policy covers only own-site adjustments.",
+        "Explicit criteria with few-shot examples in the system prompt are the way to teach this: examples are one of the most reliable ways to steer behaviour, and explaining why a rule exists lets Claude generalise it."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "says nothing about competitor prices",
+          "meaning": "Policy is silent, which is a gap, not a permission."
+        },
+        {
+          "phrase": "so the credit check passes",
+          "meaning": "The amount check cannot detect a policy gap."
+        },
+        {
+          "phrase": "does not want routine credits sent to a person",
+          "meaning": "The fix must stay narrow and keep ordinary credits automatic."
+        }
+      ],
+      "lookFor": [
+        "A criterion about requests outside policy, not about amounts.",
+        "A worked example in the system prompt.",
+        "Escalation with the case facts attached."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "The amount is the wrong signal and the lower limit queues routine credits."
+        },
+        {
+          "option": "b",
+          "reason": "Silence in policy is not a ban, so declining is wrong."
+        },
+        {
+          "option": "d",
+          "reason": "Keeping the agent as sole decider continues the problem."
+        }
+      ],
+      "rule": "Escalate when policy is silent on a request even if the amount is within authority, and teach it with explicit criteria and a worked example in the system prompt.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (long context prompting)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S2-D5-001",
+      "explanation": "Claude has drifted from the specific classes it found early on to \"typical Lua quest systems\", which is the inconsistency that appears in long sessions. A notes file that holds the findings and is checked before each answer carries them across the drift. Because the notes are one investigation's and will be thrown away, they belong outside the repository, not in shared guidance.",
+      "options": {
+        "a": {
+          "reasoning": "A notes file outside the repository keeps the named classes, files and trigger types outside the drifting conversation, so later answers can cite them. Nobody else loads it, and it is discarded when the mapping ends."
+        },
+        "b": {
+          "reasoning": "Recording findings is right, but CLAUDE.md is loaded by every session for all 45 engineers. One investigation's notes would clutter shared guidance and go stale when the mapping ends.",
+          "tempting": "CLAUDE.md is the standard place for persistent project knowledge."
+        },
+        "c": {
+          "reasoning": "Re-reading nine files before each answer pours more verbose output into a window already 60% used, speeding up the degradation. It would suit a short session, not a long exploration.",
+          "tempting": "Fresh file contents should restore the details."
+        },
+        "d": {
+          "reasoning": "`max_tokens` caps only the length of the output, and these answers already end well inside it. The drift comes from early findings being diluted in a long context, so more output room or a bigger window does not bring them back.",
+          "tempting": "Longer answers could carry more of the detail."
+        }
+      },
+      "concept": [
+        "In long sessions the model starts giving inconsistent answers and citing typical patterns instead of the specific classes it found earlier. Scratchpad files hold key findings across that drift: the agent writes notes outside the context window, for example a NOTES.md file, and reads them back later.",
+        "Project CLAUDE.md is loaded by every session for the whole team, so it holds lasting shared guidance, not one investigation's notes. The context window includes the output, and `max_tokens` caps only the output length.",
+        "The memory tool lets Claude read and write notes in a directory outside the context window, so what it has learned survives even as the window fills or is cleared."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "now it talks about \"typical Lua quest systems\"",
+          "meaning": "Specific earlier findings have been replaced by generic patterns, the classic sign of context degradation."
+        },
+        {
+          "phrase": "the notes will be of no use once the mapping is done",
+          "meaning": "The notes are temporary, so shared project files are the wrong home."
+        },
+        {
+          "phrase": "Its answers finish well within their length limit",
+          "meaning": "Output length is not the cause."
+        }
+      ],
+      "lookFor": [
+        "Findings written to a file and consulted before later answers.",
+        "A location suited to temporary, personal notes.",
+        "A fix aimed at the drift, not at output length."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "CLAUDE.md is shared by every session and would hold stale notes."
+        },
+        {
+          "option": "c",
+          "reason": "Re-reading files adds verbose output to a window already filling up."
+        },
+        {
+          "option": "d",
+          "reason": "`max_tokens` limits output length; the answers were not cut off."
+        }
+      ],
+      "rule": "In a long exploration, write key findings to a scratchpad file and check it before answering; keep temporary notes out of the shared CLAUDE.md.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Effective context engineering for AI agents",
+          "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Context windows",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Platform 101: Context management",
+          "url": "https://academy.claude.com/courses/claude-platform-101/context-management"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S2-D5-002",
+      "explanation": "The session is crowded with verbose search output, but Claude still holds the call chains, the hypothesis and the 14 file paths that the next steps need. `/compact` shrinks the output, and an instruction after the command says what the summary must keep. A fresh session or a subagent would lose the traced work.",
+      "options": {
+        "a": {
+          "reasoning": "`/compact` summarises the conversation to free space, and the instruction names the call chains, hypothesis and file paths to keep. The session continues with its findings intact."
+        },
+        "b": {
+          "reasoning": "It is the right command, but a generic summary decides for itself what to keep and may drop the 14 file paths or the hypothesis. Naming what to preserve makes it safe.",
+          "tempting": "Compacting is the right tool, so the instruction seems optional."
+        },
+        "c": {
+          "reasoning": "A fresh session starts with none of the traced chains or the hypothesis, so hours of work are redone. `/clear` and a new session suit unrelated work, not a continuation.",
+          "tempting": "A clean window avoids the clutter."
+        },
+        "d": {
+          "reasoning": "A standard subagent starts with its own isolated context and sees none of the chains or the hypothesis unless they are written into its prompt. It suits a fresh broad search whose raw output should stay out of the main session.",
+          "tempting": "Delegating the rest removes the clutter from the main session."
+        }
+      },
+      "concept": [
+        "`/compact` summarises the conversation to free space; instructions after the command, such as `/compact Focus on ...`, say what the summary must keep. `/clear` removes everything and suits starting unrelated work, so it would throw away findings still needed.",
+        "A standard subagent runs in its own context window and does not see the parent's conversation; it gets only the prompt the parent writes. A fork is the exception: it starts with a copy of the conversation."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "85% of its context, mostly verbose search output",
+          "meaning": "The window needs shrinking, but the reasoning must survive."
+        },
+        {
+          "phrase": "the next steps depend on all of them",
+          "meaning": "Specific items must be preserved through the shrink."
+        },
+        {
+          "phrase": "does not want to re-derive the call chains",
+          "meaning": "Starting over is ruled out."
+        }
+      ],
+      "lookFor": [
+        "`/compact` with an instruction naming what to keep.",
+        "Work continued in the same session.",
+        "No reliance on a subagent seeing the main conversation."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A generic compact leaves the choice of what to keep to the summariser."
+        },
+        {
+          "option": "c",
+          "reason": "A new session discards the traced work."
+        },
+        {
+          "option": "d",
+          "reason": "A standard subagent does not see the parent's conversation."
+        }
+      ],
+      "rule": "To continue a long session that is full of verbose output, run `/compact` with an instruction naming the findings to keep, rather than clearing or handing off.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage costs and context (`/compact`, `/clear`, subagents)",
+          "url": "https://code.claude.com/docs/en/costs"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: subagents",
+          "url": "https://code.claude.com/docs/en/sub-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Steering long sessions",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/steering-long-sessions"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S2-D5-003",
+      "explanation": "Two changes keep discovery output out of the main window: search for a known identifier and open only matching files, and delegate broad searches to a subagent that returns only a short summary. Loading everything, getting raw matches back or clearing the session each fail the goal of one continuous, uncluttered session.",
+      "options": {
+        "a": {
+          "reasoning": "Loading every Lua file puts all the verbose content into the main window at once, the opposite of the goal. It would suit a tiny directory, not a large game codebase.",
+          "tempting": "With everything loaded, no later search would be needed."
+        },
+        "b": {
+          "reasoning": "A targeted Grep for the identifier returns only the lines that matter, and opening just the matching files avoids reading 30 whole files. Far less discovery output enters the window."
+        },
+        "c": {
+          "reasoning": "Delegation is the right tool, but the subagent must return a short summary. Handing back every raw match with surrounding code pours the same verbose output into the main session.",
+          "tempting": "Delegating broad searches keeps the work off the main window."
+        },
+        "d": {
+          "reasoning": "The subagent's search output stays in its own isolated context, and the main session receives only a short summary. That keeps the main session free to continue."
+        },
+        "e": {
+          "reasoning": "Clearing throws away the findings so far and makes the engineer repeat the task. The goal is to keep the session going while the noise stays out.",
+          "tempting": "An empty context avoids the clutter completely."
+        }
+      },
+      "concept": [
+        "Tool results pile up and use tokens out of proportion to their relevance, so search narrowly: Grep for a known identifier and open only matching files, rather than reading whole directories.",
+        "Subagents run in their own context window; verbose work stays there and only a summary returns, often 1,000 to 2,000 tokens. The subagent's final message is all the parent receives, so it should be a short summary, not the raw output."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "returns 640 lines",
+          "meaning": "A broad search floods the window with output."
+        },
+        {
+          "phrase": "opens 30 whole files",
+          "meaning": "Whole-file reads add verbose content the engineer will not need again."
+        },
+        {
+          "phrase": "wants to keep one continuous session",
+          "meaning": "Clearing or restarting is ruled out."
+        }
+      ],
+      "lookFor": [
+        "A narrower search that returns less output.",
+        "Delegation where only a short summary returns.",
+        "The session kept continuous, without clearing."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Loading the whole directory fills the window at once."
+        },
+        {
+          "option": "c",
+          "reason": "Returning every raw match pours the verbose output back into the main session."
+        },
+        {
+          "option": "e",
+          "reason": "Clearing discards the findings and forces the task to be re-explained."
+        }
+      ],
+      "rule": "Keep verbose exploration out of the main context: search for known identifiers and open only matching files, and delegate broad searches to subagents that return short summaries.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage costs and context (`/compact`, `/clear`, subagents)",
+          "url": "https://code.claude.com/docs/en/costs"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: subagents",
+          "url": "https://code.claude.com/docs/en/sub-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Context management",
+          "url": "https://academy.claude.com/courses/claude-code-101/context-management"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S3-D5-001",
+      "explanation": "An empty list on a timeout looks like a valid \"no data\" answer, which is how the coordinator told a minister's office that no 2023 methane data exists. `fetch_dataset` should return a structured error: the failure type, the query attempted, a retryable flag and any partial results. The coordinator can then tell an access failure from a real empty result and keep going with other datasets.",
+      "options": {
+        "a": {
+          "reasoning": "A generic status hides what the coordinator needs: the failure type, what was attempted and whether a retry could work. It is little better than the empty list for deciding how to recover.",
+          "tempting": "A short, easy-to-log status keeps the response simple."
+        },
+        "b": {
+          "reasoning": "A structured error carrying the failure type, query, retryable flag and partial results lets the coordinator tell a timeout from a true empty result. It can retry, use an alternative source and report an honest gap, while the other datasets continue."
+        },
+        "c": {
+          "reasoning": "Flagging the failure is better than an empty list, but a bare message carries no query, retryable flag or partial results. The coordinator cannot choose between retrying and trying another source.",
+          "tempting": "It already uses the error flag and names the failure."
+        },
+        "d": {
+          "reasoning": "A longer timeout leaves the real defect in place: when the provider is down, the empty list is still reported as no data. It would only suit a provider that is merely slow.",
+          "tempting": "Fewer timeouts means fewer false empty results."
+        }
+      },
+      "concept": [
+        "Structured error context (failure type, attempted query, partial results, alternatives) lets the coordinator recover well. Access failures, such as timeouts that need a retry decision, differ from valid empty results, and generic statuses or silent empty results hide that difference.",
+        "In MCP, tool execution errors are returned in the tool result with `isError: true` so that the model can see and handle them. That signals failure; the useful detail for recovery goes in the error content. When a tool raises an exception, the loop still returns a tool_result with the error text and is_error true."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "its wrapper returns an empty list",
+          "meaning": "A failure is reported as a valid result, which is a silent failure."
+        },
+        {
+          "phrase": "\"no government data exists\"",
+          "meaning": "The coordinator drew a false conclusion from the empty list."
+        },
+        {
+          "phrase": "must still be able to carry on with the other datasets",
+          "meaning": "The failure must be reported without ending the whole workflow."
+        }
+      ],
+      "lookFor": [
+        "An error that carries failure type, attempted query and retryable flag.",
+        "A clear difference between a timeout and an empty result.",
+        "A response that lets the coordinator continue with other work."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A generic status hides the type, query and retryability."
+        },
+        {
+          "option": "c",
+          "reason": "A bare message carries no query, retryable flag or partial results."
+        },
+        {
+          "option": "d",
+          "reason": "A longer timeout still reports an outage as empty data."
+        }
+      ],
+      "rule": "Return structured error context (failure type, attempted query, retryable flag, partial results) so a failed read is never mistaken for a valid empty result.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "MCP specification: tools (2025-06-18)",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/tools"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Implementing multiple turns",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/implementing-multiple-turns"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S3-D5-002",
+      "explanation": "The flood-defences database is down for the whole 48-hour window, so waiting or retrying cannot produce the evidence in time. The briefing should go on time, with the flood topic annotated as a gap because its source was unavailable and the other four marked as supported by full results. That keeps the findings usable and the gap visible.",
+      "options": {
+        "a": {
+          "reasoning": "The outage lasts the whole window, so waiting means missing the deadline and giving the minister nothing. Four well-supported topics can be delivered now.",
+          "tempting": "A complete report is better than a partial one."
+        },
+        "b": {
+          "reasoning": "Unsourced text presented as researched hides the gap and misleads the reader. A missing source should be visible, not papered over, and claims should be backed by a supporting quote or withdrawn.",
+          "tempting": "It makes the briefing read as complete and on time."
+        },
+        "c": {
+          "reasoning": "Retrying suits a transient timeout, but the database is down for the whole window, so every attempt fails and the briefing stays unannotated until the last minute. The gap should be recorded now.",
+          "tempting": "Retries cover the case where the database comes back."
+        },
+        "d": {
+          "reasoning": "Annotating coverage keeps the supported findings usable and tells the reader exactly where evidence is missing and why. The briefing is honest and on time."
+        }
+      },
+      "concept": [
+        "Synthesis should annotate coverage, marking well-supported findings and gaps from unavailable sources, and neither hide a failure nor end the whole workflow because of one. Only a subagent's final message comes back to the coordinator, so the error from the literature subagent has to carry what is missing.",
+        "Ground claims in quotes: find a supporting quote for each claim and withdraw the claim if none exists. Text written from background knowledge with no source does not meet that bar."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "down for the whole 48-hour window",
+          "meaning": "Waiting and retrying cannot recover the data in time."
+        },
+        {
+          "phrase": "Synthesis currently writes the briefing as if all five topics were covered",
+          "meaning": "The gap is being hidden from the reader."
+        },
+        {
+          "phrase": "the minister's office needs it on time",
+          "meaning": "The deadline rules out waiting for the source."
+        }
+      ],
+      "lookFor": [
+        "A briefing delivered on time with the gap marked.",
+        "Support levels shown per topic.",
+        "No unsourced text standing in for missing research."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Waiting misses the deadline for four well-supported topics."
+        },
+        {
+          "option": "b",
+          "reason": "Unsourced text hides the gap and misleads the reader."
+        },
+        {
+          "option": "c",
+          "reason": "Retries cannot succeed while the database is down all window."
+        }
+      ],
+      "rule": "Annotate synthesis coverage: mark well-supported findings and gaps from unavailable sources, and deliver on time instead of waiting out a failure or hiding it.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: subagents",
+          "url": "https://code.claude.com/docs/en/sub-agents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Reduce hallucinations",
+          "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S3-D5-003",
+      "explanation": "The subagent already retried locally and returned a structured error naming the 3 failures and the 9 results. The coordinator should use it: keep the 9 results, re-delegate only the 3 failed queries (or try an alternative source), and annotate whatever still fails as a gap. Treating any error as fatal and rerunning everything throws away good work and nine minutes.",
+      "options": {
+        "a": {
+          "reasoning": "The structured error says what failed and what succeeded. Keeping the 9 results, retrying only the 3 or using another source, and annotating what remains is cheap and honest."
+        },
+        "b": {
+          "reasoning": "Re-delegating only the failures is right, but they already failed after local retries, so waiting for them blocks the briefing with no promise of success. Queries that still fail should be annotated as gaps.",
+          "tempting": "It keeps the 9 results and retries only what failed."
+        },
+        "c": {
+          "reasoning": "Nine queries returned good data, and discarding them over three failures wastes most of the source. A partial failure should not end use of the whole source.",
+          "tempting": "Marking the source unavailable gives a clear, consistent limitation."
+        },
+        "d": {
+          "reasoning": "More retries do nothing about how the coordinator handles an error, and they slow each run. The coordinator's reaction, not the retry count, is what wastes nine minutes.",
+          "tempting": "Fewer errors reaching the coordinator means fewer reruns."
+        }
+      },
+      "concept": [
+        "Subagents recover locally from transient failures and propagate only what they cannot resolve, together with what was attempted and the partial results. The coordinator uses that structured context to keep partial results and retry only failed work, rather than rerunning everything or dropping the source.",
+        "In MCP, a failed tool call is reported in the result with `isError: true` so it can be handled. Only the subagent's final message comes back to its parent, so whatever the coordinator needs about the failure must be in that message."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "returns an error naming the failure type, the 3 failed queries and the 9 results",
+          "meaning": "The error already holds enough to recover selectively."
+        },
+        {
+          "phrase": "re-delegates all 12 queries",
+          "meaning": "Everything is rerun, wasting completed work."
+        },
+        {
+          "phrase": "the 48-hour briefing must still go out on time",
+          "meaning": "Waiting on repeated failures is not acceptable."
+        }
+      ],
+      "lookFor": [
+        "Completed results kept and only failures reworked.",
+        "A gap annotation for anything that still fails.",
+        "The coordinator reading the structured error, not treating it as fatal."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Waiting for queries that already failed blocks the briefing."
+        },
+        {
+          "option": "c",
+          "reason": "Discarding 9 good results over 3 failures wastes the source."
+        },
+        {
+          "option": "d",
+          "reason": "More local retries do not change how the coordinator reacts."
+        }
+      ],
+      "rule": "Use the structured error: keep partial results, retry only the failed work or try an alternative, and annotate remaining failures as gaps; never rerun everything or drop the source.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "MCP specification: tools (2025-06-18)",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: subagents",
+          "url": "https://code.claude.com/docs/en/sub-agents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S3-D5-004",
+      "explanation": "Reviewers cannot trace a figure to its source, and two figures from different years look like a conflict. The two fields that fix both are a claim-source mapping (source URL or document name plus the supporting excerpt) and the publication or data collection date of each figure. A bare URL list, a retrieval date or whole pages fix neither problem cleanly.",
+      "options": {
+        "a": {
+          "reasoning": "A bare list shows what was read but not what backs each figure, so reviewers still cannot trace a number to its source. Each claim needs its own mapping.",
+          "tempting": "Source URLs are the basic form of attribution."
+        },
+        "b": {
+          "reasoning": "Tying each claim to its source and a supporting excerpt lets reviewers verify figures and lets synthesis keep attribution as it merges findings."
+        },
+        "c": {
+          "reasoning": "A retrieval date records when the page was fetched, not the year the figure describes, so figures from different years would still look like a conflict. The publication or collection date is what matters.",
+          "tempting": "A date field is the right kind of metadata."
+        },
+        "d": {
+          "reasoning": "Whole pages would overrun the synthesis agent's limited context and bury the figures. A short excerpt and a source reference carry what is needed.",
+          "tempting": "Full text would let synthesis check any citation itself."
+        },
+        "e": {
+          "reasoning": "With the publication or collection date attached, synthesis can see that figures for different years are not in conflict and present each with its period."
+        }
+      },
+      "concept": [
+        "Attribution is lost when findings are summarised without claim-source mappings, so subagents should output structured mappings (URLs or document names, with excerpts) that downstream agents keep. Requiring publication or collection dates stops differences over time being read as contradictions.",
+        "Ground each claim in a supporting quote. Telling a subagent to return sources that can be cited makes it pass that on, and a defined output format is the most important improvement to a subagent."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "return prose summaries",
+          "meaning": "Prose gives no way to trace a figure to its source."
+        },
+        {
+          "phrase": "Reviewers cannot tell which source supports each figure",
+          "meaning": "Missing claim-source mappings."
+        },
+        {
+          "phrase": "two figures from different years were presented as a conflict",
+          "meaning": "Missing publication or collection dates."
+        }
+      ],
+      "lookFor": [
+        "A per-claim link to source and excerpt.",
+        "The date the figure describes, not the fetch date.",
+        "Compact fields that fit a limited context budget."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A list of URLs does not say which claim each supports."
+        },
+        {
+          "option": "c",
+          "reason": "A retrieval date does not say what year the figure describes."
+        },
+        {
+          "option": "d",
+          "reason": "Whole pages would overrun the synthesis agent's limited context."
+        }
+      ],
+      "rule": "Require subagents to return structured findings with a claim-source mapping (source plus excerpt) and the publication or collection date of each figure, and keep them through synthesis.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Reduce hallucinations",
+          "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: Designing effective subagents",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/designing-effective-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S3-D5-005",
+      "explanation": "Ministers have two different complaints: the numbers are hard to scan, and the news has lost its narrative. Both come from forcing every content type into bullets. The fix is to tell the synthesis step to render each type in a fitting form: tables for the emissions data, prose for the news and lists for the technical findings.",
+      "options": {
+        "a": {
+          "reasoning": "Prose would repair the news summary but make the emissions comparison harder to scan. Swapping one uniform format for another ignores that the content types differ.",
+          "tempting": "Full sentences read more easily for ministers."
+        },
+        "b": {
+          "reasoning": "Tables for the figures are right, but the news summary has also lost its narrative and needs prose. Leaving it as bullets leaves half the complaint unresolved.",
+          "tempting": "Only the numbers are hard to read, so fixing them seems enough."
+        },
+        "c": {
+          "reasoning": "A separate formatting agent adds a step and still applies one style to different content. The fix is in how synthesis renders each content type.",
+          "tempting": "One house style would make the briefing consistent."
+        },
+        "d": {
+          "reasoning": "Matching form to content, tables for numbers, prose for narrative and lists for discrete findings, solves both complaints inside the existing synthesis step."
+        }
+      },
+      "concept": [
+        "Render each content type in a fitting format: tables for financial or numeric data, prose for news and lists for technical findings. A single uniform format loses what each kind of content needs.",
+        "Claude follows explicit instructions, so tell the synthesis step exactly how to render each content type (tables for numeric data, prose for news, lists for technical findings) instead of leaving the format to inference, and explain why so Claude can generalise it."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "converts everything it receives into bullet points",
+          "meaning": "One format is being applied to three content types."
+        },
+        {
+          "phrase": "three-year emissions comparison is hard to read",
+          "meaning": "Numeric data needs a table."
+        },
+        {
+          "phrase": "news summary has lost its narrative",
+          "meaning": "News needs prose."
+        }
+      ],
+      "lookFor": [
+        "A form matched to each content type.",
+        "The change made inside the synthesis step.",
+        "An explicit instruction naming each form."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Swapping bullets for prose still applies one format to everything."
+        },
+        {
+          "option": "b",
+          "reason": "Leaving the news as bullets keeps half the problem."
+        },
+        {
+          "option": "c",
+          "reason": "A new agent adds a step and still applies one style."
+        }
+      ],
+      "rule": "Render each content type in a fitting form (tables for numbers, prose for news, lists for technical findings) instead of one uniform format.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (long context prompting)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S3-D5-006",
+      "explanation": "Standard subagents start with an empty history, so each one re-reads documents to rediscover what phase 1 found. The coordinator should summarise phase 1 into the document-to-area list and the key findings and put it in each phase 2 subagent's prompt. That gives them what they need immediately and stays inside their limited windows.",
+      "options": {
+        "a": {
+          "reasoning": "A standard subagent starts with isolated context and sees nothing from phase 1 unless it is passed in the prompt. A fork would copy the coordinator's whole history, far more than each limited window can usefully hold.",
+          "tempting": "Inheriting the history removes any need to brief the subagents."
+        },
+        "b": {
+          "reasoning": "A compact summary of the phase 1 results gives each subagent what it needs from the start and removes the re-reading, while fitting its limited context."
+        },
+        "c": {
+          "reasoning": "Injecting phase 1 output is right, but all 300 documents' findings would fill each subagent's limited window with detail it does not need. The key findings and the area map are what carry forward.",
+          "tempting": "More information in the prompt means less to rediscover."
+        },
+        "d": {
+          "reasoning": "Subagents messaging each other goes around the coordinator, which owns routing and context passing, and leaves it unaware of what each subagent was told.",
+          "tempting": "Asking the source directly is the fastest route to the answer."
+        }
+      },
+      "concept": [
+        "A standard subagent starts fresh and does not see the parent's conversation; it gets only the prompt the parent writes. A fork is the exception, since it starts with a copy of the conversation. So a phase's findings must be summarised and injected into the next phase's prompts.",
+        "Subagent pipelines lose information at each handoff, so pass what the next step needs explicitly. Summarising one phase's key findings before spawning the next keeps the handoff small and complete."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "each with a limited context window and an empty history",
+          "meaning": "The new subagents have no memory of phase 1."
+        },
+        {
+          "phrase": "spends about 35 minutes re-reading documents",
+          "meaning": "Findings are being rediscovered because they were not passed on."
+        },
+        {
+          "phrase": "one per area",
+          "meaning": "Each subagent needs only its own area's findings, so the summary can be compact."
+        }
+      ],
+      "lookFor": [
+        "Phase 1 results summarised and placed in each new prompt.",
+        "A summary sized to a limited window.",
+        "The coordinator, not the subagents, passing the context."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A standard subagent inherits nothing, and a fork copies far too much."
+        },
+        {
+          "option": "c",
+          "reason": "Raw output for all 300 documents overfills each limited window."
+        },
+        {
+          "option": "d",
+          "reason": "Direct messaging bypasses the coordinator, which owns routing and context."
+        }
+      ],
+      "rule": "Summarise one phase's key findings and inject them into the next phase's subagent prompts, because a standard subagent inherits nothing from its parent.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: subagents",
+          "url": "https://code.claude.com/docs/en/sub-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: Using subagents effectively",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/using-subagents-effectively"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to agent skills: Sharing skills (subagents and forks)",
+          "url": "https://academy.claude.com/courses/introduction-to-agent-skills/sharing-skills"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S3-D5-007",
+      "explanation": "The manifest is only written when all six subagents finish, so a reboot at hour 22 leaves nothing to resume from. For recovery, each agent exports its state to a known location after each unit, and the coordinator loads the manifest on resume and injects it into prompts. A reboot then loses at most the unit in progress.",
+      "options": {
+        "a": {
+          "reasoning": "The history records what subagents reported, not the progress of units that were part-way through, so it cannot say which units are done. State must be written to a known location as work proceeds.",
+          "tempting": "The conversation already holds each subagent's reports."
+        },
+        "b": {
+          "reasoning": "Exporting at the end saves the two finished subagents but loses all progress of the four that were part-way through, and injecting the manifest cannot restore work that was never saved. Export has to happen as each unit finishes.",
+          "tempting": "It uses the right mechanism: a manifest loaded on resume and injected into prompts."
+        },
+        "c": {
+          "reasoning": "Subagents sharing a store go around the coordinator, which owns routing and recovery. On resume the coordinator would still not know what was done.",
+          "tempting": "Any subagent could pick up another's work."
+        },
+        "d": {
+          "reasoning": "Exporting state after each unit means a reboot loses at most the unit in progress. The coordinator loads the manifest on resume and injects it into each subagent's prompt, so only unfinished work is redone."
+        }
+      },
+      "concept": [
+        "For crash recovery, each agent exports its state to a known location as it works, and the coordinator loads a manifest on resume and injects it into the agents' prompts. Saving state only at the end leaves nothing to restore after a failure in the middle.",
+        "Structured note-taking has the agent write notes outside the context window and read them back later. Only a subagent's final message returns to the parent, so the coordinator's history holds reports, not each unit's progress."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "writes a manifest of subagent status only once all six have finished",
+          "meaning": "State is saved too late to help after a crash."
+        },
+        {
+          "phrase": "the rerun began from nothing",
+          "meaning": "Nothing persisted that the coordinator could load."
+        },
+        {
+          "phrase": "without repeating finished units",
+          "meaning": "The state must record completed units as they finish."
+        }
+      ],
+      "lookFor": [
+        "State written during the run, after each unit.",
+        "A manifest the coordinator loads on resume.",
+        "Recovery through the coordinator, not between subagents."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "The history does not record progress of part-finished units."
+        },
+        {
+          "option": "b",
+          "reason": "Exporting only at the end loses the part-way progress."
+        },
+        {
+          "option": "c",
+          "reason": "A shared store bypasses the coordinator and still leaves it without a record."
+        }
+      ],
+      "rule": "For crash recovery, have each agent export state to a known location after each unit and have the coordinator load the manifest on resume and inject it into prompts.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Effective context engineering for AI agents",
+          "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: subagents",
+          "url": "https://code.claude.com/docs/en/sub-agents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S3-D5-008",
+      "explanation": "Findings in the middle of a long input are skipped while those at the start and end are covered. Two structural changes address that: a short key-findings summary at the top of the prompt, and explicit section headers for the detail. Emphasis in the middle, splitting the input or a bigger `max_tokens` do not address position.",
+      "options": {
+        "a": {
+          "reasoning": "Models handle the start and end of a long input best, so a short summary of key findings at the top keeps them from being lost in the middle."
+        },
+        "b": {
+          "reasoning": "Emphasis inside the middle does not change how position affects what the model picks up, so the same findings are still skipped. It adds noise instead of changing the structure.",
+          "tempting": "Capital letters and bold should make a finding stand out."
+        },
+        "c": {
+          "reasoning": "Each half still has a middle where findings are lost, the halves cannot be weighed against each other, and a merge step is added. Moving key points to the top and adding headers addresses position directly.",
+          "tempting": "Smaller inputs should reduce the effect."
+        },
+        "d": {
+          "reasoning": "Explicit headers, one per policy area, give the model landmarks in a long input, so findings in the middle are located and covered instead of blending in."
+        },
+        "e": {
+          "reasoning": "`max_tokens` caps the output length, and the briefing already ends well inside it, so running out of room is not the cause. Findings are missed because of where they sit in the input, and a bigger window would not change that.",
+          "tempting": "A longer briefing has room to mention every finding."
+        }
+      },
+      "concept": [
+        "Models handle the start and end of long inputs better than the middle, the \"lost in the middle\" effect. Counter it by putting a key-findings summary at the top of aggregated input and using explicit section headers for the detail.",
+        "For long-context prompts, put long documents and data at the top and structure them with tags and metadata. `max_tokens` caps only output length, and the context window includes the response, so a bigger limit does not change what gets picked up from the input."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "findings from the middle of the input are often left out",
+          "meaning": "The omissions follow position in the input."
+        },
+        {
+          "phrase": "near the start and the end are covered",
+          "meaning": "The start and end are handled better, so key material belongs there."
+        },
+        {
+          "phrase": "finishes well inside its output limit",
+          "meaning": "Output length is not the cause."
+        }
+      ],
+      "lookFor": [
+        "Key findings summarised at the top of the prompt.",
+        "Headers that structure the detail.",
+        "A fix aimed at position in the input, not at output length."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Emphasis in the middle does not change the position effect."
+        },
+        {
+          "option": "c",
+          "reason": "Splitting leaves a middle in each half and adds a merge step."
+        },
+        {
+          "option": "e",
+          "reason": "`max_tokens` limits output length and the briefing was not cut off."
+        }
+      ],
+      "rule": "To counter lost-in-the-middle, put a key-findings summary at the top of the input and use explicit section headers for the detail.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (long context prompting)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Context windows",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S3-D5-009",
+      "explanation": "Both readings are accurate, so verifying twice changes nothing; the problem is that only one value reached the coordinator. The subagent should complete the analysis with both values, each annotated with its location and base year, and let the coordinator reconcile. Averaging, choosing or stopping all hide or block the conflict.",
+      "options": {
+        "a": {
+          "reasoning": "An average is a number the report never states, and it hides both the discrepancy and the differing base years. Reviewers would have no way to trace it to a source.",
+          "tempting": "A single combined figure is easy to use."
+        },
+        "b": {
+          "reasoning": "Both values and their context travel to the coordinator, which can reconcile them or flag the conflict, so neither the discrepancy nor the base-year difference is lost."
+        },
+        "c": {
+          "reasoning": "Keeping both values is right, but choosing one in the subagent hides the conflict from the coordinator, which owns reconciliation. A newer base year is not proof that its value is the right one.",
+          "tempting": "Picking the more recent base year is a principled rule."
+        },
+        "d": {
+          "reasoning": "A conflict between sources is information, not a failure. Stopping blocks the whole analysis when the subagent could report both values and move on.",
+          "tempting": "Waiting for a researcher avoids reporting a wrong figure."
+        }
+      },
+      "concept": [
+        "When sources give conflicting statistics, annotate both with their sources rather than resolving them by picking one. The subagent completes the analysis with the conflicting values included and annotated, and the coordinator reconciles them.",
+        "Claude follows explicit instructions, so say exactly what the subagent must report: each value, where it appears and its base year. A defined output format is the most important improvement to a subagent."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "an appendix table says 21.1 Mt",
+          "meaning": "A second value for the same quantity exists in the report."
+        },
+        {
+          "phrase": "a footnote shows a different base year",
+          "meaning": "The context that explains the difference must be kept."
+        },
+        {
+          "phrase": "both readings were accurate",
+          "meaning": "Checking again cannot remove a real conflict."
+        }
+      ],
+      "lookFor": [
+        "Both values reported with location and base year.",
+        "Reconciliation left to the coordinator.",
+        "No averaging, picking or stopping in the subagent."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "An average is a figure no source states and hides the base-year difference."
+        },
+        {
+          "option": "c",
+          "reason": "Choosing one in the subagent hides the conflict from the coordinator."
+        },
+        {
+          "option": "d",
+          "reason": "Stopping blocks the analysis over information it could simply report."
+        }
+      ],
+      "rule": "Complete the analysis with every conflicting value annotated with its location and date, and let the coordinator reconcile; do not average, pick one or stop.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: Designing effective subagents",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/designing-effective-subagents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (long context prompting)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D5-001",
+      "explanation": "A flat 0.90 cutoff queues 4,200 documents against a capacity of about 1,800, and the labeled set of 8,000 documents lets the team do better. Calibrate a threshold for each field on that set, because reliability differs by field, then queue documents below any field's threshold, most uncertain first, up to capacity.",
+      "options": {
+        "a": {
+          "reasoning": "Document type is a weak filter: clean scans pass and many typed documents with uncertain fields are never seen. Review should follow measured uncertainty, with type as one of the things to check.",
+          "tempting": "Handwritten and scanned documents are the hardest to read."
+        },
+        "b": {
+          "reasoning": "Calibrating on the labeled set is right, but fields differ: a score of 0.85 on `repair_total` can be reliable while 0.85 on a date is not. Thresholds need to be set per field.",
+          "tempting": "One calibrated cutoff keeps the rule simple."
+        },
+        "c": {
+          "reasoning": "Per-field thresholds calibrated against labeled data reflect each field's real error rate, and ordering by uncertainty spends the 1,800 daily reviews where errors are most likely."
+        },
+        "d": {
+          "reasoning": "A cutoff chosen to fit the queue size has no link to error rates, so risky fields go unchecked while capacity is used by chance. The threshold should be calibrated, not picked to fit.",
+          "tempting": "Lowering the cutoff brings the queue to the size reviewers can handle."
+        }
+      },
+      "concept": [
+        "Field-level confidence scores should be calibrated on a labeled validation set, and low-confidence or contradictory documents routed to review, prioritising limited reviewer capacity. Self-reported confidence is an unreliable proxy unless it is calibrated against labeled data.",
+        "Evaluation grades against gold answers labeled by people, with targets set on a held-out set. That labeled validation set is what the per-field thresholds are calibrated on, so the scores are checked against known outcomes instead of trusted as reported."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "can check about 1,800 extractions a night",
+          "meaning": "Reviewer capacity is fixed, so the queue must be prioritised."
+        },
+        {
+          "phrase": "when any field is under 0.90",
+          "meaning": "A single uncalibrated cutoff is the current rule."
+        },
+        {
+          "phrase": "A labeled validation set of 8,000 documents is available",
+          "meaning": "Calibration against labeled data is possible."
+        }
+      ],
+      "lookFor": [
+        "Thresholds set per field from labeled data.",
+        "Queue ordered by uncertainty and capped at capacity.",
+        "No cutoff chosen to fit the queue size."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Document type is a weak proxy for where errors occur."
+        },
+        {
+          "option": "b",
+          "reason": "One cutoff ignores that fields differ in reliability."
+        },
+        {
+          "option": "d",
+          "reason": "A cutoff chosen to fit capacity is not tied to error rates."
+        }
+      ],
+      "rule": "Calibrate a review threshold for each field on a labeled validation set, then route documents below it, most uncertain first, up to reviewer capacity.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define success criteria and build evaluations",
+          "url": "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D5-002",
+      "explanation": "A 97% overall figure says little about handwritten invoices, which were a small part of the labeled set. Before reducing review, the team should label more handwritten invoices, measure accuracy by document type and field, and cut review only for the segments that hold up.",
+      "options": {
+        "a": {
+          "reasoning": "Overall accuracy can hide a weak segment. With enough labeled handwritten invoices, per-type and per-field figures show where review can safely be cut."
+        },
+        "b": {
+          "reasoning": "A per-type breakdown is right, but the handwritten sample is small so its figure is noisy, and a type average can still hide a weak field. More labeled handwritten invoices and per-field figures are needed.",
+          "tempting": "Breaking results down by type already addresses the masking problem."
+        },
+        "c": {
+          "reasoning": "A strong average can hide a poor segment. Handwritten invoices were a small part of the labeled set, so the 97% says little about them.",
+          "tempting": "97% is well above the automation target."
+        },
+        "d": {
+          "reasoning": "Schema validity shows that values have the right shape, not that they are right. A wrong amount in a valid number field passes every check.",
+          "tempting": "A 99.8% pass rate suggests the extraction is reliable."
+        }
+      },
+      "concept": [
+        "An aggregate accuracy figure can hide poor results on particular document types or fields, so validate accuracy by type and field before automating or reducing review. A small segment needs enough labeled examples to measure.",
+        "Schema compliance is about shape, not truth: a value can match the schema and still be wrong. Strict schemas do not check bounds or cross-field rules, which must be checked in a validator.",
+        "Evals should mirror the real task distribution, including edge cases and hard cases, so a labeled set with few handwritten invoices says little about them. Evaluation also runs along several criteria, each with its own threshold, not one number.",
+        "Read failures grouped by kind of document and by field: a single score counts failures but cannot explain them, and failures that cluster on one kind of input and one field usually share a cause."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "overall field accuracy is 97%",
+          "meaning": "An aggregate figure is being used for a decision."
+        },
+        {
+          "phrase": "handwritten invoices were a small part of that set",
+          "meaning": "The segment of concern is under-measured."
+        },
+        {
+          "phrase": "a wrong payout is costly",
+          "meaning": "Errors in a weak segment are expensive, so evidence must be solid."
+        }
+      ],
+      "lookFor": [
+        "Accuracy broken down by document type and field.",
+        "More labeled examples of the weak segment.",
+        "Review cut only where the evidence supports it."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A small sample gives a noisy figure and a type average can hide a weak field."
+        },
+        {
+          "option": "c",
+          "reason": "The 97% average can mask a poor segment."
+        },
+        {
+          "option": "d",
+          "reason": "Schema validity shows shape, not correctness."
+        }
+      ],
+      "rule": "Before reducing review, measure accuracy by document type and field on enough labeled examples of each; an overall figure or a schema pass rate can hide a poor segment.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Structured outputs",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Strict tool use",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/strict-tool-use"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define success criteria and build evaluations",
+          "url": "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to evals: Iterate the prompt before you upgrade the model",
+          "url": "https://academy.claude.com/courses/introduction-to-evals/iterate-the-prompt-before-you-upgrade-the-model"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D5-003",
+      "explanation": "A random 2% sample of auto-approved items holds only a handful of police reports, too few to expose a date swap affecting 40% of them. Stratifying the weekly sample by document type and field gives each segment enough items to measure its own error rate, so the problem would have appeared in the first week.",
+      "options": {
+        "a": {
+          "reasoning": "A breakdown is the right idea, but a proportional sample holds only a few police reports and date fields, too few to measure their error rate reliably. The sample has to be allocated per segment.",
+          "tempting": "Reporting by type and field makes each segment visible."
+        },
+        "b": {
+          "reasoning": "The swapped dates were in documents that scored high, so removing high-confidence items from checking hides exactly the errors that were missed. Auto-approved items need sampling to find new patterns.",
+          "tempting": "Low-confidence items are where errors are most likely."
+        },
+        "c": {
+          "reasoning": "A day-and-month swap is a well-formed date that passes the pattern check. Schema checks cannot see semantic errors.",
+          "tempting": "A malformed date would fail the date field's pattern."
+        },
+        "d": {
+          "reasoning": "Stratified random sampling guarantees each segment enough items to measure, so a 40% error in one field of a small segment shows up in the first week instead of hiding in the overall 0.8%."
+        }
+      },
+      "concept": [
+        "Stratified random sampling of high-confidence extractions, by document type and field, measures error rates among items that pass automatically and finds new error patterns. An aggregate rate such as 0.8% can hide a small segment that is badly wrong.",
+        "Grade a sample of live traffic regularly to catch drift. Schema compliance is about shape, not truth, and strict schemas leave bounds and cross-field rules to a validator, so a valid date can still be wrong.",
+        "Read failures grouped by kind of document and by field, because one score counts failures but cannot explain them. Evaluation also runs along several criteria, each with its own threshold, not one number."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "2% of these are sampled at random",
+          "meaning": "A proportional sample gives small segments very few items."
+        },
+        {
+          "phrase": "Police reports are 3% of volume",
+          "meaning": "A small segment can be badly wrong without moving the overall rate."
+        },
+        {
+          "phrase": "a day-and-month swap",
+          "meaning": "A semantic error that a format check cannot see."
+        }
+      ],
+      "lookFor": [
+        "A sample allocated by document type and field.",
+        "Auto-approved items still sampled.",
+        "A check that sees semantic errors, not only format."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A proportional sample is too small for a rare segment."
+        },
+        {
+          "option": "b",
+          "reason": "Dropping high-confidence items hides the errors that were missed."
+        },
+        {
+          "option": "c",
+          "reason": "A swapped date is well formed and passes a pattern check."
+        }
+      ],
+      "rule": "Sample high-confidence extractions with stratified random sampling by document type and field, so small segments get enough items to measure their own error rates.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Structured outputs",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to evals: Evals in production (CI, batch, drift)",
+          "url": "https://academy.claude.com/courses/introduction-to-evals/evals-in-production"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to evals: Iterate the prompt before you upgrade the model",
+          "url": "https://academy.claude.com/courses/introduction-to-evals/iterate-the-prompt-before-you-upgrade-the-model"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define success criteria and build evaluations",
+          "url": "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D5-004",
+      "explanation": "Two cases deserve scarce reviewer time: a field below the threshold calibrated for it, and a claim whose source documents contradict each other. A scan whose fields all clear their thresholds, a model's own note of assurance and a score just above its threshold do not.",
+      "options": {
+        "a": {
+          "reasoning": "If every field clears its calibrated threshold, the report has already been judged reliable. Document type alone should not spend limited reviewer capacity.",
+          "tempting": "Scans are harder to read, so extra checking seems wise."
+        },
+        "b": {
+          "reasoning": "A field under its calibrated threshold is the main trigger for review, since the labeled set shows that such scores correspond to a high error rate."
+        },
+        "c": {
+          "reasoning": "A free-text note of self-assurance is not calibrated against outcomes. Field confidences judged against validated thresholds are the signal.",
+          "tempting": "The model says it is quite sure, which should count for something."
+        },
+        "d": {
+          "reasoning": "The threshold was calibrated to separate reliable from unreliable scores, so a field above it should pass. Routing near-misses would fill the queue with items that are probably correct.",
+          "tempting": "A score so close to the line is worth a second look."
+        },
+        "e": {
+          "reasoning": "Contradictory sources cannot be resolved by the extractor, however confident each field looks. A reviewer needs to decide which document to trust."
+        }
+      },
+      "concept": [
+        "Route low-confidence or contradictory documents to review, judged against thresholds calibrated on a labeled set, and prioritise within limited reviewer capacity. Sentiment and self-reported confidence are unreliable proxies unless calibrated.",
+        "Thresholds are only meaningful if they were set by grading against gold answers labeled by people, with targets set on a held-out set. Fields judged against such calibrated thresholds, plus claims whose sources contradict each other, are what a person should see."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "calibrated review thresholds on a labeled validation set",
+          "meaning": "Thresholds are already validated, so they define what is low confidence."
+        },
+        {
+          "phrase": "limited capacity each night",
+          "meaning": "The queue must hold only cases that need a person."
+        },
+        {
+          "phrase": "the queue must stay small",
+          "meaning": "Near-misses and document-type guesses would inflate it."
+        }
+      ],
+      "lookFor": [
+        "Fields judged against calibrated thresholds.",
+        "Contradictory sources sent to a person.",
+        "No routing on document type, near-misses or self-assurance alone."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A document type alone is not a trigger when every field clears its threshold."
+        },
+        {
+          "option": "c",
+          "reason": "Free-text assurance is not calibrated against outcomes."
+        },
+        {
+          "option": "d",
+          "reason": "A score above the calibrated threshold should pass."
+        }
+      ],
+      "rule": "Route fields below their calibrated thresholds and claims with contradictory source documents to human review; do not route on document type, near-misses or self-assurance.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define success criteria and build evaluations",
+          "url": "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D5-005",
+      "explanation": "The extraction step returns the same `null` for an unreadable page and a bill with no charges, so adjudication books both as \"no charges\" and pays wrongly on 150 claims. The step should return a status that separates a failed read (error type, document ID, retryable flag) from a valid empty bill, and the run should continue for the other documents.",
+      "options": {
+        "a": {
+          "reasoning": "Invented charges are worse than a gap: they look like real data and lead to payouts on figures nobody extracted.",
+          "tempting": "Populated fields keep adjudication running without gaps."
+        },
+        "b": {
+          "reasoning": "A structured status lets adjudication retry or hold a failed read and book a legitimately empty bill correctly, while the run keeps going for the other documents."
+        },
+        "c": {
+          "reasoning": "The two cases are now different values, but the distinction rests on a convention that is easy to lose, and a failure carries no error type, retryable flag or partial fields to act on.",
+          "tempting": "Different values for the two cases already separate them."
+        },
+        "d": {
+          "reasoning": "One unreadable page would halt every other bill. A failure should be reported for that document while the rest of the run continues.",
+          "tempting": "Stopping prevents any failed read being booked as empty."
+        }
+      },
+      "concept": [
+        "Access failures differ from valid empty results, and structured error context (failure type, attempted query, partial results) lets downstream systems handle each correctly. Silently returning empty results as success, and ending the whole workflow on one failure, are both anti-patterns.",
+        "In MCP, tool execution errors are returned in the tool result with `isError: true` so the model can see and handle them, rather than being hidden in an empty value. When a tool raises an exception, the loop still returns a tool_result with the error text and is_error true."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "returns `{\"fields\": null}` when a scanned page cannot be read",
+          "meaning": "A failure is reported as an ordinary value."
+        },
+        {
+          "phrase": "and the same value when a bill legitimately lists no itemised charges",
+          "meaning": "Two different situations share one signal."
+        },
+        {
+          "phrase": "The nightly run must keep going",
+          "meaning": "One failure must not stop the rest."
+        }
+      ],
+      "lookFor": [
+        "A status field or error that names the failure type.",
+        "A legitimate empty result kept distinct.",
+        "Processing continued for other documents."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Invented data hides the failure and drives wrong payouts."
+        },
+        {
+          "option": "c",
+          "reason": "A convention-based difference carries no error type or retry information."
+        },
+        {
+          "option": "d",
+          "reason": "Stopping the whole run over one document ends the workflow."
+        }
+      ],
+      "rule": "Return a structured status that separates a failed read from a valid empty result, so downstream systems retry or hold the first and accept the second, while the run continues.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "MCP specification: tools (2025-06-18)",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/tools"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Implementing multiple turns",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/implementing-multiple-turns"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "S6-D5-006",
+      "explanation": "The invoice says $4,820 and the photo estimate says $3,950, and the single `repair_total` field hides the second figure. Stricter prompts return the same two values, so the fix is in the schema: keep both values with source document, page and date, and flag the conflict so the case goes to human review.",
+      "options": {
+        "a": {
+          "reasoning": "Both figures survive with their provenance, and the flag makes the disagreement visible, so a person decides which one to pay on."
+        },
+        "b": {
+          "reasoning": "Keeping both values is right, but filling `repair_total` by a date rule hides that the conflict is unresolved, and a later date is not proof of the final cost. The conflict should be flagged.",
+          "tempting": "A deterministic tie-break gives adjudication one number."
+        },
+        "c": {
+          "reasoning": "An average is a number no document states, and it hides the discrepancy that someone should investigate.",
+          "tempting": "A middle figure with a note is a reasonable compromise."
+        },
+        "d": {
+          "reasoning": "The documents genuinely disagree, so no extraction run can make them match. A stronger model would only choose between them silently.",
+          "tempting": "A larger model should read the documents more accurately."
+        }
+      },
+      "concept": [
+        "Conflicting values from credible sources should be kept and annotated with their sources and dates, not resolved by picking one. Complete the analysis with the conflict included, and leave reconciliation to the coordinator or a human reviewer.",
+        "Structured outputs constrain a response to the schema, so the way to capture a second value and its provenance is to change the schema. A defined output format is the most important improvement to a subagent."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "a single `repair_total` field",
+          "meaning": "The schema has no place for a second value."
+        },
+        {
+          "phrase": "the same two values came back each time",
+          "meaning": "The extraction is accurate, so the issue is structure, not prompting."
+        },
+        {
+          "phrase": "adjudicators need to see where each figure came from",
+          "meaning": "Provenance for each value must be kept."
+        }
+      ],
+      "lookFor": [
+        "Both values kept with source, page and date.",
+        "A flag that makes the conflict visible.",
+        "A person deciding, not an automatic rule."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A date rule hides an unresolved conflict."
+        },
+        {
+          "option": "c",
+          "reason": "An average is a figure no document states."
+        },
+        {
+          "option": "d",
+          "reason": "A stronger model cannot make the documents agree."
+        }
+      ],
+      "rule": "Keep conflicting values with their sources and dates, flag the conflict, and let a human or coordinator reconcile it; do not pick one or average.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (reproduction of the official guide; also `docs/ccaf-exam-research.md` §3)",
+          "url": "https://jc-aiwiki.pages.dev/claude-ai/official-exam-guide"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Structured outputs",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: Designing effective subagents",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/designing-effective-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    }
+  ]
+}

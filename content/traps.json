@@ -114,11 +114,12 @@
     {
       "id": "ASSUMED_CONTEXT_INHERITANCE",
       "name": "Assumed context inheritance",
-      "description": "Assumes a subagent or new session sees the coordinator's history.",
-      "principle": "Subagents have isolated context. Pass everything they need explicitly in the prompt.",
+      "description": "Assumes context crosses an agent boundary on its own: a subagent or new session sees the coordinator's history, or the coordinator sees a subagent's intermediate work.",
+      "principle": "Subagents have isolated context. Pass everything they need explicitly in the prompt; only their final message comes back.",
       "examples": [
         "Asking the synthesis subagent to \"use the findings above\" without including them in its prompt.",
-        "Expecting a spawned subagent to know the user's constraints from the coordinator's conversation."
+        "Expecting a spawned subagent to know the user's constraints from the coordinator's conversation.",
+        "Having the main session read a subagent's intermediate messages, when only its final message comes back."
       ]
     },
     {
@@ -199,6 +200,16 @@
       "examples": [
         "Continuing to troubleshoot after the customer has asked twice to speak to a person.",
         "Picking the most recent account when the lookup returns three customers with the same name."
+      ]
+    },
+    {
+      "id": "WRONG_COMPONENT",
+      "name": "Blaming the wrong component",
+      "description": "Puts the cause of a failure in a component the evidence clears (a subagent that did its assigned part, a step the stem says worked) instead of the one that owns the gap.",
+      "principle": "Rule out each component the evidence shows working, then look at what owns the gap: the decomposition, the prompt, the handoff or the tool contract.",
+      "examples": [
+        "Blaming a search subagent's narrow queries when it covered the one sector it was given and the coordinator never assigned the rest.",
+        "Blaming the synthesis step for a missing topic when it used everything it received."
       ]
     }
   ]

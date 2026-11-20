@@ -8,7 +8,7 @@ async function answerFirstQuestionInStudyMode(page: Page) {
   await page.waitForURL(/\/practice\/[^/?]+/);
   await page.getByRole('radio').first().check();
   await page.getByRole('radio', { name: 'Sure', exact: true }).check();
-  await page.getByRole('button', { name: 'Submit' }).click();
+  await page.getByRole('button', { name: 'Submit', exact: true }).click();
 }
 
 test('research page has an anchor per task statement', async ({ page }) => {
@@ -35,6 +35,7 @@ test('feedback "Read" link lands on the primary task in the research page', asyn
 
 test('feedback trap badge links to the decision sheet', async ({ page }) => {
   await answerFirstQuestionInStudyMode(page);
+  await page.getByRole('button', { name: 'Show reasoning' }).click();
   await page.locator('a[href^="/cheatsheet#trap-"]').first().click();
   await expect(page).toHaveURL(/\/cheatsheet#trap-[A-Z_]+$/);
 });

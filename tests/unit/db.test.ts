@@ -14,6 +14,7 @@ const TABLES = [
   'flashcard_state',
   'question',
   'question_flag',
+  'question_lesson',
   'question_option',
   'question_task',
   'review_item',

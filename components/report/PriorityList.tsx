@@ -27,7 +27,7 @@ export default function PriorityList({
   lessonUrls: Record<string, string | null>;
 }) {
   return (
-    <ol className="space-y-3">
+    <ol className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
       {entries.map((e) => (
         <li
           key={e.taskId}

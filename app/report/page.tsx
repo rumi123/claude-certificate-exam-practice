@@ -92,44 +92,50 @@ export default function ReportPage() {
           )}
         </Section>
 
-        <Section id="domains" title="Domains" icon={Layers}>
-          {!hasAnswers && <Empty id="domains" text={EMPTY_DATA} />}
-          <DomainBars domains={report.domains} />
-        </Section>
+        <div className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
+          <div className="space-y-6">
+            <Section id="domains" title="Domains" icon={Layers}>
+              {!hasAnswers && <Empty id="domains" text={EMPTY_DATA} />}
+              <DomainBars domains={report.domains} />
+            </Section>
 
-        <Section id="tasks" title="Task statements" icon={Target}>
-          {!tested && <Empty id="tasks" text={EMPTY_TASKS} icon={Target} />}
-          <TaskTable rows={report.tasks} />
-        </Section>
+            <Section id="tasks" title="Task statements" icon={Target}>
+              {!tested && <Empty id="tasks" text={EMPTY_TASKS} icon={Target} />}
+              <TaskTable rows={report.tasks} />
+            </Section>
+          </div>
 
-        <Section id="traps" title="Trap profile" icon={TriangleAlert}>
-          {report.traps.length > 0 ? (
-            <TrapProfile traps={report.traps} />
-          ) : (
-            <Empty id="traps" text={EMPTY_TRAPS} icon={Target} />
-          )}
-        </Section>
+          <div className="space-y-6">
+            <Section id="traps" title="Trap profile" icon={TriangleAlert}>
+              {report.traps.length > 0 ? (
+                <TrapProfile traps={report.traps} />
+              ) : (
+                <Empty id="traps" text={EMPTY_TRAPS} icon={Target} />
+              )}
+            </Section>
 
-        <Section id="calibration" title="Calibration" icon={Crosshair}>
-          {report.calibration.score === null && report.calibration.luckyGuesses === 0 ? (
-            <Empty id="calibration" text={EMPTY_DATA} />
-          ) : (
-            <Calibration calibration={report.calibration} taskTitles={taskTitles} />
-          )}
-        </Section>
+            <Section id="calibration" title="Calibration" icon={Crosshair}>
+              {report.calibration.score === null && report.calibration.luckyGuesses === 0 ? (
+                <Empty id="calibration" text={EMPTY_DATA} />
+              ) : (
+                <Calibration calibration={report.calibration} taskTitles={taskTitles} />
+              )}
+            </Section>
 
-        <Section id="timing" title="Timing" icon={Timer}>
-          {report.timing.overall.n > 0 ? (
-            <Timing timing={report.timing} domainNames={domainNames} />
-          ) : (
-            <Empty id="timing" text={EMPTY_DATA} />
-          )}
-        </Section>
+            <Section id="timing" title="Timing" icon={Timer}>
+              {report.timing.overall.n > 0 ? (
+                <Timing timing={report.timing} domainNames={domainNames} />
+              ) : (
+                <Empty id="timing" text={EMPTY_DATA} />
+              )}
+            </Section>
 
-        <Section id="scenarios" title="Scenarios" icon={Gauge}>
-          {!hasAnswers && <Empty id="scenarios" text={EMPTY_DATA} />}
-          <ScenarioTable scenarios={report.scenarios} />
-        </Section>
+            <Section id="scenarios" title="Scenarios" icon={Gauge}>
+              {!hasAnswers && <Empty id="scenarios" text={EMPTY_DATA} />}
+              <ScenarioTable scenarios={report.scenarios} />
+            </Section>
+          </div>
+        </div>
       </div>
     </>
   );

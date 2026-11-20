@@ -40,8 +40,8 @@ async function pickAndSubmit(page: Page, correct: boolean): Promise<void> {
   const escaped = text.replace(/`/g, '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   await page.getByRole('radio', { name: new RegExp(`^[A-E]\\. ${escaped}$`) }).check();
   await page.getByRole('radio', { name: 'Sure', exact: true }).check();
-  await page.getByRole('button', { name: 'Submit' }).click();
-  await expect(page.getByTestId('feedback-option').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Submit', exact: true }).click();
+  await expect(page.getByRole('status')).toBeVisible();
 }
 
 function counts(): string {
@@ -98,7 +98,7 @@ test('AC3: a multiple-response question needs exactly 2 picks; 1 of 2 is partial
   page,
 }) => {
   await start(page, 'scenario=S1&size=5&mode=study&multi=only');
-  const submit = page.getByRole('button', { name: 'Submit' });
+  const submit = page.getByRole('button', { name: 'Submit', exact: true });
   const boxes = page.getByRole('checkbox');
   await page.getByRole('radio', { name: 'Sure', exact: true }).check();
   await boxes.first().check();

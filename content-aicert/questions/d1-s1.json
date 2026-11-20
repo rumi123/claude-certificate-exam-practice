@@ -1,0 +1,790 @@
+{
+  "scenario": "S1",
+  "version": 2,
+  "questions": [
+    {
+      "id": "S1-D1-001",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.4",
+      "secondaryTasks": ["1.5"],
+      "stem": "The energy regulator forbids disconnection notices to customers on the vulnerable-customer register. The agent can call `send_disconnection_notice`, and `get_account` returns a `vulnerable` flag. Last quarter 5 of 4,200 notices reached register customers even though the system prompt states the ban and holds two worked examples of declining. Adding a third example and a bold warning cut the monthly count only from 3 to 2. Compliance wants zero, and the other 99% of notices should not slow down. What should you do?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add worked examples of register customers to the system prompt, covering partial payments, hardship notes and joint accounts, and keep the ban as its first rule.",
+          "correct": false,
+          "explanation": "Examples are a probabilistic nudge, and the stem shows they have already stopped working: a third example and a warning cut the count only from 3 to 2. A regulatory ban needs a guarantee, so extra prompt text is the wrong layer here. Examples suit gray-area judgment, not a legal prohibition.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "b",
+          "text": "Add a `PostToolUse` hook on `send_disconnection_notice` that voids the notice, alerts compliance and logs the breach when the session's `get_account` result shows the `vulnerable` flag.",
+          "correct": false,
+          "explanation": "A `PostToolUse` hook runs after the notice has gone out, so the customer has already received it and the regulator's rule is already broken. Voiding and alerting only report the breach. This hook point would suit data normalization, but this rule has to be enforced before the call runs.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add a `PreToolUse` hook that checks the `vulnerable` flag from the session's `get_account` result on every notice call, blocks it when set and redirects the agent to `escalate_to_agent`.",
+          "correct": true,
+          "explanation": "A `PreToolUse` hook intercepts the call before it runs, so no notice can reach a register customer, and the block message sends the agent to the approved human path. It adds no work for the 99% of notices that are allowed.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Run every conversation through a separate classifier agent that predicts up front whether the customer is vulnerable, and removes the notice tool for those it flags.",
+          "correct": false,
+          "explanation": "The register flag is already available from `get_account`, so a predictive classifier adds a new component with its own error rate to settle a question the data already settles. A classifier is worth it when no explicit field exists, which is not the case here.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "A regulator-backed ban needs a pre-call block in code; once examples have stopped helping, extra prompt text won't close the gap.",
+      "studyRef": "§3 Task 1.4; §3 Task 1.5; §5 Key decision frameworks (compliance rule → hook)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-002",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "1.4",
+      "secondaryTasks": ["5.2"],
+      "stem": "When the agent proposes a bill credit above $250 it calls `escalate_to_agent`, and an approver in the billing team picks the case up. Approvers report that the handoff arrives as the single line \"credit needs approval\", and they spend about 8 minutes reading the chat to find the account, the disputed bill and the reason a credit is justified. The team wants approvals to take under 2 minutes, so the handoff must stay short enough to read at a glance. Which two items should the handoff include? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "The full chat transcript and every raw tool result from the session, pasted in order so the approver can search them.",
+          "correct": false,
+          "explanation": "Dumping the whole session recreates the 8-minute reading task the approver already complains about. A handoff should compress the case into the few facts needed to decide. A transcript is useful as an attachment, but it cannot replace a summary.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "b",
+          "text": "The verified account ID, the disputed bill number and amount, and the credit amount the agent proposes, so the approver can open the right records.",
+          "correct": true,
+          "explanation": "These are the facts the approver is currently hunting for in the chat. With the account, the bill and the proposed amount in the handoff, the approver can open the right records straight away.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "A 0 to 100 confidence score that the agent assigns to its own credit recommendation, shown at the top of the handoff.",
+          "correct": false,
+          "explanation": "Self-reported confidence is poorly calibrated, so it gives the approver a number to trust without a reason. It also leaves out the account and bill details the approver needs. A decision should rest on stated evidence, not on how sure the model says it is.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "d",
+          "text": "A short free-text note that the customer is waiting and the case is urgent, so that the approver picks it up first.",
+          "correct": false,
+          "explanation": "This is the same kind of generic message the approvers already complain about: it says nothing about the account, the cause or the amount, so the approver still has to dig for every fact. Urgency is not a substitute for case facts.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "e",
+          "text": "The root cause the agent found, such as an estimated read 40% above the next actual read, with the supporting `get_meter_reads` result.",
+          "correct": true,
+          "explanation": "The cause and its evidence tell the approver why a credit is justified without re-reading the chat. It complements the identifiers: one says which case this is, the other says why the proposed credit is right.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "A handoff carries structured case facts for the next person: identity, the disputed item, the root cause and the recommended action.",
+      "studyRef": "§3 Task 1.4 (structured handoff protocols); §5 Patterns in the correct answers",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-003",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.4",
+      "secondaryTasks": ["1.1"],
+      "stem": "A customer writes: \"My last electricity bill looks too high, I was without power during the outage on the 3rd and want a credit, and I need to spread the water bill over three months.\" In 30% of these multi-issue conversations the agent settles the first two items, writes a closing reply and never mentions the payment plan. Single-issue conversations are fine. No money or regulation is at stake in this miss, and the team does not want to add new components. How should you fix this?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Send any message that raises several issues straight to `escalate_to_agent`, so that a person coordinates the separate items for the customer.",
+          "correct": false,
+          "explanation": "Multi-issue messages are within the agent's reach, and the 75% resolution target depends on handling them. Escalating them all is premature and throws away the agent's ability to resolve most of them. Escalation is for explicit human requests or policy gaps, not for message length.",
+          "trap": "PREMATURE_ESCALATION"
+        },
+        {
+          "id": "b",
+          "text": "Add a `PreToolUse` hook that blocks the closing reply until a counter of resolved items matches the number of items the agent extracted from the message.",
+          "correct": false,
+          "explanation": "This builds enforcement machinery for a problem of planning and attention. The agent never sees the missing item in the first place, so a counter would block it without telling it what to do. Neither money nor regulation is at stake, so code-level enforcement is not needed.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "c",
+          "text": "Ask customers in the first reply to raise one problem at a time and to open a new conversation for each extra issue they have.",
+          "correct": false,
+          "explanation": "This pushes the problem onto the customer and leaves the agent's weakness untouched. It also lowers the resolution rate the team is measured on, because customers will drop the extra items.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Add a line to the system prompt telling the agent to list each distinct request in a message, investigate each one, and cover every item in a single reply.",
+          "correct": true,
+          "explanation": "Splitting the message into separate items gives each one its own investigation and makes a missing item visible when the reply is composed. This is a judgment and planning problem with nothing to enforce, so guidance in the system prompt is the right and smallest fix. A hook would block replies without saying what is missing.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "When the need is judgment and nothing must be enforced, put guidance in the system prompt: split a multi-concern message, investigate each item, reply once.",
+      "studyRef": "§3 Task 1.4 (decomposing multi-concern requests); §5 Patterns in the correct answers",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-004",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.5",
+      "secondaryTasks": ["1.1"],
+      "stem": "`get_meter_reads` returns water usage in litres with a numeric reading type (0 actual, 1 estimated, 2 customer-supplied), while the legacy billing tool returns cubic metres and the words \"estimated\" or \"actual\". In 11% of disputes the agent calls a bill estimated when it was not, or compares usage across the two units wrongly. The team put a conversion table and a status-code legend in the system prompt, and the error rate fell only to 8%. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Extend the prompt table with 20 worked unit conversions and ask the model to double-check every figure before it replies to the customer.",
+          "correct": false,
+          "explanation": "The stem shows the prompt table was already tried and left an 8% error rate. Extra examples and a self-check keep the work probabilistic, so the arithmetic still depends on the model getting each conversion right. A hook would remove the choice entirely.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "b",
+          "text": "Add a `PreToolUse` hook on `get_meter_reads` that rewrites the request arguments so both tools are asked for readings in the same unit.",
+          "correct": false,
+          "explanation": "A `PreToolUse` hook acts on the outgoing call, but the mismatch is in what the tools send back. Rewriting arguments cannot change the numeric reading type or the unit the legacy tool returns. Data normalization belongs in the result path, after the call.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "c",
+          "text": "Add a `PostToolUse` hook on both meter tools that turns reading-type codes into words and converts every usage figure to cubic metres before the model sees a result.",
+          "correct": true,
+          "explanation": "A `PostToolUse` hook transforms results before the model processes them, so the model sees one unit and readable statuses from both tools. It is deterministic, which the prompt table was not: the stem shows the table cut errors from 11% to only 8%.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Add a `PostToolUse` hook on `get_meter_reads` that converts usage to cubic metres and replaces the unit labels, and keep the status-code legend in the system prompt for the reading types.",
+          "correct": false,
+          "explanation": "Converting only the units fixes half of the mismatch, but the numeric reading types still depend on a prompt legend, which is where the model keeps calling bills estimated by mistake. Normalizing both fields in code is what removes the error.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Normalize heterogeneous tool output in a `PostToolUse` hook so the model only ever reasons about one unit and plain-language statuses.",
+      "studyRef": "§3 Task 1.5 (PostToolUse normalization); §5 Key decision frameworks",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-005",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.5",
+      "secondaryTasks": ["1.4"],
+      "stem": "Credits above $250 need a human approver, while smaller credits must keep flowing without delay. Last month the agent applied three credits of $120 to the same account within one conversation, $360 in total, each below the limit. A teammate proposes a `PreToolUse` hook on `apply_bill_credit` that blocks any single call above $250. The system prompt already tells the agent not to split credits. What change will actually close the gap?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep the hook as proposed and add a `PostToolUse` hook that sums credits per account after each call and reverses the latest credit once the total passes $250.",
+          "correct": false,
+          "explanation": "A `PostToolUse` hook acts after the money has been applied, so the customer can see the credit and the approver has been bypassed before any reversal. The right point to stop the credit is before it runs.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "b",
+          "text": "Add a sentence to the system prompt saying that all credits for one account within a conversation must be added together before they are compared with the $250 limit.",
+          "correct": false,
+          "explanation": "The prompt already tells the agent not to split credits and the split happened anyway. Another prompt sentence is still a probabilistic nudge, and approval above $250 is a money rule that has to be guaranteed.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Lower the single-call limit in the hook from $250 to $100 so that split credits are caught sooner, and leave the rest of the hook logic as it is.",
+          "correct": false,
+          "explanation": "A lower per-call limit would block many legitimate credits and still miss a customer who gets four credits of $90. The flaw is that the hook looks at calls one at a time, not at the amount the account has received in total.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Extend the `PreToolUse` hook so it keeps a running credit total per account for the session and blocks any call that would take the total above $250, escalating instead.",
+          "correct": true,
+          "explanation": "The approval rule is about the amount a customer receives, so the hook has to count the total. Checking the sum before each call blocks the split pattern and still lets small credits through, and it redirects to the approver path.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "A hook enforcing a threshold must track the quantity the rule is about, here the running total per account, not each call alone.",
+      "studyRef": "§3 Task 1.5 (interception hooks, block and redirect); §5 Key decision frameworks",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-006",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.5",
+      "secondaryTasks": ["1.4"],
+      "stem": "Riverbend policy caps payment plans at 12 monthly instalments. The agent offered 18 instalments to 4 customers last quarter, although the system prompt states the cap. The `create_payment_plan` tool accepts any number from 1 to 36, and customers must be told only what is actually available. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Move the cap to the first line of the system prompt and add an example of declining a request for 18 instalments, with the policy wording quoted in full.",
+          "correct": false,
+          "explanation": "A prompt line and one example are a nudge. The agent already ignored the stated cap four times, so repeating it with an example does not guarantee that no 18-instalment plan is created.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "b",
+          "text": "Add a `PreToolUse` hook that blocks `create_payment_plan` for any count above 12 and returns the maximum, so the agent offers a plan that can be created.",
+          "correct": true,
+          "explanation": "The hook stops the call before a plan exists and tells the agent what is allowed, so the customer hears a plan that can actually be created. The check is deterministic, which fits a policy cap.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Add a `PreToolUse` hook that quietly lowers any instalment count above 12 to 12 before the call runs, while the agent still offers the customer 18 instalments.",
+          "correct": false,
+          "explanation": "The plan would be created with 12 instalments while the agent has told the customer 18, so the customer is misled and the mismatch surfaces later. Blocking with an explanation keeps the agent's words and the system's action aligned.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Add a `PostToolUse` hook that cancels any plan longer than 12 instalments after it has been created, and has the agent send the customer a corrected offer.",
+          "correct": false,
+          "explanation": "After the call the plan already exists, and the customer may have been told about it. Cancelling afterwards creates a worse experience than refusing the call, and it handles the wrong lifecycle point for a policy check.",
+          "trap": "WRONG_CONFIG_LAYER"
+        }
+      ],
+      "keyConcept": "Block out-of-policy calls before they run and return a message the agent can act on, instead of silently changing the arguments.",
+      "studyRef": "§3 Task 1.5 (interception hooks that block and redirect)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-007",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.1",
+      "secondaryTasks": ["5.2"],
+      "stem": "Your support agent runs in a custom loop built on the Claude API. The loop exits as soon as a response contains any text block. In 7% of conversations Claude writes \"Let me pull up your meter reads\" in the same response in which it requests `get_meter_reads`, so the loop ends and the customer gets no answer, although the tool itself works. Four-bill disputes can need 10 or more tool calls. What should the loop do instead?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Check `stop_reason` after every response: run the tools Claude asks for and keep looping while it is `\"tool_use\"`, and finish only on `\"end_turn\"`.",
+          "correct": true,
+          "explanation": "The `stop_reason` field tells the loop whether Claude is waiting for a tool result, whatever text accompanies the request. Continuing on `tool_use` and finishing on `end_turn` fixes the early exit for good.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Check `stop_reason` and finish on `\"end_turn\"`, but also stop after 6 iterations and show the customer the last text block Claude wrote.",
+          "correct": false,
+          "explanation": "Reading `stop_reason` is right, but a fixed 6-iteration stop cuts conversations off at an arbitrary point, and a four-bill dispute needs more tool calls than that. A cap is a safety net against runaway loops, not the rule that ends a normal conversation.",
+          "trap": "ITERATION_CAP"
+        },
+        {
+          "id": "c",
+          "text": "Run the requested tools while `stop_reason` is \"tool_use\", but also scan each text block for phrases such as \"let me\" or \"one moment\" and keep looping when one is found, otherwise finish.",
+          "correct": false,
+          "explanation": "The `stop_reason` check is right, but the added text scan is still natural-language parsing, with a list of phrases to maintain. A response with `end_turn` that happens to contain \"let me\" would keep the loop running with nothing left to do.",
+          "trap": "NL_TERMINATION"
+        },
+        {
+          "id": "d",
+          "text": "Keep the text check as the exit, log `stop_reason` for review, and ask the model in the system prompt to write no text in any response that requests a tool.",
+          "correct": false,
+          "explanation": "Logging `stop_reason` does not change what ends the loop. This asks the model to follow a formatting preference so that a brittle loop keeps working; the loop would still break whenever the model slips, and the fix belongs in the control flow, not in the prompt.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        }
+      ],
+      "keyConcept": "Drive the agentic loop with `stop_reason`: continue on `tool_use`, finish on `end_turn`, and never infer completion from text.",
+      "studyRef": "§3 Task 1.1; §5 The 10 critical anti-patterns (1 and 2)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-008",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.7",
+      "secondaryTasks": ["5.1"],
+      "stem": "Riverbend sessions are named by case ID. About 70% of customers who return to a dispute do so within 4 hours, when nothing in the account has changed. The rest return after the nightly billing run, which has posted payments and new meter reads. Today every returning conversation starts fresh and the agent repeats about 25 tool calls of investigation. The team wants to cut that repeated work without answering from outdated figures. Which approach is best?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Start a fresh session for every return and speed up the repeated investigation by running the independent tool calls in parallel to keep the cost down.",
+          "correct": false,
+          "explanation": "Starting fresh throws away a valid investigation for the 70% of returns where nothing changed. Faster repetition is still repetition. Starting fresh is the right choice only where earlier tool results are stale.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "b",
+          "text": "Resume the named session for every return, because the earlier investigation is the most complete record of the case and saves all 25 tool calls.",
+          "correct": false,
+          "explanation": "After the billing run, payments and meter reads in the old tool results are out of date, and the agent would reason from stale figures. A resumed session is only as good as its tool results.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Fork the original session each time a customer returns, so the first investigation is kept as a shared baseline for every later visit.",
+          "correct": false,
+          "explanation": "`fork_session` creates parallel branches for exploring different approaches from a shared baseline. A returning customer needs one continued conversation, so forking adds branches without solving the stale-data problem.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Resume the named session for same-day returns and tell it what changed; after the billing run, start a new session from a structured case summary.",
+          "correct": true,
+          "explanation": "It matches the choice to the data: where prior results are mostly valid, resuming saves the 25 calls. Where the billing run has changed the facts, a fresh session with a compact summary is more reliable than carrying stale results.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Resume a named session when its tool results are still valid, and start fresh from a structured summary when they are stale.",
+      "studyRef": "§3 Task 1.7 (resume vs fresh start with summaries)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-009",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "1.7",
+      "secondaryTasks": ["1.5"],
+      "stem": "A customer returns to a case that the agent investigated in a session named `case-88214`. Since then the nightly run posted a payment of $84 and a new meter read, so two of the five tool results in the session are out of date. The team resumes the session with `--resume case-88214`. Which two steps make the agent's next answer reliable without redoing the whole investigation? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "In the new message, tell the resumed agent that the payment and the meter read have changed since its earlier lookups.",
+          "correct": true,
+          "explanation": "The resumed agent has no way of knowing the account changed, so it would trust its earlier results. Naming the specific changes tells it which findings to question and keeps the rest of the investigation.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Fork the session with `fork_session` so that the out-of-date results sit in a separate branch the customer does not see.",
+          "correct": false,
+          "explanation": "`fork_session` is for exploring divergent approaches from a shared baseline. Forking leaves the stale results in the branch the agent continues from, so the next answer is no more reliable than before.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "c",
+          "text": "Delete every earlier tool result from the history and keep only the assistant's written conclusions.",
+          "correct": false,
+          "explanation": "The conclusions were drawn from the old figures, so keeping them without their evidence leaves stale claims that nobody can check. Discarding the evidence also throws away the three results that are still valid.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "d",
+          "text": "Have it call `get_account` and `get_meter_reads` for the changed items before it answers, so it reasons from current figures.",
+          "correct": true,
+          "explanation": "Re-fetching the affected data replaces the stale results with live ones, without redoing the other three lookups. Together with telling the agent what changed, it makes the answer rest on current facts.",
+          "trap": null
+        },
+        {
+          "id": "e",
+          "text": "Answer from the earlier results and add a line asking the customer to say if a figure looks wrong.",
+          "correct": false,
+          "explanation": "This hands the verification to the customer and still gives a wrong answer first. A disclaimer does not make stale figures correct, and the account data is a tool call away.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "When resuming a session after data changed, tell the agent what changed and have it re-read the affected sources.",
+      "studyRef": "§3 Task 1.7 (informing resumed sessions about changes)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-010",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.4",
+      "secondaryTasks": ["1.5"],
+      "stem": "Riverbend added `verify_caller`, which asks security questions and returns `{\"verified\": true}` or `{\"verified\": false}`. The system prompt says to verify the caller before any credit or payment plan. Logs show 3% of sessions call `apply_bill_credit` or `create_payment_plan` before a verified result, and twice last month a plan was set up for a caller whose `verify_caller` check had failed. Verified callers must not face extra steps. Which change closes the gap?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a `PreToolUse` hook on `apply_bill_credit` and `create_payment_plan` that denies the call until `verify_caller` has returned `{\"verified\": true}` in this session, with a reason naming the missing step.",
+          "correct": true,
+          "explanation": "Moving money or setting up a plan for the wrong person has to be prevented, so the order is enforced in code before the call. Checking for a `verified: true` result, not just a call, closes both paths in the logs: the 3% that skip the check and the two callers who failed it. Verified callers pass straight through.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add a `PostToolUse` hook on `apply_bill_credit` and `create_payment_plan` that reverses the credit or cancels the plan when the session holds no `{\"verified\": true}` result.",
+          "correct": false,
+          "explanation": "A `PostToolUse` hook runs after the credit is applied or the plan exists, so the wrong person has already been served; reversing it cleans up the harm instead of preventing it. Post-call hooks suit work on results, such as formatting, not a prerequisite.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Move the verification rule to the top of the system prompt and add two worked examples in which the agent calls `verify_caller` before offering a credit or a payment plan.",
+          "correct": false,
+          "explanation": "The system prompt already states the rule and 3% of sessions still skip it, so a stronger prompt can lower the rate but not reach zero. Examples are the right tool for judgment calls, not for an identity check before money moves.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Add a `PreToolUse` hook on `apply_bill_credit` and `create_payment_plan` that denies the call until `verify_caller` has returned a result, verified or not, in this session, with a reason naming the missing step.",
+          "correct": false,
+          "explanation": "It is the right hook at the right point, and it would stop the 3% that skip `verify_caller`. But it unlocks on any result, verified or not, so the two callers whose check failed would still get through. It would suit a rule that only needs a step to have run, not to have succeeded.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "A prerequisite gate must test the outcome the rule needs, such as a verified result, not merely that the earlier step ran.",
+      "studyRef": "§3 Task 1.4 (programmatic prerequisites that block downstream tools); §6a Q1",
+      "sources": ["exam-guide", "research-6a-q1"]
+    },
+    {
+      "id": "S1-D1-011",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.4",
+      "secondaryTasks": ["1.6"],
+      "stem": "A customer writes: \"I'd like to spread my $540 balance over six months, and I was cut off for two days in the March outage.\" The agent investigates both items in parallel and answers each as soon as its tool calls return, so it offers a $90-a-month plan and then applies a $60 outage credit. In 14% of such chats the plan is revised later, costing a second contact. Most payment-plan requests involve no credit at all, and those must stay quick. How should the agent handle these conversations?",
+      "options": [
+        {
+          "id": "a",
+          "text": "List the items first and investigate them in parallel, but write one reply only after all have returned, applying any credit before sizing the plan on the reduced balance.",
+          "correct": true,
+          "explanation": "The two items depend on each other: the $60 credit changes the balance the plan spreads, so $540 over six months becomes $480, or $80 a month. Investigating in parallel is still fine; what must wait is the reply. One resolution written after all results return removes the 14% of revised plans.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "List the items first and handle them one at a time in the order the customer raised them, replying after each one, so every answer rests on the results that came before it.",
+          "correct": false,
+          "explanation": "Working in order fixes this chat only when the credit comes first. Here the customer asked for the plan first, so the plan would again be sized on $540. Answering item by item suits items that are independent; here the dependency decides the order, not the customer's wording.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add a `PreToolUse` hook that blocks `create_payment_plan` until `apply_bill_credit` has run in the session, so a credit always comes before any plan is set up.",
+          "correct": false,
+          "explanation": "A hook makes the order certain, but it would block every plan request that comes with no credit, which is most of them, and push the agent to look for a credit nobody asked for. Gates fit fixed prerequisites such as identity checks, not an order that depends on what the customer raised.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Send any conversation that mixes a credit with a payment plan to `escalate_to_agent`, so a person works out the order and the final amounts.",
+          "correct": false,
+          "explanation": "Mixed requests are routine work for the agent, and escalating them all would cut into the 75% target for a problem the agent can solve by planning its reply. Escalation fits a policy gap or an explicit request for a person.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "Split a multi-concern request and investigate the items in parallel, but compose one resolution after all results return when the items interact.",
+      "studyRef": "§3 Task 1.4 (decomposing multi-concern requests into one unified resolution)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-012",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.4",
+      "secondaryTasks": ["1.5"],
+      "stem": "When Riverbend's agent calls `get_meter_reads` before discussing a high bill, the dispute closes in about 3 fewer turns, but the agent checks the reads first in only half of disputes. A teammate proposes a `PreToolUse` hook that blocks `create_payment_plan` until `get_meter_reads` has run in the session. About 60% of payment-plan requests come from customers who accept their bill and only want to spread it. The read check is a pattern seen in the best conversations, not a written policy. How should the architect respond to the proposal?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Accept the hook as proposed, so that every payment plan, even for a customer who disputes nothing, is backed by a `get_meter_reads` result before anyone discusses the amount.",
+          "correct": false,
+          "explanation": "It forces a meter read on the 60% of customers who accept their bill, adding turns to the conversations it was meant to shorten. A blocking gate is right for a mandatory prerequisite, such as identity before money moves, not for a practice that saves turns.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "b",
+          "text": "Decline the hook but add a system-prompt line: when a customer disputes the bill amount, call `get_meter_reads` before discussing it, and skip it for every plan-only request.",
+          "correct": true,
+          "explanation": "Checking reads first is a best-effort preference with no compliance stake, so guidance in the system prompt is the right layer, and Claude usually follows such an instruction. Scoping the line to disputed bills keeps the 60% of plan-only requests fast while lifting the half of disputes that skip the check.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Accept the hook, but have it block `create_payment_plan` only in sessions the agent has tagged as disputes over a bill amount, so plan-only requests pass straight through.",
+          "correct": false,
+          "explanation": "Scoping by dispute fixes the 60% problem, but the gate now depends on a tag the model sets, so it is no more certain than a prompt line, and it adds code to maintain for a preference. A tagged gate would make sense only if the order were a real requirement.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Decline the hook and add a `PostToolUse` hook on `create_payment_plan` that flags plans set up without a `get_meter_reads` call for a supervisor to review.",
+          "correct": false,
+          "explanation": "It sends plans to a supervisor over something that is only a preference, so plan-only requests the agent handled correctly would fill the queue, and a flag raised after the plan exists saves no turns in the dispute. Supervisor review suits a rule whose breaches matter.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "Use hooks for rules that must be guaranteed; put best-effort preferences, such as a helpful order of steps, in the prompt.",
+      "studyRef": "§3 Task 1.4 (programmatic enforcement vs prompt guidance); §5 Key decision frameworks (best-effort preference)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-013",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.5",
+      "secondaryTasks": ["1.4"],
+      "stem": "`get_account` returns the customer's full `bank_account` number, which agents need only to confirm the last four digits. To stop the agent repeating it, the team added a `PostToolUse` hook on `get_account` that returns `decision: \"block\"` with the reason \"Do not reveal bank details.\" The agent still quoted the full number in 0.3% of chats last month. Replies must keep quoting 8-digit meter serials and account IDs. Why did the hook not help, and what fixes it?",
+      "options": [
+        {
+          "id": "a",
+          "text": "The block reason is too mild for the model to act on; make the reason say that quoting bank details breaks policy, and repeat the ban in the system prompt.",
+          "correct": false,
+          "explanation": "The model already sees a reason and still leaks the number sometimes; stronger wording is still a request. When data must stay out of replies, remove it from what the model sees rather than asking it not to repeat it.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "b",
+          "text": "A `PostToolUse` block decision comes too late, after the model has read the full number; return the same block decision and reason from a `PreToolUse` hook on `get_account` instead.",
+          "correct": false,
+          "explanation": "It misreads the hook's timing: a `PostToolUse` hook runs before the model processes the result, so timing is not the cause. Blocking `get_account` before it runs would stop the whole account lookup the agent needs. `PreToolUse` is right for stopping an outgoing call, not for changing a result.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Hook output such as `updatedToolOutput` never reaches the model; add a filter on outgoing replies that deletes any number of eight or more digits.",
+          "correct": false,
+          "explanation": "Hook output does reach the model; `updatedToolOutput` replaces what it sees, so the diagnosis is wrong, and a digit filter would also delete the 8-digit meter serials and account IDs that replies must quote. Output filters suit patterns with no legitimate use in replies.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "A block decision only adds its reason beside the result, so the model still reads the full number; return `updatedToolOutput` with the number masked to its last four digits.",
+          "correct": true,
+          "explanation": "In a `PostToolUse` hook, a block decision only adds the reason next to the result; Claude still reads the full number, which is why 0.3% of chats leak it. `updatedToolOutput` replaces what the model sees, so a masked number can't be repeated, and the last four digits still allow confirmation.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "To keep data from the model, replace the tool result with `updatedToolOutput`; a block reason leaves the original output visible.",
+      "studyRef": "§3 Task 1.5 (PostToolUse hooks transform results before the model processes them)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-014",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 3,
+      "primaryTask": "1.5",
+      "secondaryTasks": ["1.4"],
+      "stem": "Credits above $250 need a human approver. A `PreToolUse` hook on `apply_bill_credit` checks the amount and, for credits above $250 only, asks the approvals service whether a signed approval exists. During a 15-minute approvals outage the lookup timed out, the hook threw an exception, and 6 unapproved credits of $300 to $700 were applied. Credits of $250 or less must keep flowing during outages. Which two changes should the team make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Configure the hook with `onFailure: \"block\"`, so that if the hook itself crashes, the credit it was checking does not go through.",
+          "correct": true,
+          "explanation": "By default a hook that fails lets the action proceed, which is how 6 credits got through. Setting it to block on failure covers any crash the code does not catch. It complements catching the timeout: one handles the known error with a useful message, the other closes the gap for unexpected ones.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add a system-prompt rule telling the agent not to apply credits above $250 while the approvals service is slow or unavailable.",
+          "correct": false,
+          "explanation": "A prompt rule asks the model to judge whether the service is down, which it can't see, and leaves the outcome to chance. Whether an approval exists is a deterministic check, so it belongs in the hook.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "In the hook, keep retrying the approvals lookup until it answers, holding the customer's conversation open while the approvals service recovers.",
+          "correct": false,
+          "explanation": "Retrying until the service answers keeps the customer waiting through the 15-minute outage, and the call may still fail. A short retry suits brief blips; a long outage needs a decision now, and for a money rule that decision is to deny and escalate.",
+          "trap": "FAILURE_TO_ESCALATE"
+        },
+        {
+          "id": "d",
+          "text": "In the hook, catch a failed approvals lookup, allow the credit, and post it to the approvers' queue for review within the hour.",
+          "correct": false,
+          "explanation": "Allowing the credit and reviewing it later is fail-open: the money has already moved before an approver looks, which is the incident in the stem. Review after the fact suits low-risk actions, not an approval rule.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "e",
+          "text": "In the hook, catch a failed approvals lookup and deny the credit with a reason that sends the agent to `escalate_to_agent` for approval.",
+          "correct": true,
+          "explanation": "When the check can't be completed, the safe answer for a money rule is to deny, not to allow. Denying with a reason that names `escalate_to_agent` turns the outage into the normal human-approval path, and credits of $250 or less never reach the lookup, so they keep flowing.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "A compliance hook should fail closed: deny when its check can't complete, and block the action if the hook itself crashes.",
+      "studyRef": "§3 Task 1.5 (interception hooks that block and redirect to human escalation)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-015",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.5",
+      "secondaryTasks": ["1.4"],
+      "stem": "For the regulator's outage report, every outage credit must carry a reason code. A `PreToolUse` hook on `apply_bill_credit` detects outage cases and returns `updatedInput: {\"reason_code\": \"OUTAGE\"}`. Since it shipped, every outage credit fails with the tool error \"missing account_id\", while credits for other reasons go through. The agent's calls look the same as they did before the hook. Why do outage credits fail?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`updatedInput` replaces the whole input object, so the call reached the tool with only `reason_code` and without the agent's own arguments, including `account_id`.",
+          "correct": true,
+          "explanation": "`updatedInput` replaces the entire input rather than adding to it. The hook returned an object holding only `reason_code`, so every outage credit reached the tool without `account_id` or an amount, while credits the hook ignores keep the agent's arguments. The fix is to return the agent's full input with `reason_code` added.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "`updatedInput` is merged into the agent's input, and the agent leaves `account_id` out of its outage credits, so the merged call reached the tool without that field.",
+          "correct": false,
+          "explanation": "It would explain the error if the agent's outage calls had changed, but they look the same as before the hook. The rewrite does not merge; it replaces, which is why only rewritten calls fail.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "The hook's `updatedInput` replaces the input only after the tool has run, so the tool saw the original call and rejected it for lacking `reason_code`.",
+          "correct": false,
+          "explanation": "It misreads when `updatedInput` takes effect: a `PreToolUse` hook runs before the call, so its rewrite is what the tool receives. And the tool complains about `account_id`, not `reason_code`, which points to arguments being lost rather than a field being missing.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "`apply_bill_credit` reads `account_id` from the session's earlier `get_account` result, and a call rewritten by a hook loses that session context.",
+          "correct": false,
+          "explanation": "It assumes the tool sees the session's history, but a tool works from the input object of its call, the very object `updatedInput` replaces. The agent's calls look the same as before and credits the hook leaves alone go through, so `account_id` travels in the agent's arguments and is lost in the rewrite. Lost context is a real cause for a subagent or new session, which starts without the parent's history.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        }
+      ],
+      "keyConcept": "A `PreToolUse` hook's `updatedInput` replaces the whole tool input, so return every original argument along with any field you add.",
+      "studyRef": "§3 Task 1.5 (hooks that intercept outgoing tool calls)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-016",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "1.1",
+      "secondaryTasks": ["5.3"],
+      "stem": "Before moving to the Agent SDK, Riverbend's prototype runs in a custom loop on the Claude API. For a four-bill dispute, Claude often asks for `get_meter_reads` on all four bills in one response, with four `tool_use` blocks. The loop runs only the first block and returns its result, and when a read fails it sends nothing for that block. The next API call in those disputes is rejected with the error \"tool_use ids were found without tool_result blocks immediately after\". Which two changes fix the loop? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Tell Claude in the system prompt to request one meter read per response, so the loop's single-block handling covers every request it makes.",
+          "correct": false,
+          "explanation": "This asks the model to work around a broken loop, and a prompt can't guarantee one request per response, so reads would still be dropped and calls rejected. It also turns one round of four reads into four rounds, and a failed read would still go unanswered.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "b",
+          "text": "Run every `tool_use` block, then return all four reads joined together in a single `tool_result` that carries the `tool_use_id` of the first block only.",
+          "correct": false,
+          "explanation": "Running all four blocks is right, but one combined result under the first block's ID leaves three requests unanswered, so the next call is still rejected, and Claude can't tell which read belongs to which bill. A single result fits a response with a single `tool_use` block.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "When any read fails, end the turn and tell the customer to contact Riverbend again later, so no answer rests on partial data.",
+          "correct": false,
+          "explanation": "One failed read out of four doesn't justify ending the conversation; the other three results are good and the failure can be reported to Claude. Ending the turn fits only a failure nothing can work around.",
+          "trap": "TOTAL_FAILURE"
+        },
+        {
+          "id": "d",
+          "text": "When a read fails, still return a `tool_result` for that block, with the error text and `is_error: true`, so Claude can react to the failure.",
+          "correct": true,
+          "explanation": "A failed tool still needs a `tool_result` carrying the error and `is_error: true`; without it the block goes unanswered, the next call is rejected, and Claude never learns the read failed. This covers the failure case, while running every block instead of only the first covers answering all four requests; together they leave no block unanswered.",
+          "trap": null
+        },
+        {
+          "id": "e",
+          "text": "Run every `tool_use` block in the response instead of only the first, and return each read's result in the next user message, matched by `tool_use_id`.",
+          "correct": true,
+          "explanation": "Claude can request several tools in one response, and each `tool_use` block needs its own `tool_result`, matched by `tool_use_id`, in the next user message. This fixes the cause, a loop that runs only the first of the four blocks, and Claude gets every read in one round; what a failed read's result must contain is a separate rule.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Return one `tool_result` per `tool_use` block, matched by `tool_use_id`, and mark failed tools with `is_error` instead of dropping them.",
+      "studyRef": "§3 Task 1.1 (tool results added to the conversation between iterations)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-017",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.6",
+      "secondaryTasks": ["1.3"],
+      "stem": "Riverbend split high-bill disputes into a pipeline of three subagents (reads, tariff, resolution), each given only the previous one's final message. The tariff step needs the read dates, and the resolution needs both the reads and the rate changes. In 18% of disputes the resolution credits the wrong period. The team already added estimated months to the reads summary, but now the rate-change dates get lost instead. Cost per dispute must stay flat. What should change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep the pipeline and extend each subagent's summary format with a fixed field for every detail lost at a handoff so far, such as the estimated months and the rate-change dates.",
+          "correct": false,
+          "explanation": "Adding fields fixes the last loss the team noticed, and the stem shows the pattern: once estimated months were added, rate-change dates went missing. Each handoff drops whatever the format did not foresee. A fixed format suits a step whose output is predictable.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Run the dispute investigation in the main agent, so reads, tariffs and the resolution share one context for the full dispute, and use subagents only for independent lookups.",
+          "correct": true,
+          "explanation": "Subagent pipelines break down when each step needs what the previous step found, because only a final message crosses each handoff and details are lost there. Here the tariff step needs the read dates and the resolution needs both, so dependent steps belong in one context: with no handoffs, the read dates and rate changes stay together.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Keep the reads, tariff and resolution subagents, but have each one forward the earlier final messages along with its own, so the dispute summaries add up for the resolution.",
+          "correct": false,
+          "explanation": "It tempts because the resolution would then see the reads summary as well as the tariff one, but it patches what crosses the handoffs instead of removing them. Each forwarded message still holds only what its subagent chose to report, and the stem shows details dropped from a step's own summary: first the estimated months, then the rate-change dates. Forwarding earlier results along a chain works when each step's output is predictable enough that its summary holds what later steps need.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Add a fourth subagent after the resolution step that re-reads the meter and tariff data and checks the proposed credit period before it is applied.",
+          "correct": false,
+          "explanation": "A checker repeats the reads and tariff work, which breaks the flat-cost requirement, and the cause, details lost between steps, stays. Extra verification fits when the steps are sound and an independent check adds assurance.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Keep dependent investigation steps in one context; pipeline subagents lose details at each handoff, so use them for independent lookups.",
+      "studyRef": "§3 Task 1.6 (fixed pipelines vs adaptive decomposition)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-018",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.7",
+      "secondaryTasks": ["5.1"],
+      "stem": "About 35% of Riverbend contacts are customers returning to an open case, and cases often stay open for a week. The agent runs on a pool of 40 hosts that are replaced at every nightly deploy, and session history is kept on the host that ran the session. Returning customers go to whichever host is free, so `resume` with the stored session ID fails for most of them and the agent repeats about 20 tool calls. How should the team carry a case from one visit to the next without that repeat work?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Start a fresh session on each return and rerun the investigation of the account and bills, so no answer rests on findings from an earlier visit.",
+          "correct": false,
+          "explanation": "Rerunning everything repeats the 20 tool calls the team wants to avoid and throws away valid findings. A fresh start is right when old results are stale, and even then it should be seeded with a summary.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "b",
+          "text": "Keep each case's facts (account, bills, findings, promised actions) as application state after each visit, and seed a fresh session's prompt with them at the next visit.",
+          "correct": true,
+          "explanation": "Session history lives on one host and hosts are replaced nightly, so anything that depends on resuming that history breaks for a week-long case. Capturing the case as application state and passing it into a fresh prompt works on any host and saves the 20 repeated calls.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Route each returning customer to the host that served their last visit, so `resume` with the stored session ID finds the case's state, findings and promised actions there.",
+          "correct": false,
+          "explanation": "Sticky routing works until the nightly deploy replaces the host, and cases stay open for a week, so most returns would still find no history. It would suit cases that finish the same day on long-lived hosts.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Call `resume` with `fork_session` on each return, so each visit runs in its own branch of the first session and keeps the case facts found so far.",
+          "correct": false,
+          "explanation": "A fork still starts from the original session's history, which isn't on the new host either, so it fails the same way. Forking is for exploring different approaches from one baseline, not for continuing a case.",
+          "trap": "MISREAD_PARAMETER"
+        }
+      ],
+      "keyConcept": "To continue work across hosts, save the results as application state and pass them into a fresh session's prompt.",
+      "studyRef": "§3 Task 1.7 (fresh start with a structured summary vs resuming)",
+      "sources": ["exam-guide"]
+    }
+  ]
+}

@@ -27,7 +27,7 @@ function About() {
   const { versions, importedAt } = getContentInfo();
   const model = process.env.AI_MODEL || 'claude-sonnet-5-5';
   return (
-    <div className="mt-4 space-y-6">
+    <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
       <Card aria-labelledby="ai-h">
         <CardHeader id="ai-h" title="AI" />
         <p data-testid="ai-status" className="text-sm">

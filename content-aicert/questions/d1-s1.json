@@ -1,6 +1,6 @@
 {
   "scenario": "S1",
-  "version": 2,
+  "version": 3,
   "questions": [
     {
       "id": "S1-D1-001",
@@ -784,6 +784,398 @@
       ],
       "keyConcept": "To continue work across hosts, save the results as application state and pass them into a fresh session's prompt.",
       "studyRef": "§3 Task 1.7 (fresh start with a structured summary vs resuming)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-019",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.1",
+      "secondaryTasks": ["5.1"],
+      "stem": "Riverbend's billing-dispute prototype runs in a custom loop on the Claude API. To save tokens, each request sends the system prompt, the customer's latest message and only the most recent round of `tool_use` and `tool_result` blocks. A whole conversation would be about 20k tokens, well inside the context window, but finance has asked the team to watch token spend. The agent now calls `get_account` about 3 times per chat, and in 6% of disputes it contradicts a meter read it quoted to the customer earlier. What should the loop send on each request?",
+      "options": [
+        {
+          "id": "a",
+          "text": "The latest customer message and tool round, plus a summary of older `tool_use` and `tool_result` rounds, so Claude keeps its key facts at fewer tokens.",
+          "correct": false,
+          "explanation": "It tempts because it answers finance's concern and keeps some memory. But it trims the request to cut cost without fixing the cause: it still leaves out the earlier customer messages and assistant turns, including the reply that quoted the meter read. Summarising older rounds trades exact figures for tokens; it earns its place as a conversation nears the context window, and a 20k-token chat is nowhere near it.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "The conversation so far: every customer message, each assistant turn with its `tool_use` blocks, and each `tool_result`, so Claude can build on the results it already has.",
+          "correct": true,
+          "explanation": "Each request stands alone, so Claude sees only what the loop sends: earlier tool results and its own earlier replies have to stay in the history. Dropping the results is why it fetches `get_account` 3 times, and dropping its replies is why it contradicts the meter read it quoted. At about 20k tokens the whole conversation fits easily, so nothing needs cutting; the extra input tokens are modest and buy back the facts Claude was losing.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Only the newest message and round of blocks, with a system-prompt instruction to reuse account details and meter reads from earlier in the chat instead of calling the tools again.",
+          "correct": false,
+          "explanation": "The instruction assumes the earlier results carry over, but each API request stands alone, like a new session: Claude sees only what the loop sends, and the loop has removed those results. So there is nothing to reuse, and Claude would call the tools again or answer from memory it does not have. A reuse instruction helps only when the earlier results are in the history.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "d",
+          "text": "The system prompt, latest message and latest tool round as before, with the loop caching each `get_account` and `get_meter_reads` result and returning it when Claude repeats a call.",
+          "correct": false,
+          "explanation": "Caching saves backend calls but no tokens, and the repeated calls stay in place. Claude still cannot see what it told the customer earlier, so it can answer without re-fetching and contradict itself. Caching suits a slow or costly tool that is called repeatedly for good reasons, not a loop that hides its own history.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Each loop request must carry the accumulated history, tool results included, so Claude can build on what it already found.",
+      "studyRef": "§3 Task 1.1 (tool results appended to the conversation history)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-020",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.2",
+      "secondaryTasks": ["5.2"],
+      "stem": "For multi-bill disputes, Riverbend's main agent spawns one bill-review subagent per bill with the `Task` tool, and the reviews run in parallel. Each subagent's `tools` list holds `get_meter_reads`, `get_account` and `escalate_to_agent`, and its prompt says to escalate anything it cannot settle. In 11% of multi-bill disputes one customer gets 2 or 3 separate human tickets, each with only one bill's facts, and approvers phone the customer to piece the case together. Approvers need one recommended resolution per case that weighs all its bills together, and bill reviews must stay parallel. What is the best fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Have each bill-review subagent write its findings and blockers to a shared case record, and let the last subagent to finish call `escalate_to_agent` with the whole record.",
+          "correct": false,
+          "explanation": "It produces one ticket, but it routes the case around the main agent, which can no longer see or check what is escalated, and a subagent working in its own context cannot tell whether others are still running. Stored outputs passed by reference can suit large results, but the escalation decision belongs with the coordinator.",
+          "trap": "BYPASS_COORDINATOR"
+        },
+        {
+          "id": "b",
+          "text": "Add a line to each bill-review subagent's prompt telling it to check whether another subagent has already escalated the case before it calls `escalate_to_agent`.",
+          "correct": false,
+          "explanation": "Subagents run in isolated contexts and do not see each other's work, so a subagent has no way to know that another has escalated, and the tickets would keep splitting. Coordination between parallel subagents goes through the coordinator, which receives every result.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "c",
+          "text": "Keep the reviews parallel but drop `escalate_to_agent` from the bill-review subagents' `tools`, so each returns its blockers and the main agent makes one escalation for the case.",
+          "correct": true,
+          "explanation": "In a hub-and-spoke design the coordinator owns error handling and routing, and escalation is part of that. Each subagent sees only its own bill, so letting it escalate splits one case into 2 or 3 partial tickets. Blockers reach the main agent in each subagent's final message, and one handoff then weighs every bill together. The reviews still run in parallel.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Keep `escalate_to_agent` on the bill-review subagents and have the escalation queue merge open tickets for one account, with each bill's findings and facts, into a single handoff.",
+          "correct": false,
+          "explanation": "It tempts because it yields one ticket per customer. But each merged part is still one subagent's one-bill decision, so nobody has weighed the bills together and approvers get no single recommended resolution. Queue-side merging suits duplicate tickets from separate contacts, not tickets that the agent's own design splits apart.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Subagents should return blockers to the coordinator, which owns escalation and routing, so one case produces one complete handoff.",
+      "studyRef": "§3 Task 1.2 (hub-and-spoke: coordinator handles error handling and routing)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-021",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 1,
+      "primaryTask": "1.4",
+      "secondaryTasks": ["1.5"],
+      "stem": "Before launch, Riverbend's team sorts five candidate rules for the agent: each becomes a `PreToolUse` gate in code or guidance in the system prompt. Three come from the support playbook, which the team wrote from last year's best-handled chats; the playbook words its items firmly, such as \"Agents must check the meter reads first.\" Each gate adds code to test and can stop a chat partway through, so the team wants no more gates than the rules require. Which two rules need a `PreToolUse` gate? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Deny `apply_bill_credit` and `create_payment_plan` in high-bill disputes until `get_meter_reads` has run in the session, as the playbook says agents must.",
+          "correct": false,
+          "explanation": "This tempts because the playbook words it as a requirement. But it was drawn from good chats, not from a regulation or a money rule, so it is a best-effort preference, and as a gate it would block plans for customers who accept their bill. A system-prompt line encourages the habit without blocking anyone.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "b",
+          "text": "Deny `send_disconnection_notice` when the account's `get_account` record carries the `vulnerable` flag, with a reason saying the notice is barred.",
+          "correct": true,
+          "explanation": "The energy regulator forbids disconnection notices to customers on the vulnerable-customer register, so this is a compliance rule with no room for a miss. A prompt instruction is usually followed but cannot guarantee zero breaches; a `PreToolUse` gate stops the call before it is made.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Deny further tool calls in disputes that span more than three bills, with a reason sending the agent to `escalate_to_agent` for a person.",
+          "correct": false,
+          "explanation": "The playbook's advice to hand big disputes to a person is a habit, not a rule. As a gate it would force a handoff on cases the agent can settle, pulling down the 75% self-service target. If the team keeps it, it belongs in the prompt as guidance the agent can weigh.",
+          "trap": "PREMATURE_ESCALATION"
+        },
+        {
+          "id": "d",
+          "text": "Deny `apply_bill_credit` for amounts above $250 unless a human approval exists, with a reason pointing the agent to `escalate_to_agent`.",
+          "correct": true,
+          "explanation": "Credits above $250 need a human approver, a money rule that has to hold in every chat, not most of them. A gate before `apply_bill_credit` enforces it deterministically, and the reason sends the agent to the approval path instead of a dead end.",
+          "trap": null
+        },
+        {
+          "id": "e",
+          "text": "Deny `create_payment_plan` until the agent has asked the customer which day of the month suits their instalments.",
+          "correct": false,
+          "explanation": "Asking about the instalment day is a courtesy from the playbook. No money or compliance rule depends on it, so blocking the tool adds code and stalls chats for a guarantee nobody needs. A line in the system prompt is the proportionate place for it.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "Gate only rules with regulatory, money or safety weight; keep practices drawn from good conversations as prompt guidance, however firmly worded.",
+      "studyRef": "§3 Task 1.4 (programmatic enforcement vs prompt guidance); §5 Key decision frameworks (best-effort preference)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-022",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.3",
+      "secondaryTasks": ["1.2"],
+      "stem": "Riverbend disputes run to about 60 messages, so the main agent hands tariff checks to a `tariff` subagent through the `Task` tool, which keeps rate tables out of the main conversation. In 23% of disputes the subagent analysed the wrong billing period. Its `Task` prompt reads only \"Check the tariff applied to the disputed bills\", while the account ID, the disputed bill numbers and the move-in date came up only in the main conversation. The subagent runs on most disputes, so its cost per call must stay low. What should change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add `get_account` to the `tariff` subagent's `tools`, so it can look up the customer's account, bills and move-in date for itself when the check starts.",
+          "correct": false,
+          "explanation": "A lookup tool doesn't help when the subagent doesn't know which account or bills the customer means; the account ID is one of the missing facts. Adding a lookup tool is right when the subagent has the identifier and needs data the main agent doesn't hold.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "Have the main agent paste the whole 60-message conversation into the `Task` prompt, so the `tariff` subagent sees each fact the customer has given in the chat.",
+          "correct": false,
+          "explanation": "It would fix the wrong periods, which is why it tempts, but each call would carry about 60 messages to find three facts, on most disputes, which breaks the cost limit. Passing the conversation fits a subagent whose task depends on the chat as a whole, such as summarising it.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "c",
+          "text": "Have the main agent write the account ID, the disputed bill numbers and the move-in date into the `Task` prompt, with the question it has to answer.",
+          "correct": true,
+          "explanation": "A subagent starts fresh: the only thing it receives from the main agent is the prompt string, so facts from the chat must be written into it. Naming the account, the bills and the move-in date gives the tariff check the right period, and the call stays small enough to run on most disputes.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Add a line to the `tariff` subagent's `AgentDefinition` prompt telling it to use the account and bills the customer is discussing with the main agent in the chat.",
+          "correct": false,
+          "explanation": "The line assumes the subagent can see the main conversation, and it cannot: it gets its own system prompt and the `Task` prompt. It would still guess the period. Standing rules that apply to each tariff check belong in the `AgentDefinition` prompt, but facts about one dispute do not.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        }
+      ],
+      "keyConcept": "A subagent sees only its prompt, so write the specific facts it needs into the `Task` prompt rather than assuming it inherits them.",
+      "studyRef": "§3 Task 1.3 (subagent context must be provided explicitly in the prompt)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-023",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.4",
+      "secondaryTasks": ["1.5"],
+      "stem": "Riverbend's `PreToolUse` hook on `apply_bill_credit` denies the call until `verify_caller` has returned a result such as `{\"verified\": true, \"accounts\": [\"88214\"]}` in the session. Last month 9 outage credits went to accounts the caller does not hold, after requests like \"my mother's account 4471 was in the outage too\". Each of those callers had passed `verify_caller`, and the agent had called `get_account` on the other account before crediting it. Verified callers must not face extra steps. Which change closes the gap?",
+      "options": [
+        {
+          "id": "a",
+          "text": "In the hook, also require that `get_account` has returned a record for the call's `account_id` in the session, and deny the credit otherwise with a reason naming the step.",
+          "correct": false,
+          "explanation": "It is the textbook prerequisite: block a tool until an earlier step has run. But the agent called `get_account` on the other account before each of the 9 credits, so this check would have passed each time. Requiring a step suits ordering rules; this rule is about which accounts the caller may act on.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "b",
+          "text": "In the hook, deny each `apply_bill_credit` call until `verify_caller` has run anew after the previous credit, so each credit follows a fresh check.",
+          "correct": false,
+          "explanation": "Re-verifying adds a step for callers who are already verified, which the stem rules out, and it proves only that the same person is still on the line. A fresh check doesn't tie that person to account 4471. Repeated verification can suit long or handed-over sessions where the caller may change.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "c",
+          "text": "Add a system-prompt rule that credits go to accounts in the caller's `verify_caller` result alone, with two worked examples of declining a relative's account.",
+          "correct": false,
+          "explanation": "The rule is right, but a prompt can't guarantee it, and money is going to the wrong accounts. Claude usually follows such instructions, so the 9 cases might shrink rather than stop. Examples suit judgment calls; whose account may be credited is a check the hook can make exactly.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "In the hook, also compare the call's `account_id` with the `accounts` list in the session's verified `verify_caller` result, and deny other accounts with a reason naming the mismatch.",
+          "correct": true,
+          "explanation": "The gate checks that verification happened, but the rule is about whose account is credited, so the hook must also check scope. Comparing `account_id` with the accounts the verified caller holds blocks all 9 credits to other people's accounts, and a caller crediting their own account passes with no extra step.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "A prerequisite gate must also check the scope of the action, such as which account, not only that verification passed.",
+      "studyRef": "§3 Task 1.4 (programmatic prerequisites that block downstream tools); §6a Q1",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-024",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.5",
+      "secondaryTasks": ["1.4"],
+      "stem": "Riverbend's `PreToolUse` hook on `apply_bill_credit` denies a credit under three rules: the amount is above $250, that outage was already credited on the account, or the account is closed. Each needs its own next step: approval through `escalate_to_agent`, quoting the earlier credit, or asking whether the customer has a newer account. Every denial returns `permissionDecisionReason: \"Blocked by policy\"`, and in 38% of denied chats the agent tells the customer a system error occurred. The three rules must stay enforced. What should change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Change the hook to rewrite the call with `updatedInput` instead of denying it, capping the amount at $250 and setting repeat outage credits to $0.",
+          "correct": false,
+          "explanation": "Rewriting a forbidden call hides it instead of redirecting it: customers owed more than $250 would get $250 with no approver involved, and a $0 credit is still applied without explanation. `updatedInput` suits correcting or adding a field that the rule allows, not replacing a decision.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "b",
+          "text": "Make the hook's `permissionDecisionReason` name the rule that fired and its next step, for example \"Above $250: call `escalate_to_agent` for approval with the case facts\".",
+          "correct": true,
+          "explanation": "The deny reason is what Claude sees, so it is how the hook redirects the agent. \"Blocked by policy\" tells it nothing, so in 38% of chats it guesses at a system error. A reason that names the rule and the next step sends each denial down its own path, while the hook keeps enforcing all three rules.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Keep the hook's `permissionDecisionReason` and add a system-prompt line giving the agent its next step: call `escalate_to_agent` for approval when a credit is denied.",
+          "correct": false,
+          "explanation": "It stops the \"system error\" replies and is right for credits above $250. But a duplicate needs only a note of the earlier credit and a closed account needs a question about a newer one, so a person would get cases the agent can settle, against the 75% target. One escalation rule fits a hook that blocks for one reason.",
+          "trap": "PREMATURE_ESCALATION"
+        },
+        {
+          "id": "d",
+          "text": "Add worked examples to the system prompt showing how to explain each of the three policy denials to customers in plain words.",
+          "correct": false,
+          "explanation": "Examples would teach good wording, but the agent receives the same \"Blocked by policy\" for all three rules and can't tell which one fired, so it can't pick the right example. The gap is in the hook's reason, not the prompt. Examples would help once the reason names the rule.",
+          "trap": "WRONG_COMPONENT"
+        }
+      ],
+      "keyConcept": "When a hook blocks an action, its deny reason should name the rule and the next step so the agent can redirect.",
+      "studyRef": "§3 Task 1.5 (interception hooks that block policy-violating actions and redirect)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-025",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.6",
+      "secondaryTasks": ["1.4"],
+      "stem": "After storms, outage-credit contacts make up 40% of Riverbend's volume. A standard one takes three steps: confirm with `get_account` that the address was in the outage area, work out the credit from the hours without power, and apply it with `apply_bill_credit`. The full agent spends about 9 tool calls on each and gives the wrong amount in 3%. About 8% of these contacts also raise a billing dispute partway through. Queues must not grow during storm peaks. Which design should the team use?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep the full agent for outage contacts but cap it at three tool calls, matching the three steps, and end the contact when the cap is reached.",
+          "correct": false,
+          "explanation": "A cap limits tool calls but not wrong amounts, and it would cut off the 8% of contacts that need extra steps for a dispute. A cap is a safety net against a runaway loop, not a way to make an agent follow a known procedure.",
+          "trap": "ITERATION_CAP"
+        },
+        {
+          "id": "b",
+          "text": "Keep the full agent for outage contacts and add the three steps and the credit formula to its system prompt, with two worked examples.",
+          "correct": false,
+          "explanation": "Listing the steps may cut some tool calls, but the agent still plans each contact itself, and a formula in the prompt is a request, not a calculation. Wrong amounts are money, so the amount needs code. Prompt guidance suits the open-ended disputes the agent keeps.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "c",
+          "text": "Route standard outage credits to a fixed three-step chain that computes the amount in code, and hand the contact to the full agent if a dispute or other issue arises.",
+          "correct": true,
+          "explanation": "Prompt chaining suits work whose steps are known in advance: each step is focused, and code between steps can compute the credit, which removes the 3% of wrong amounts and most of the 9 tool calls. The 8% that raise a dispute are open-ended, so handing them to the agent keeps its flexibility where it is needed.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Route every outage contact, standard or not, to a fixed three-step chain that computes the amount in code, and have the chain's final step close the contact once `apply_bill_credit` succeeds.",
+          "correct": false,
+          "explanation": "The chain is right for the standard contact, which is why it tempts. But it has no exit, so the 8% who raise a billing dispute would get a credit and a closed contact, and come back. A chain on its own fits work where nothing outside the steps comes up.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Use a fixed chain for work whose steps are known, with a hand-off to the agent when a case goes outside them.",
+      "studyRef": "§3 Task 1.6 (prompt chaining vs dynamic decomposition)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-026",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 3,
+      "primaryTask": "1.5",
+      "secondaryTasks": ["1.4"],
+      "stem": "Riverbend's $250 approval rule is enforced by a `PreToolUse` hook registered with no matcher. On each tool call it asks the approvals service, which takes about 400 ms, whether a signed approval exists. Chats average 14 tool calls, so the hook adds about 5.6 seconds to each, although most chats hold one credit or none and few credits exceed $250. Product proposes replacing the hook with a system-prompt rule to cut latency. How should the architect respond? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Accept the proposal and replace the hook with a system-prompt rule that credits above $250 go to `escalate_to_agent`, since few credits exceed the limit.",
+          "correct": false,
+          "explanation": "Rare cases are still money cases: a prompt rule is a request the model usually follows, so some unapproved credits would get through. The latency comes from where the hook runs, not from using a hook, so it can be fixed without giving up the guarantee.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "b",
+          "text": "Keep the hook, but register it with a matcher for `apply_bill_credit`, so the other tool calls in a chat no longer run it at all.",
+          "correct": true,
+          "explanation": "SDK hooks are attached with matchers, and this one has none, so it runs on all 14 calls. Matching it to `apply_bill_credit` takes the lookup off every other call, so most chats pay 400 ms once or not at all. The rule stays enforced in code, which a money rule needs.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Move the check to a `PostToolUse` hook on `apply_bill_credit` that asks the approvals service after the credit is applied and reverses unapproved ones.",
+          "correct": false,
+          "explanation": "It takes the lookup off the path before the call, which is why it tempts, but `PostToolUse` runs after the credit is applied, so the money has moved before anyone checks. Post-call hooks suit work on results, such as formatting, not an approval rule.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Keep the hook on each tool call, but give the approvals lookup a 100 ms timeout and let the call proceed when the lookup does not answer in time.",
+          "correct": false,
+          "explanation": "Lookups take about 400 ms, so a 100 ms timeout would let nearly every check fail open, credits above $250 included. A timeout is useful, but for a money rule the safe result of a check that can't finish is to deny, not to allow.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "e",
+          "text": "Keep the hook, but have it call the approvals service only when an `apply_bill_credit` amount is above $250, and allow smaller credits at once.",
+          "correct": true,
+          "explanation": "Only credits above $250 need an approval, so only they need the lookup. With this check first, other tool calls and small credits pass straight through, and the 400 ms is paid only on the few credits that can need it. It works with or without a matcher, and the rule stays deterministic.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Fix a slow compliance hook by narrowing when it runs, with a matcher or an early check, not by moving the rule into the prompt.",
+      "studyRef": "§3 Task 1.5 (hooks that intercept outgoing tool calls to enforce compliance)",
+      "sources": ["exam-guide"]
+    },
+    {
+      "id": "S1-D1-027",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.7",
+      "secondaryTasks": ["1.3"],
+      "stem": "To test a new system prompt, Riverbend's QA team took 200 production session IDs, called the Agent SDK's `resume` with each one, and sent a scripted follow-up message under the new prompt, with tool calls routed to a sandbox copy of the billing system. The next day 14 returning customers saw the test replies in their own conversations. Each test must start from the exact production history, including the original tool results, and QA plans to rerun the set for each prompt change. Which approach should QA use?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Start a new session for each case and seed its prompt with a structured summary of the production session's messages and tool results.",
+          "correct": false,
+          "explanation": "It leaves production sessions untouched, which is why it tempts, but a summary is not the exact history the tests need: wording and raw tool results are lost, so replies can differ for reasons unrelated to the prompt. A fresh start with a summary is right when the old tool results are stale.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "b",
+          "text": "Keep calling `resume` with each session ID, but run the tests overnight and end each one with a message telling the agent to disregard the test turns.",
+          "correct": false,
+          "explanation": "Overnight runs make collisions rarer, not impossible, and the test turns stay in the session, where the customer sees them and the agent reads them. A closing note asks the model to ignore history it still has. Off-peak timing suits load, not isolation.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Call `resume` with each session ID from a separate QA deployment with its own system prompt that reads the production sessions through a `SessionStore` adapter.",
+          "correct": false,
+          "explanation": "It tempts because a separate deployment looks like isolation from production. But a separate deployment isolates code and prompts, not session history: with access to the same sessions, plain `resume` still continues the original session, so the test turns land in the customer's conversation. Only a fork gives the test its own copy.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "d",
+          "text": "Call `resume` with each session ID and `fork_session: true`, so each test runs in a new session that starts from a copy of the production history.",
+          "correct": true,
+          "explanation": "Plain `resume` continues the original session, so the test turns became part of the customers' own conversations. With `fork_session`, `resume` creates a new session holding a copy of the history, tool results included, and leaves the original unchanged. QA gets the exact baseline on each rerun, and the customers' conversations stay clean.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "To branch from an existing session without changing it, resume with forking so the new work gets its own copy of the history.",
+      "studyRef": "§3 Task 1.7 (fork_session for independent branches from a shared baseline)",
       "sources": ["exam-guide"]
     }
   ]

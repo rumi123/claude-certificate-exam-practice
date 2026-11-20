@@ -1,6 +1,6 @@
 {
   "scenario": "S4",
-  "version": 2,
+  "version": 3,
   "questions": [
     {
       "id": "S4-D1-001",
@@ -558,6 +558,285 @@
       ],
       "keyConcept": "Let the plan adapt to what each step finds: read before writing, check results as you go, and revise the remaining steps.",
       "studyRef": "§3 Task 1.6 (adaptive plans that generate subtasks from findings)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S4-D1-013",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.1",
+      "secondaryTasks": [],
+      "stem": "Fleetway's nightly module explainer runs on a custom loop on the Claude API in which code picks each next step: after `Grep` finds the class an engineer asked about, the loop calls `Read` on the first match and asks Claude to explain that file. In 31% of runs the explanation covers a test, a generated stub or a caller instead. The team has added 14 exception rules, such as skipping `*Test.java` and `build/generated/`, but the rate fell only to 24%. Runs use 3 of their 8 allowed steps on average. What is the root cause, and the fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "The next step is fixed in code and never weighs what `Grep` found; give Claude `Grep` and `Read` as tools, so it chooses which file to `Read` from the `tool_result`.",
+          "correct": true,
+          "explanation": "In a model-driven loop Claude reasons about which tool to call next from the results in its history; a pre-configured tree reads the first match whatever it is. Fourteen rules moved the rate only from 31% to 24% because tests, stubs and callers keep taking new shapes. With `Grep` and `Read` as its tools, Claude sees the matches in the `tool_result` of its own `Grep` call and can pick the class the engineer asked about.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "The next step is fixed in code, and the 14 rules still miss some file shapes; derive new rules from the failing 24% so the code skips those matches before `Read`.",
+          "correct": false,
+          "explanation": "It gets the cause right, since the tree is the problem, but answers it with more of the tree: each rule covers one file shape, and a caller of the class can't be written as a pattern. Seven points from 14 rules shows where that leads. Rules in code fit when the cases are few and known in advance.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Runs end before the code reaches the right `Grep` match; raise the step cap from 8 to 20 so the code can `Read` the later matches before Claude explains one.",
+          "correct": false,
+          "explanation": "A higher cap would matter if runs were being cut off, but they use 3 of their 8 steps, so the cap is not what ends them, and the code would still read whichever match comes first. Raising a cap fits a loop that stops in the middle of normal work.",
+          "trap": "WRONG_COMPONENT"
+        },
+        {
+          "id": "d",
+          "text": "Claude cannot tell source files from tests in raw `Grep` output; add a classifier step that labels each match as test, generated or source before the code calls `Read`.",
+          "correct": false,
+          "explanation": "A classifier tempts because tests and generated files are named in the symptom, but Claude never sees the `Grep` output in this loop, and a file-type label would not catch a caller of the class. It adds a component while the tree still picks the file. A labelling step fits when the file type alone decides what to read.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "When the right next tool call depends on what earlier results show, give Claude the tools and let it choose each call from the results.",
+      "studyRef": "§3 Task 1.1 (model-driven decision-making vs pre-configured decision trees)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S4-D1-014",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.2",
+      "secondaryTasks": [
+        "1.3"
+      ],
+      "stem": "Fleetway's investigation coordinator decides for itself how many Explore subagents to spawn through the `Task` tool. It starts 6 to 8 even for questions such as \"where is `DepotWindow` defined?\", which a single `Grep` call answers, and those answers take a median of 9 minutes. Cross-service investigations, such as a late-delivery bug traced through routing, billing and dispatch, do need 6 to 8 subagents, and they work well. Token spend is 40% over the monthly budget. What change fits best?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Tell the coordinator in its system prompt how to size effort: one subagent with a few tool calls for a lookup, two or three for a comparison, 6 to 8 for cross-service work.",
+          "correct": true,
+          "explanation": "Choosing how many subagents a question needs is the coordinator's own judgment, and it is missing guidance on scale. Anthropic's research system scales effort the same way: one agent with a few tool calls for simple fact-finding, a few subagents for comparisons, many for complex research. Guidance stops the 6 to 8 subagents on a one-`Grep` lookup while broad investigations keep them, and no money or safety rule needs a hard guarantee here.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Cap the coordinator in code at 2 subagents per question: a lookup gets one subagent and a few tool calls, and a comparison or a cross-service bug gets two.",
+          "correct": false,
+          "explanation": "A hard cap meets the budget and fixes the lookups, which makes it tempting, but it gives cross-service investigations two subagents when they need 6 to 8, so they lose coverage. A limit in code fits a rule that must hold for every question; how many subagents to use depends on how broad the question is.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Put a routing classifier in front of the coordinator that labels each question a lookup or an investigation and sends the lookups to a single agent with `Grep`.",
+          "correct": false,
+          "explanation": "A classifier would separate lookups from investigations, but deciding which subagents a query needs is already the coordinator's role, so this adds a component to make a judgment the coordinator can make with guidance. It also has only two labels, while comparisons need a middle size.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "d",
+          "text": "Let the Explore subagents share a scratch file and stop as soon as one of them has written the answer, so that lookups end early and the investigations run as they do now.",
+          "correct": false,
+          "explanation": "Stopping early would shorten some lookups, but the coordinator still spawns 6 to 8 subagents and pays for each start, and subagents coordinating through a shared file go around the hub that should manage their communication. Shared storage can hold large outputs, with the coordinator still directing the work.",
+          "trap": "BYPASS_COORDINATOR"
+        }
+      ],
+      "keyConcept": "When a coordinator over-spawns subagents for simple questions, give it guidance that scales effort to query complexity instead of a fixed cap.",
+      "studyRef": "§3 Task 1.2 (coordinator decides which subagents to invoke based on query complexity)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S4-D1-015",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.3",
+      "secondaryTasks": [
+        "1.2"
+      ],
+      "stem": "An engineer asks the main session to add tests for the classes that build depot delivery windows. The Explore subagent returns a map of 9 classes with file paths and line numbers. The main session then delegates through the `Task` tool to `test-writer` with the prompt \"write tests for the classes the explorer found\". `test-writer` re-explores for 20 minutes but still tests 2 classes that are not on the map. The project CLAUDE.md is committed, shared by 120 engineers and loaded by subagents too. What is the best fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Paste the explorer's full map of 9 classes, with file paths and line numbers, into the `test-writer` `Task` prompt, because the subagent never sees the explorer's result.",
+          "correct": true,
+          "explanation": "A subagent starts fresh: the only thing it gets from the parent is the prompt string, so findings from an earlier agent must be written into it. With the 9 classes, paths and lines in the prompt, `test-writer` stops re-exploring for 20 minutes and tests the classes the explorer found.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Write the explorer's map of 9 classes, with file paths and line numbers, into the project CLAUDE.md, which `test-writer` loads when it starts, and keep the one-line `Task` prompt as it is.",
+          "correct": false,
+          "explanation": "Subagents do load the project CLAUDE.md, so the list would reach `test-writer`, which makes this tempting. But the file is committed and shared by 120 engineers, so the list either reaches every engineer's sessions with the next commit or has to be kept out of it by hand, and it is stale at the next task. CLAUDE.md fits standing project instructions; per-task findings belong in the `Task` prompt.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "c",
+          "text": "Keep the one-line `Task` prompt, and add to the `test-writer` system prompt that the explorer's map is in the main session's context, so it reads the map before exploring.",
+          "correct": false,
+          "explanation": "A subagent does not see the parent's conversation or another subagent's result, so there is no map in its context to read, and it would re-explore as before. Its system prompt shapes how it works, but it cannot hand over context the subagent never received. Context goes into the prompt the parent writes.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "d",
+          "text": "Remove `Grep` and `Glob` from the `test-writer` tools, so it cannot spend 20 minutes re-exploring the service and writes tests for the classes it is given.",
+          "correct": false,
+          "explanation": "Taking away the search tools ends the 20-minute search, but the prompt still names no classes, so `test-writer` would guess from the one line or from whatever it can open. Restricting tools fits a subagent doing work outside its role, not one missing the input it needs.",
+          "trap": "WRONG_COMPONENT"
+        }
+      ],
+      "keyConcept": "A subagent sees only the prompt it is given, so paste earlier agents' complete findings into that prompt.",
+      "studyRef": "§3 Task 1.3 (include complete findings from prior agents in the subagent prompt)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S4-D1-016",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.5",
+      "secondaryTasks": [
+        "1.4"
+      ],
+      "stem": "Fleetway's Java modules are formatted with Spotless, and CI rejects any push that contains an unformatted `.java` file. The project CLAUDE.md says \"run `./gradlew spotlessApply` after editing Java files\", but Claude skips it in 30% of sessions, and each rejected push costs an engineer about 15 minutes. Running Spotless on a module takes about 4 seconds. What is the most effective fix?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Add a `PostToolUse` hook with a matcher on `Edit` and `Write` that runs `./gradlew spotlessApply` whenever the file path in the call ends in `.java`.",
+          "correct": true,
+          "explanation": "A hook is deterministic code at a fixed point in the loop, so it runs after every matching edit, while the CLAUDE.md line is a request Claude skips 30% of the time. `PostToolUse` fires after the edit has happened, which is the point where there is a file to format, and 4 seconds per edit is cheap next to 15 minutes per rejected push.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Add a `PreToolUse` hook with a matcher on `Edit` and `Write` that runs `./gradlew spotlessApply` whenever Claude starts an edit to a file ending in `.java`.",
+          "correct": false,
+          "explanation": "It uses the right mechanism at the wrong moment: `PreToolUse` fires before the edit, so Spotless formats the old file and the new change lands unformatted. `PreToolUse` fits checks that must stop or change a call before it runs.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "Rewrite the CLAUDE.md line as a numbered checklist item marked IMPORTANT, with an example of a session that runs Spotless after each Java edit.",
+          "correct": false,
+          "explanation": "A stronger instruction may cut the 30%, but a CLAUDE.md line is still a request, not a guarantee, so some sessions would still push unformatted files. Instructions fit preferences where an occasional miss costs little.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Ask Claude at the end of each session to list the Java files it changed and run Spotless on any that it has not yet formatted before it finishes.",
+          "correct": false,
+          "explanation": "It has the same session check its own work: Claude decides from its own memory which files it already formatted, and the end-of-session step is one more instruction it can skip. It moves the miss to the end of the session instead of removing it.",
+          "trap": "SELF_REVIEW"
+        }
+      ],
+      "keyConcept": "When a step must follow every matching tool call, such as formatting after edits, run it in a `PostToolUse` hook, not a CLAUDE.md line.",
+      "studyRef": "§3 Task 1.5 (hooks are deterministic, prompt instructions probabilistic)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S4-D1-017",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.6",
+      "secondaryTasks": [
+        "1.4"
+      ],
+      "stem": "Fleetway generates boilerplate for each new carrier integration with a fixed three-step prompt chain: one prompt writes the DTO classes, the next writes mappers from those DTOs, and the last writes tests. Running `./gradlew compileJava` on the DTO module takes 40 seconds. In 12% of runs a DTO doesn't compile, which shows only at the final `./gradlew build`, so the whole 25-minute chain runs again. The team added \"make sure the code compiles\" to every step's prompt, but the rate fell only to 10%. What should change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Run `./gradlew compileJava` on the DTO module in code after the DTO step and feed any errors back to that step until it compiles, before the mapper step starts.",
+          "correct": true,
+          "explanation": "A prompt chain can run programmatic checks between its steps. The compile instruction is a request and moved the rate only from 12% to 10%, while a 40-second compile in code catches a broken DTO before the mapper and test steps build on it. A failure then costs one fix to the first step, not a 25-minute rerun.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Keep the check at the final `./gradlew build`, and feed its compiler errors back to the DTO step, so that the next run of the chain starts from DTOs that compile.",
+          "correct": false,
+          "explanation": "Feeding compiler errors back is the right idea, which makes this the closest option, but at the final build the mappers and tests are already written against the broken DTOs, so the 25-minute chain still runs again. The check belongs right after the step whose output it tests.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Add a worked example of a compiling DTO and a checklist of common compile errors to the DTO prompt, to back up the compile instruction it already has.",
+          "correct": false,
+          "explanation": "Examples are a real way to improve a prompt, but the team already tried a prompt fix and it moved the rate by 2 points; more prompt text is still a request the model can miss, and the error would still surface only at the end.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "Merge the three prompts into one that writes the DTOs, mappers and tests together, so that the mappers and tests are written against the DTOs the model has just produced.",
+          "correct": false,
+          "explanation": "One prompt sounds simpler, but Claude does better on one focused task than on many requirements at once, and a merged prompt removes the point between steps where the DTOs could be checked. Chaining exists to split such work into focused steps.",
+          "trap": "OVER_ENGINEERING"
+        }
+      ],
+      "keyConcept": "In a prompt chain, check each step's output in code before the next step uses it, instead of relying on a prompt instruction.",
+      "studyRef": "§3 Task 1.6 (fixed sequential pipelines, prompt chaining)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S4-D1-018",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "1.7",
+      "secondaryTasks": [],
+      "stem": "Yesterday an engineer spent 2 hours in a session named `depot-tz`, tracing a time-zone bug through 30 files, and later ran a short session about a CSV parser in the same checkout. This morning she checks out the `hotfix-tz` branch there and runs `claude --continue`, which opens the CSV session. On `hotfix-tz`, 2 of the 30 files differ from yesterday's branch: `DepotWindow.java` and `tz_offsets.py`. She wants to carry on without redoing the 2 hours. Which two steps let her pick up the investigation reliably? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Run `claude --resume depot-tz` in the checkout, because `--resume` opens a session by name, while `--continue` opens the latest one in the directory.",
+          "correct": true,
+          "explanation": "`--continue` loads the most recent conversation in the current directory, and the CSV session ran after `depot-tz`, so it is the one that opens. `--resume` takes a session ID or name, so `--resume depot-tz` opens yesterday's investigation and keeps the 2 hours of work.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Tell the agent that `DepotWindow.java` and `tz_offsets.py` differ on `hotfix-tz`, so it re-reads those 2 files before relying on yesterday's findings.",
+          "correct": true,
+          "explanation": "A session keeps the conversation, not the files, so its tool results show the code as it was when it was read, on yesterday's branch. Naming the 2 files that differ gets a targeted re-read, while the findings on the other 28 files still hold.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Rename the CSV session with `/rename`, then run `claude --continue` in the same checkout, so the parser session is no longer picked up as the most recent one.",
+          "correct": false,
+          "explanation": "A new name doesn't change which session is most recent, so `--continue` still opens the CSV session. Names are for `--resume`, which picks a session by name. `--continue` is the quick way back when the session you want is the last one in the directory.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Run `claude --continue --fork-session` in the checkout, so a copy of `depot-tz` with a new session ID opens on the `hotfix-tz` branch.",
+          "correct": false,
+          "explanation": "`--fork-session` gives a new session ID instead of reusing the original, but with `--continue` it forks the most recent session in this directory, which is the CSV session. Forking fits trying a different approach from a shared baseline while keeping the original unchanged.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "e",
+          "text": "Start a fresh session on `hotfix-tz` and have the agent trace the time-zone bug from the start, because its earlier reads came from another branch.",
+          "correct": false,
+          "explanation": "A fresh start suits a session whose tool results are mostly stale, ideally seeded with a summary of what was found. Here only 2 of 30 files differ, so starting over throws away 2 hours of mostly valid work.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "Resume a specific earlier session by name with `--resume`, and tell it which analysed files have changed since.",
+      "studyRef": "§3 Task 1.7 (`--resume` with session names; informing resumed sessions about file changes)",
       "sources": [
         "exam-guide"
       ]

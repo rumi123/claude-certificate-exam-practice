@@ -76,17 +76,17 @@
         {
           "kind": "exam-guide",
           "title": "Exam guide, Task 1.4",
-          "url": "https://example.com/exam-guide"
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
         },
         {
           "kind": "anthropic-docs",
           "title": "Handling stop reasons",
-          "url": "https://example.com/docs/stop-reasons"
+          "url": "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons"
         },
         {
           "kind": "skilljar",
           "title": "Building with the Claude API",
-          "url": "https://example.com/skilljar/api"
+          "url": "https://academy.claude.com/courses/api"
         }
       ],
       "verifiedAt": "2026-11-19"
@@ -168,17 +168,17 @@
         {
           "kind": "exam-guide",
           "title": "Exam guide, Task 1.4",
-          "url": "https://example.com/exam-guide"
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
         },
         {
           "kind": "anthropic-docs",
           "title": "Handling stop reasons",
-          "url": "https://example.com/docs/stop-reasons"
+          "url": "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons"
         },
         {
           "kind": "skilljar",
           "title": "Building with the Claude API",
-          "url": "https://example.com/skilljar/api"
+          "url": "https://academy.claude.com/courses/api"
         }
       ],
       "verifiedAt": "2026-11-19"

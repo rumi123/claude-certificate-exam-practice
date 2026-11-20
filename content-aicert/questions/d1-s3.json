@@ -947,6 +947,478 @@
       "sources": [
         "exam-guide"
       ]
+    },
+    {
+      "id": "S3-D1-021",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.1",
+      "secondaryTasks": [
+        "5.3"
+      ],
+      "stem": "The dataset subagent's loop wraps each `fetch_dataset` call in a try/except, and when a call times out the except branch ends the run with \"Research failed\". About 9% of runs now abort this way and their requests start over, although mirror datasets reachable through the same `fetch_dataset` tool hold most of the series that time out. What should the loop do when a `fetch_dataset` call times out?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Send back a `tool_result` for that call with empty content and `is_error: false`, so the run carries on and Claude moves to the next series on its list.",
+          "correct": false,
+          "explanation": "It tempts because the run keeps going. But an empty result marked as a success reads as a series that holds no data, so Claude has no reason to try a mirror and may report the gap as a finding. Empty content with `is_error: false` is right only when the call worked and really found nothing.",
+          "trap": "SILENT_FAILURE"
+        },
+        {
+          "id": "b",
+          "text": "Retry the call up to five times with a growing delay, and end the run with \"Research failed\" only if the fifth attempt also times out.",
+          "correct": false,
+          "explanation": "Retrying a timeout is reasonable, and a short local retry can come first. But this still ends the whole run when the database stays slow, throwing away the work already done and ignoring the mirrors. After any retries, the failure should go back to Claude as a tool result, not end the run.",
+          "trap": "TOTAL_FAILURE"
+        },
+        {
+          "id": "c",
+          "text": "Send back a `tool_result` for that call holding the timeout message and `is_error: true`, so Claude sees the failure and can try a mirror or report the gap.",
+          "correct": true,
+          "explanation": "When a tool fails, the loop still returns its `tool_result`, with the error text and `is_error: true`, so Claude can react. Here that turns the 9% of aborted runs into runs where Claude fetches the series from a mirror dataset, or notes the gap and carries on with the rest of the request.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Send back only the results of the calls that succeeded and leave out the timed-out one, so Claude notices the missing series and re-requests it or a mirror next turn.",
+          "correct": false,
+          "explanation": "It tempts because it avoids the abort and looks as if Claude will simply ask for the series again. But the next user message must hold one `tool_result` for each `tool_use` block, so the API rejects the call with an error such as \"tool_use ids were found without tool_result blocks immediately after\". A failed call still needs its result.",
+          "trap": "SILENT_FAILURE"
+        }
+      ],
+      "keyConcept": "When a tool call fails, return its `tool_result` with the error and `is_error: true` so the model can adapt.",
+      "studyRef": "§3 Task 1.1 (return tool results for the next iteration); §3 Task 5.3",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-022",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.2",
+      "secondaryTasks": [
+        "1.1"
+      ],
+      "stem": "After synthesis, the Northgate coordinator checks the draft against the request's coverage criteria, re-delegates the gaps it finds and sends the revised briefing on. Still, 12% of briefings reach ministers with gaps: in those runs the re-delegated work closed some gaps but left others open or exposed new ones. Each refinement round takes about 3 hours and a typical run uses 20 of its 48 hours, but the team worries about runs that never settle. What should change?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep the single round, and have the synthesis subagent confirm in its final message that every coverage criterion is met before the coordinator sends the revised briefing on to the minister.",
+          "correct": false,
+          "explanation": "It tempts because it adds a check without another round. But the subagent would be rating its own draft, the same draft in which it missed the gaps, so its confirmation is not reliable evidence. The coordinator's check against the coverage criteria is the signal to act on.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "b",
+          "text": "Repeat the check and re-delegation until the draft meets all the coverage criteria, and stop early only when another 3-hour round would end past the 48-hour deadline, noting any open gaps.",
+          "correct": true,
+          "explanation": "The guide's refinement loop re-delegates until the synthesis is sufficient, so the coverage criteria are the stopping rule. The arithmetic allows it: a typical run uses 20 hours, leaving room for several 3-hour rounds, and the deadline check is a backstop that ends a run which never settles, with its open gaps stated.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Repeat the check and re-delegation a fixed two times on every request, which closes most of the remaining gaps and still keeps each run well inside the 48-hour deadline.",
+          "correct": false,
+          "explanation": "It tempts because two rounds would catch many of the 12% at a predictable cost. But a fixed count is still the stopping rule: runs that are complete after one round pay for another, and runs that need a third round still ship with gaps. A round limit belongs behind the coverage check as a backstop, tied to the deadline.",
+          "trap": "ITERATION_CAP"
+        },
+        {
+          "id": "d",
+          "text": "When the revised draft still has gaps, discard it and rerun the whole pipeline from the first delegation, so the next briefing comes from one consistent run.",
+          "correct": false,
+          "explanation": "It tempts because a clean rerun sounds thorough. But it throws away the sections that already meet the criteria, costs another 20 hours of a 48-hour window, and the new run can leave gaps of its own. Rerunning from scratch suits a run whose decomposition was wrong, not one with a few open gaps.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "Repeat evaluate-and-re-delegate until the coverage criteria are met; a round limit tied to the deadline is only a backstop.",
+      "studyRef": "§3 Task 1.2 (iterative refinement loops); §5 The 10 critical anti-patterns (2)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-023",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.3",
+      "secondaryTasks": [],
+      "stem": "The coordinator pastes 1,100 words of citation rules (page numbers, report edition, table IDs) into each `Task` prompt it writes for the synthesis subagent. When it re-delegates a revision it shortens them, and 9% of revised briefings lose their page numbers. The literature and dataset subagents follow different citation formats of their own. The rules have not changed in a year, while the request facts differ for each delegation. Where should the citation rules live?",
+      "options": [
+        {
+          "id": "a",
+          "text": "In the project CLAUDE.md, so the synthesis subagent loads the full rules on every run and each `Task` prompt carries only the request's facts.",
+          "correct": false,
+          "explanation": "It tempts because CLAUDE.md is also loaded without the coordinator copying anything. But project CLAUDE.md reaches every agent, so the literature and dataset subagents, which use their own citation formats, would get rules that conflict with theirs. CLAUDE.md suits guidance that applies to every agent in the project.",
+          "trap": "WRONG_CONFIG_LAYER"
+        },
+        {
+          "id": "b",
+          "text": "In the `description` field of the synthesis subagent's `AgentDefinition`, so the coordinator has the full rules in view whenever it writes a synthesis or revision `Task` prompt.",
+          "correct": false,
+          "explanation": "It tempts because the description belongs to the same `AgentDefinition`. But the description sits in the coordinator's system prompt and decides when the subagent is launched, so the rules would still reach synthesis only through the coordinator copying them into each `Task` prompt, as now. Descriptions suit when-to-delegate guidance.",
+          "trap": "ASSUMED_CONTEXT_INHERITANCE"
+        },
+        {
+          "id": "c",
+          "text": "In the coordinator's system prompt, with an instruction to copy the 1,100 words of rules unchanged into every synthesis `Task` prompt, revisions included.",
+          "correct": false,
+          "explanation": "It tempts because it targets the copying step that goes wrong. But the rules still depend on the coordinator reproducing 1,100 words in each prompt, and an instruction makes shortening less likely without stopping it. Writing text into each `Task` prompt suits facts that change per request.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        },
+        {
+          "id": "d",
+          "text": "In the `prompt` field of the synthesis subagent's `AgentDefinition`, so every synthesis run starts with the full rules and each `Task` prompt carries only the request's facts.",
+          "correct": true,
+          "explanation": "An `AgentDefinition` holds the system prompt for one subagent type, and the subagent receives it on every run alongside the `Task` prompt. Rules that stay fixed for synthesis belong there, so a revision can no longer arrive with shortened rules, while each request's facts still travel in the `Task` prompt.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Put standing rules for one subagent type in its `AgentDefinition` prompt; pass per-request facts in the `Task` prompt.",
+      "studyRef": "§3 Task 1.3 (AgentDefinition: descriptions, system prompts, tool restrictions)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-024",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "1.2",
+      "secondaryTasks": [
+        "1.3"
+      ],
+      "stem": "The synthesis subagent's `AgentDefinition` has no `tools` field, so it inherited `fetch_dataset`. When a figure is missing from the findings it was given, it fetches the figure itself, and last month's audit could not trace 6 briefing figures to any delegation in the coordinator's log. Every fetch must pass through the coordinator's audit log and retry handling, but synthesis still needs the figures it lacks. Which two changes should the team make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "Let synthesis start the dataset subagent itself with a `Task` call for each missing figure, and paste that subagent's reply into the draft.",
+          "correct": false,
+          "explanation": "It tempts because the dataset subagent is the right one to fetch figures. But a subagent-to-subagent call goes around the coordinator, so the audit log still misses the fetch and the coordinator cannot retry a failure. Delegation to the dataset subagent should come from the coordinator.",
+          "trap": "BYPASS_COORDINATOR"
+        },
+        {
+          "id": "b",
+          "text": "Set a `tools` list in the synthesis subagent's `AgentDefinition` that holds the tools it needs for writing and leaves out `fetch_dataset`.",
+          "correct": true,
+          "explanation": "If `tools` is omitted, a subagent inherits every tool available to subagents, which is how synthesis came to fetch data outside the coordinator's view. Listing only the tools it needs closes that side channel, so each fetch has to come from a delegation the coordinator logs and can retry.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Keep `fetch_dataset` on synthesis, and run a nightly script that matches each briefing figure to the fetch calls in the subagent transcripts.",
+          "correct": false,
+          "explanation": "It tempts because it would find the untraced figures. But it runs after the briefing is built, gives the coordinator no chance to retry a failed fetch, and leaves the side channel open. An after-the-fact check suits catching rare errors, not routing that has to go through the hub.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Have synthesis list each missing figure, with its series and year, in its final message, so the coordinator can re-delegate it to the dataset subagent.",
+          "correct": true,
+          "explanation": "Only a subagent's final message returns to the coordinator, so that is where a gap has to be reported. With the missing figures named there, the coordinator re-delegates them to the dataset subagent under its own log and retry handling, and synthesis still gets the figures it needs.",
+          "trap": null
+        },
+        {
+          "id": "e",
+          "text": "Keep `fetch_dataset` on synthesis, and have it write each fetch to a shared log file that the coordinator reads before approving the briefing.",
+          "correct": false,
+          "explanation": "It tempts because the coordinator sees the log before approval. But the fetch has already happened outside its retry handling, and the file is complete only if synthesis writes each entry. Shared storage suits large outputs passed by reference through the coordinator, not fetches that go around it.",
+          "trap": "BYPASS_COORDINATOR"
+        }
+      ],
+      "keyConcept": "Keep data access in the hub: give each subagent only its role's tools and have it return gaps to the coordinator.",
+      "studyRef": "§3 Task 1.2 (route all communication through the coordinator); §3 Task 1.3 (tool restrictions per subagent)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-025",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 1,
+      "primaryTask": "1.4",
+      "secondaryTasks": [
+        "5.2"
+      ],
+      "stem": "The national agriculture database has been down for 12 hours, and a briefing is due in 10. The coordinator escalates to the duty analyst by sending the raw run log, about 300,000 tokens of tool calls and results. Analysts take about 50 minutes to work out which sections are affected, while the choice between waiting, using another source and shipping with a stated gap has to be made within hours. What should the coordinator send?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A structured summary of the sections complete with their sources, the missing figures and why, what was tried, and the options against the deadline.",
+          "correct": true,
+          "explanation": "A handoff to a person should be a structured summary of what they need to decide, not a dump. Each field answers a question the analyst would otherwise hunt for in 300,000 tokens, so the choice between waiting, another source and a stated gap takes minutes instead of 50.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "A two-page prose summary of the run in the order events happened, covering the sections, the missing figures and what was tried, so the analyst can follow it.",
+          "correct": false,
+          "explanation": "It tempts because it is far shorter than the log and mentions the right things. But a chronological narrative still makes the analyst piece together which sections are affected, and it leaves out the options the analyst has to choose between. Prose fits a post-incident write-up; a decision under a deadline needs the facts laid out field by field.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "No escalation yet: retry the agriculture database at 30-minute intervals and escalate only if it is still down 2 hours before the deadline.",
+          "correct": false,
+          "explanation": "It tempts because databases here do recover after load. But this one has been down for 12 hours with 10 left, nothing is progressing, and the analyst's options need time to act on. Retrying first fits a short, transient timeout, not an outage this long.",
+          "trap": "FAILURE_TO_ESCALATE"
+        },
+        {
+          "id": "d",
+          "text": "The raw run log as now, but sent at the first timeout on the database, so the analyst has extra hours to read it before the deadline.",
+          "correct": false,
+          "explanation": "It tempts because earlier escalation gives the analyst more time. But databases here time out under load routinely, so escalating at the first timeout sends analysts many cases the system would have recovered, and each still arrives as an unreadable log. The fix is in what the handoff contains.",
+          "trap": "PREMATURE_ESCALATION"
+        }
+      ],
+      "keyConcept": "When escalating to a person, send a structured summary of what is done, what is missing and why, and the options.",
+      "studyRef": "§3 Task 1.4 (structured handoff summaries when escalating to humans)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-026",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.5",
+      "secondaryTasks": [
+        "1.4"
+      ],
+      "stem": "Some reports in Northgate's library are under embargo and must not be quoted before their release date. `load_document`, a tool on Northgate's document MCP server, returns each report's text with metadata, and `embargo_until` appears only in that metadata. A rule in the synthesis subagent's prompt was added in the spring, yet 3 briefings since then quoted embargoed text. Analysts still need to know that an embargoed report exists. What should the team add?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A `PostToolUse` hook on `load_document` that, when `embargo_until` is in the future, returns `decision: \"block\"` with a reason naming the report and its release date.",
+          "correct": false,
+          "explanation": "It tempts because it runs at the right moment and names the embargo. But a `PostToolUse` block decision adds its reason next to the result, and Claude still sees the original text, so the embargoed passage stays quotable. A block reason suits telling Claude why a result is a problem, not hiding it.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "b",
+          "text": "A `PreToolUse` hook on `load_document` that, when `embargo_until` is in the future, denies the call and sends the agent a reason naming the report and its release date.",
+          "correct": false,
+          "explanation": "It tempts because blocking before the call is the usual way to enforce a rule. But a `PreToolUse` hook runs before the tool does, and `embargo_until` arrives only in the result, so the hook has no date to check. A pre-call block is right when the deciding fact is in the call's input.",
+          "trap": "MISREAD_PARAMETER"
+        },
+        {
+          "id": "c",
+          "text": "A `PostToolUse` hook on `load_document` that, when `embargo_until` is in the future, uses `updatedToolOutput` to replace the result with a notice of the report's title and release date.",
+          "correct": true,
+          "explanation": "The embargo condition exists only once the result comes back, so the check has to run after the call. A `PostToolUse` hook can replace what the model sees with `updatedToolOutput`, which covers MCP tools such as `load_document`, so the embargoed text never reaches Claude while the notice still tells analysts the report exists.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "A rule in the document analysis subagent's prompt, with two worked examples, to check `embargo_until` in each result and keep embargoed text out of its findings.",
+          "correct": false,
+          "explanation": "It tempts because it moves the rule upstream, before synthesis sees the text. But a prompt rule is a request the model usually follows, which is what already failed three times in synthesis. Prompt rules suit judgment calls; a release date that has to hold is a check for code.",
+          "trap": "PROMPT_FOR_GUARANTEE"
+        }
+      ],
+      "keyConcept": "When the deciding condition arrives only in a tool's result, enforce it after the call by replacing what the model sees.",
+      "studyRef": "§3 Task 1.5 (PostToolUse hooks transform tool results before the model processes them)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-027",
+      "type": "multi",
+      "selectCount": 2,
+      "difficulty": 2,
+      "primaryTask": "1.3",
+      "secondaryTasks": [
+        "1.2"
+      ],
+      "stem": "The coordinator's delegation prompts to the literature subagent say only \"Find evidence on X. Be thorough.\" On requests about peatland restoration costs, one run stopped after 3 press articles, and another read 90 papers over 4 hours, leaving synthesis 6 hours late. Every cost figure in a briefing must cite its source, and other topics need different databases and search strategies. Which two changes to the delegation prompt should the team make? (Select 2.)",
+      "options": [
+        {
+          "id": "a",
+          "text": "State the quality criteria for sources: official statistics or peer-reviewed studies only, with two independent sources behind each cost figure.",
+          "correct": true,
+          "explanation": "Quality criteria tell the subagent what counts as evidence, so 3 press articles no longer satisfy the task, while it still chooses its own databases and searches for each topic. The guide's skill is to give subagents goals and quality criteria rather than procedures.",
+          "trap": null
+        },
+        {
+          "id": "b",
+          "text": "Replace the line with a fixed procedure: search the three peer-reviewed databases, read the first 30 results of each, then list each cost figure with its page number.",
+          "correct": false,
+          "explanation": "It tempts because it removes the vagueness. But a fixed procedure reads 90 results whether or not the figures are already found, and it does not carry over to topics that need other databases. A procedure suits a task whose steps are known and the same each time.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Strengthen the line to \"Be extremely thorough and do not stop until the evidence is complete\", in capitals at the top of the delegation prompt.",
+          "correct": false,
+          "explanation": "It tempts because the short run looks like a lack of effort. But it restates the same instruction more loudly without adding what is missing, criteria for good evidence: it pushes toward the 90-paper runs and still gives no test of when the evidence is good enough. Emphasis helps when one clear instruction is being overlooked.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Cap each delegation at 30 tool calls, so a run can no longer read 90 papers over 4 hours and hold up synthesis.",
+          "correct": false,
+          "explanation": "It tempts because it bounds the long run directly. But it does nothing for the run that stopped at 3 press articles, and it can cut off a run that needs a 31st call to find a second source. A cap is a safety net behind a clear output, not the main stopping rule.",
+          "trap": "ITERATION_CAP"
+        },
+        {
+          "id": "e",
+          "text": "Define the output it returns, such as a table of up to 10 cost figures, each with its two sources and page numbers, so it knows when it is done.",
+          "correct": true,
+          "explanation": "A defined output format gives the subagent a natural stopping point: once the table holds sourced figures it is done, instead of reading 90 papers over 4 hours. It also makes the citations synthesis needs part of what comes back.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "Delegate with goals, source-quality criteria and a defined output format; the format gives the subagent a natural stopping point.",
+      "studyRef": "§3 Task 1.3 (coordinator prompts with goals and quality criteria, not procedures)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-028",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.6",
+      "secondaryTasks": [
+        "1.3"
+      ],
+      "stem": "For a request on \"the top 5 methane sources in the national inventory and the policy on each\", the coordinator emits six `Task` calls in one response: the dataset subagent, and five literature subagents named after last year's top 5. This year's inventory reordered the list, so 2 of the 5 literature subagents researched sources outside the new top 5. The dataset step takes about 20 minutes, while each literature search takes about 8 hours and synthesis needs the last 12 of the 48. What should the coordinator do?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Run the dataset step first, then spawn the five literature subagents one after another, each given the sources its ranking returns and the findings before it.",
+          "correct": false,
+          "explanation": "It tempts because it fixes the dependency and lets later searches build on earlier ones. But it does more than the fix needs: waiting 20 minutes for the ranking is enough, and chaining five independent searches adds coupling the task doesn't need. In sequence they take about 40 hours, so with synthesis's 12 the run overshoots 48. Sequential steps suit work where each step needs the one before.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "b",
+          "text": "Run the dataset step first, then emit five `Task` calls in one response, one literature subagent for each of the top 5 sources its ranking returns.",
+          "correct": true,
+          "explanation": "Parallel spawning is right for independent subtasks, but these five depend on what the dataset step finds. Waiting 20 minutes for the ranking, then emitting the five `Task` calls together, keeps the 8-hour searches parallel and points each one at a source in the new top 5, well inside the 36 hours before synthesis.",
+          "trap": null
+        },
+        {
+          "id": "c",
+          "text": "Emit the six `Task` calls in one response as now, and have each literature subagent read the new ranking from a shared file after the dataset subagent writes it.",
+          "correct": false,
+          "explanation": "It tempts because it keeps everything in parallel. But the literature subagents would coordinate through a file outside the coordinator, which then cannot see which ranking each one used or handle a failed dataset step. The coordinator should pass the ranking in each `Task` prompt.",
+          "trap": "BYPASS_COORDINATOR"
+        },
+        {
+          "id": "d",
+          "text": "Emit the six `Task` calls in one response with last year's list, then check the results against the ranking the dataset step returns and re-delegate any source outside the top 5.",
+          "correct": false,
+          "explanation": "It tempts because it keeps the fast parallel launch and catches the error afterwards. But it spends two 8-hour searches on the wrong sources and adds another 8-hour round to replace them, when a 20-minute wait avoids both. Checking and re-delegating suits gaps that can't be foreseen; this one follows from the plan.",
+          "trap": "SYMPTOM_PATCH"
+        }
+      ],
+      "keyConcept": "Run independent subtasks in parallel, but when their scope depends on an earlier step's result, wait for that step first.",
+      "studyRef": "§3 Task 1.6 (adaptive plans from intermediate findings); §3 Task 1.3 (parallel Task calls)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-029",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 2,
+      "primaryTask": "1.6",
+      "secondaryTasks": [
+        "1.2"
+      ],
+      "stem": "A minister asks what drove the 11% rise in 2023 transport emissions. The national dataset, already fetched, breaks the rise down by sub-sector, and freight accounts for 70% of it. The coordinator splits all 380 retrieved documents evenly across four document analysis subagents and has each read its share in full. Runs now take 40 of the 48 hours, but synthesis needs about 12, and freight gets the same two pages as cycling. What should the coordinator do instead?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Keep the even four-way split, but have each subagent analyse its documents one at a time, then run an integration pass that ranks the high-impact findings before synthesis.",
+          "correct": false,
+          "explanation": "It tempts because per-document passes plus an integration step are the right shape for a review in which each item must be read, and it ranks the high-impact findings. But the ranking comes after each of the 380 documents is read in full, so the 40 hours stay and freight gets no more reading than cycling.",
+          "trap": "OVER_ENGINEERING"
+        },
+        {
+          "id": "b",
+          "text": "Partition the 380 documents by source type, peer-reviewed studies to two subagents and agency reports to the other two, so that no document is read twice.",
+          "correct": false,
+          "explanation": "It tempts because partitioning by source type is how to stop two subagents reading the same documents. But overlap is not the problem here: the split is even and exhaustive, so the 40 hours and the thin freight coverage stay. Partitioning fixes duplication, not priority.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "c",
+          "text": "Map the topic first from the sub-sector breakdown and all 380 titles and abstracts, then delegate the high-impact areas in priority order, freight first, and every other area after, each read in full.",
+          "correct": false,
+          "explanation": "It tempts because it maps first and orders the work by impact. But every area still follows and is read in full, so all 380 documents are read, the run still takes about 40 hours and synthesis stays short of time. Priority has to change how much is read, not only the order; full reading suits a review in which each document must be covered.",
+          "trap": "SYMPTOM_PATCH"
+        },
+        {
+          "id": "d",
+          "text": "Map the topic first from the sub-sector breakdown and all 380 titles and abstracts, then delegate the high-impact areas in priority order, freight first, revising the plan as each step reports.",
+          "correct": true,
+          "explanation": "Open-ended questions are decomposed by mapping the structure first, finding the high-impact areas, then making a prioritised plan that adapts. The dataset already shows freight is 70% of the rise, so it gets the most effort and minor sub-sectors get less, which brings the reading well inside the hours synthesis needs.",
+          "trap": null
+        }
+      ],
+      "keyConcept": "For open-ended questions, map the structure first, rank the high-impact areas, then plan in priority order and adapt.",
+      "studyRef": "§3 Task 1.6 (map structure, identify high-impact areas, prioritised adaptive plan)",
+      "sources": [
+        "exam-guide"
+      ]
+    },
+    {
+      "id": "S3-D1-030",
+      "type": "single",
+      "selectCount": 1,
+      "difficulty": 3,
+      "primaryTask": "1.7",
+      "secondaryTasks": [
+        "5.1"
+      ],
+      "stem": "Northgate's policy is to start a fresh session from a summary once a session is more than 24 hours old. The `heat-labour` document-analysis session read 60 documents 30 hours ago; its tool results hold the page-level excerpts it read, night-shift sections included, and none of the documents has been revised since. The minister asked for three added paragraphs on night-shift work, which the documents cover but the draft did not. Following the policy, the team started fresh from a summary that keeps each claim and its source but no page excerpts, and 4 of 11 new citations named the wrong page. What should the team do?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Resume the `heat-labour` session by name, but first give it the list of all 60 documents to re-read, since its tool results are over 24 hours old.",
+          "correct": false,
+          "explanation": "It tempts because it uses the right session and acts on its age. But it decides on the session's age rather than on whether anything changed, and age is not staleness: none of the 60 documents was revised, so re-reading them repeats the work for nothing. Telling a resumed session what changed is right when specific documents were revised, and then only those.",
+          "trap": "UNRELIABLE_PROXY"
+        },
+        {
+          "id": "b",
+          "text": "Seed a new session with a fuller summary that adds the page excerpt behind each claim, in line with the 24-hour policy, so the new citations carry their pages.",
+          "correct": false,
+          "explanation": "It tempts because it keeps the policy and adds what the last summary lacked. But the excerpts behind existing claims do not include the night-shift passages the new paragraphs need, so their pages would still be guessed. A fresh start with a summary is right when the old tool results are stale, and these are not.",
+          "trap": "DISCARD_STATE"
+        },
+        {
+          "id": "c",
+          "text": "Resume the `heat-labour` session by name and write the three paragraphs in it, since its tool results on the 60 documents are still current.",
+          "correct": true,
+          "explanation": "Resumption fits when the prior context is mostly valid, and nothing behind this session has been revised, so its 30-hour-old tool results are still accurate. Its tool results hold the night-shift passages with their pages, which a summary of existing claims never carried, so resuming gives the new paragraphs the right citations.",
+          "trap": null
+        },
+        {
+          "id": "d",
+          "text": "Open a new session and reload all 60 documents with `load_document`, so the three paragraphs rest on new analyses and current page excerpts.",
+          "correct": false,
+          "explanation": "It tempts because newly read text cannot be stale. But it throws away the session's valid results and repeats the analysis of 60 unchanged documents it already holds. Reloading suits documents that were revised or never read, not a session whose results are current.",
+          "trap": "DISCARD_STATE"
+        }
+      ],
+      "keyConcept": "Resume a session whose tool results are still valid, whatever its age; start fresh with a summary only when results are stale.",
+      "studyRef": "§3 Task 1.7 (resume when prior context is mostly valid; fresh start when tool results are stale)",
+      "sources": [
+        "exam-guide"
+      ]
     }
   ]
 }

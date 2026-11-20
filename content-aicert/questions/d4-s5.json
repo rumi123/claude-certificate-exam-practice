@@ -42,7 +42,7 @@
       ],
       "keyConcept": "Replace vague review instructions with explicit categorical criteria that state what to report and what to skip.",
       "studyRef": "§3 Task 4.1; §6c Domain 4 Q1",
-      "sources": ["exam-guide", "research", "research-6c-d4"]
+      "sources": ["exam-guide", "research"]
     },
     {
       "id": "S5-D4-002",
@@ -308,7 +308,7 @@
       ],
       "keyConcept": "Use batch for latency-tolerant work nothing waits on, and synchronous calls for blocking or interactive work.",
       "studyRef": "§3 Task 4.5; §6a Q11",
-      "sources": ["exam-guide", "research", "research-6a-q11"]
+      "sources": ["exam-guide", "research"]
     },
     {
       "id": "S5-D4-008",
@@ -483,7 +483,7 @@
       ],
       "keyConcept": "Split large reviews into per-file passes plus an integration pass that checks data flow between the changed files.",
       "studyRef": "§3 Task 4.6; §6a Q12",
-      "sources": ["exam-guide", "research", "research-6a-q12"]
+      "sources": ["exam-guide", "research"]
     },
     {
       "id": "S5-D4-012",

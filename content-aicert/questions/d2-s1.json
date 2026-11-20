@@ -42,7 +42,7 @@
       ],
       "keyConcept": "Tool descriptions drive selection, so fix confusion between similar tools by describing outputs, inputs and boundaries before adding layers.",
       "studyRef": "§3 Task 2.1; §5 Key decision frameworks",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S1-D2-002",
@@ -84,7 +84,7 @@
       ],
       "keyConcept": "When a good tool description is ignored, check the system prompt for keyword instructions that steer the model to that tool.",
       "studyRef": "§3 Task 2.1 (system prompt wording); §5 Key decision frameworks",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S1-D2-003",
@@ -126,7 +126,7 @@
       ],
       "keyConcept": "Return business-rule failures as structured, non-retryable errors with a readable reason so the agent knows to hand the case on.",
       "studyRef": "§3 Task 2.2 (retriable false for business errors)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S1-D2-004",
@@ -175,7 +175,7 @@
       ],
       "keyConcept": "Tell access failures apart from valid empty results at the tool: a failed call is an error, a true empty stays a success.",
       "studyRef": "§3 Task 2.2 (access failures vs empty results); §3 Task 5.3",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S1-D2-005",
@@ -217,7 +217,7 @@
       ],
       "keyConcept": "When some tool must be called but any of several fits, set `tool_choice` to `\"any\"` rather than prompting or forcing one tool.",
       "studyRef": "§3 Task 2.3 (tool_choice options); §5 Key decision frameworks",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S1-D2-006",
@@ -259,7 +259,7 @@
       ],
       "keyConcept": "Give each subagent only the tools its role needs; a tool outside the role gets used, and a threshold hook won't catch it.",
       "studyRef": "§3 Task 2.3 (scoped tool access); §5 anti-pattern 8",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S1-D2-007",
@@ -301,7 +301,7 @@
       ],
       "keyConcept": "Expose stable content catalogues as MCP resources so the agent sees what exists without exploratory tool calls.",
       "studyRef": "§3 Task 2.4 (MCP resources)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     }
   ]
 }

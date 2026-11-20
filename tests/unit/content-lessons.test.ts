@@ -123,8 +123,14 @@ describe('validating lessons', () => {
 
   it('rejects lessons with no exam-guide or docs source', () => {
     const r = raw();
-    for (const s of lesson(r, 'S1-003').sources) s.kind = 'community';
+    for (const s of lesson(r, 'S1-003').sources) s.kind = 'skilljar';
     expectError(r, 'S1-003', 'exam-guide or anthropic-docs');
+  });
+
+  it('rejects a lesson source that is not an Anthropic page', () => {
+    const r = raw();
+    lesson(r, 'S1-003').sources[0].url = 'https://dev.to/x/post';
+    expectError(r, 'S1-003', 'not an Anthropic page');
   });
 
   it('rejects a date that is not on the calendar', () => {

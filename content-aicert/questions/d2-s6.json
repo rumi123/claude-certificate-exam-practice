@@ -42,7 +42,7 @@
       ],
       "keyConcept": "Rename and re-describe overlapping tools by purpose, with their outputs and boundaries, instead of forcing or adding tools.",
       "studyRef": "§3 Task 2.1 (renaming to remove overlap)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S6-D2-002",
@@ -84,7 +84,7 @@
       ],
       "keyConcept": "A validation error should say which field failed and what was expected, so the agent can correct it instead of resubmitting blind.",
       "studyRef": "§3 Task 2.2 (errorCategory, isRetryable, readable description)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S6-D2-003",
@@ -126,7 +126,7 @@
       ],
       "keyConcept": "When a prompt rule leaves occasional misuse of a generic tool, replace it with a constrained tool that validates its inputs.",
       "studyRef": "§3 Task 2.3 (constrained alternatives to generic tools)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S6-D2-004",
@@ -175,7 +175,7 @@
       ],
       "keyConcept": "Build codebase understanding incrementally: Grep for an entry point, then Read and follow imports rather than reading everything.",
       "studyRef": "§3 Task 2.5 (incremental understanding)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     }
   ]
 }

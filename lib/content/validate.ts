@@ -1,4 +1,5 @@
 import type { ZodType } from 'zod';
+import { isAnthropicUrl, isHttpUrl } from './source-url';
 import { buildCoverage, type Coverage } from './coverage';
 import type { RawContent } from './load';
 import {
@@ -403,6 +404,9 @@ function checkLesson(
   if (!l.sources.some((s) => s.kind === 'exam-guide' || s.kind === 'anthropic-docs')) {
     err('needs a source of kind exam-guide or anthropic-docs');
   }
+  for (const s of l.sources) {
+    if (!isAnthropicUrl(s.url)) err(`source url ${s.url} is not an Anthropic page`);
+  }
   if (!isRealDate(l.verifiedAt)) err(`verifiedAt ${l.verifiedAt} is not a real date`);
 }
 
@@ -466,6 +470,14 @@ function checkSyllabus(file: string, syl: Syllabus, out: Collector): void {
   const domains = new Set(syl.domains.map((d) => d.id));
   for (const t of syl.tasks) {
     if (!domains.has(t.domain)) out.error(file, `task ${t.id} has unknown domain ${t.domain}`);
+    if (t.lessonUrl && !isAnthropicUrl(t.lessonUrl)) {
+      out.error(file, `task ${t.id} lessonUrl ${t.lessonUrl} is not an Anthropic page`);
+    }
+  }
+  for (const [key, s] of Object.entries(syl.sources)) {
+    if (isHttpUrl(s.url) && !isAnthropicUrl(s.url)) {
+      out.error(file, `source "${key}" url ${s.url} is not an Anthropic page`);
+    }
   }
 }
 

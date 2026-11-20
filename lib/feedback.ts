@@ -29,7 +29,6 @@ export const SOURCE_LABEL: Record<LessonView['sources'][number]['kind'], string>
   'exam-guide': 'Exam guide',
   'anthropic-docs': 'Anthropic docs',
   skilljar: 'Claude Academy',
-  community: 'Community',
 };
 
 // Ruling-out rows use the letters of the current display order.

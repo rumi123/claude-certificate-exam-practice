@@ -42,7 +42,7 @@
       ],
       "keyConcept": "Overlapping tool descriptions cause misrouting; state what each tool covers, its expected input and when to use it instead of the other.",
       "studyRef": "§3 Task 2.1; §5 Key decision frameworks",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S4-D2-002",
@@ -84,7 +84,7 @@
       ],
       "keyConcept": "Tools from all configured MCP servers are discovered at connection time and usable together, so don't build a gateway to combine them.",
       "studyRef": "§3 Task 2.4 (tools discovered at connection time)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S4-D2-003",
@@ -126,7 +126,7 @@
       ],
       "keyConcept": "Use Glob to match file paths by name or extension, and Grep to search what is inside files.",
       "studyRef": "§3 Task 2.5 (Grep for content, Glob for paths)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S4-D2-004",
@@ -168,7 +168,7 @@
       ],
       "keyConcept": "Shared team servers go in project `.mcp.json`; personal or experimental servers go in user-level `~/.claude.json`.",
       "studyRef": "§3 Task 2.4 (.mcp.json vs ~/.claude.json)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S4-D2-005",
@@ -210,7 +210,7 @@
       ],
       "keyConcept": "Search by the fixed part of a message with Grep to find an entry point, then Read only the files it points to.",
       "studyRef": "§3 Task 2.5 (Grep for error messages; build understanding incrementally)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S4-D2-006",
@@ -252,7 +252,7 @@
       ],
       "keyConcept": "When an MCP tool is ignored despite a good description, check the CLAUDE.md or prompt wording that steers to built-in tools.",
       "studyRef": "§3 Task 2.4 (descriptions vs built-ins); §3 Task 2.1 (keyword-sensitive prompts)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S4-D2-007",
@@ -301,7 +301,7 @@
       ],
       "keyConcept": "When Edit can't find a unique anchor, use Read plus Write; use Grep, not Glob, to find where a name is used.",
       "studyRef": "§3 Task 2.5 (Edit fallback; Grep vs Glob)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S4-D2-008",
@@ -343,7 +343,7 @@
       ],
       "keyConcept": "To trace usage through aliases and wrappers, find the exported names first, then search the codebase for each of them.",
       "studyRef": "§3 Task 2.5 (tracing usage across wrapper modules)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S4-D2-009",
@@ -392,7 +392,7 @@
       ],
       "keyConcept": "Prefer a maintained community MCP server for standard integrations, and keep secrets out of git with `${VAR}` expansion in `.mcp.json`.",
       "studyRef": "§3 Task 2.4 (community servers; env expansion)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     }
   ]
 }

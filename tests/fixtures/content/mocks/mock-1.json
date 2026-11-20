@@ -147,7 +147,7 @@
       "keyConcept": "Use prompt guidance for best-effort preferences; reserve hooks and gates for rules that must be guaranteed.",
       "studyRef": "§5 Key decision frameworks (best-effort preference → prompt guidance); §3 Task 1.4",
       "sources": [
-        "dnacenta",
+        "exam-guide",
         "research"
       ],
       "scenario": "S1"

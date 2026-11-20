@@ -114,7 +114,7 @@ const OPTION_ID = z.enum(['a', 'b', 'c', 'd', 'e']);
 
 export const LessonSourceSchema = z
   .object({
-    kind: z.enum(['exam-guide', 'anthropic-docs', 'skilljar', 'community']),
+    kind: z.enum(['exam-guide', 'anthropic-docs', 'skilljar']),
     title: z.string().min(3),
     url: z.string().regex(/^https:\/\/\S+$/),
   })

@@ -42,7 +42,7 @@
       ],
       "keyConcept": "Document input formats, examples and edge cases in the tool's own description, where the model reads when it builds a call.",
       "studyRef": "§3 Task 2.1 (input formats, example queries, edge cases)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S3-D2-002",
@@ -84,7 +84,7 @@
       ],
       "keyConcept": "Recover from transient errors locally inside the subagent, and pass up only failures it cannot resolve, with what was attempted.",
       "studyRef": "§3 Task 2.2 (retryable vs non-retryable)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S3-D2-003",
@@ -133,7 +133,7 @@
       ],
       "keyConcept": "Error responses carry category, retryability, what was attempted and partial results, so the coordinator can recover.",
       "studyRef": "§3 Task 2.2; §3 Task 5.3",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S3-D2-004",
@@ -175,7 +175,7 @@
       ],
       "keyConcept": "Replace a generic tool with a constrained one that validates its inputs when the role needs only a narrow capability.",
       "studyRef": "§3 Task 2.3 (fetch_url replaced by load_document)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     },
     {
       "id": "S3-D2-005",
@@ -217,7 +217,7 @@
       ],
       "keyConcept": "Force a tool only on the request where it must run first, then return to `\"auto\"` so the loop can end.",
       "studyRef": "§3 Task 2.3 (forced tool selection to run first)",
-      "sources": ["exam-guide", "research-6c-d2"]
+      "sources": ["exam-guide"]
     }
   ]
 }

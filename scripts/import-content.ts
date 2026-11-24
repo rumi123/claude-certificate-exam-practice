@@ -16,7 +16,10 @@ function main(): number {
     return 1;
   }
   const r = importContent(getDb(), raw);
-  console.log(`content:import ${fmt(r)} (questions); mocks ${fmt(r.mocks)}; cards ${fmt(r.cards)}; lessons ${fmt(r.lessons)}`);
+  const drafts = r.skippedDrafts.length ? `; skipped draft papers: ${r.skippedDrafts.join(', ')}` : '';
+  console.log(
+    `content:import ${fmt(r)} (questions); mocks ${fmt(r.mocks)}; cards ${fmt(r.cards)}; lessons ${fmt(r.lessons)}${drafts}`,
+  );
   return 0;
 }
 

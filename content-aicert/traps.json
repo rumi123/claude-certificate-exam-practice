@@ -211,6 +211,36 @@
         "Blaming a search subagent's narrow queries when it covered the one sector it was given and the coordinator never assigned the rest.",
         "Blaming the synthesis step for a missing topic when it used everything it received."
       ]
+    },
+    {
+      "id": "STALE_CONTEXT",
+      "name": "Relying on stale context",
+      "description": "Resumes, forks or keeps working from a session whose tool results or readings no longer describe the current state.",
+      "principle": "Resume when the earlier context is still valid. When its tool results are stale, start fresh with a structured summary of the conclusions and re-run the live checks.",
+      "examples": [
+        "Resuming yesterday's incident session and trusting its queue-depth readings because no code changed overnight.",
+        "Resuming a review session after the files it read were rewritten, so it quotes code that no longer exists."
+      ]
+    },
+    {
+      "id": "SERIAL_EXECUTION",
+      "name": "Running independent work in sequence",
+      "description": "Runs independent tasks one after another in a single agent or session when they could run in parallel and the time limit needs it.",
+      "principle": "Run independent work in parallel: several `Task` calls in one coordinator response, or forked sessions from a shared baseline.",
+      "examples": [
+        "Giving one subagent twelve independent fact-checks to run in turn when the deadline only allows them to run together.",
+        "Drafting two proposals one after the other in one session when each takes 90 minutes and both are due in two hours."
+      ]
+    },
+    {
+      "id": "SUPPRESSED_CONFLICT",
+      "name": "Suppressing a conflict",
+      "description": "Settles a conflict between credible sources by picking one value, averaging them or dropping the contested findings, instead of keeping both with attribution.",
+      "principle": "Keep conflicting credible values side by side, each with its source and how it was measured, and mark which findings are well established and which are contested.",
+      "examples": [
+        "Averaging two emissions totals that differ because one includes international aviation.",
+        "Leaving single-source findings out of a briefing instead of labelling them as contested."
+      ]
     }
   ]
 }

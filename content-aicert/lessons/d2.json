@@ -27,14 +27,23 @@
         "Combining tools is for tools that overlap, such as several tools that each return one fact about the same record. Tools that do different jobs stay separate, so the answer is not 'merge whenever two tools are confused'."
       ],
       "conceptTable": {
-        "headers": ["Symptom", "First fix"],
+        "headers": [
+          "Symptom",
+          "First fix"
+        ],
         "rows": [
-          ["Wrong tool chosen", "Rewrite the description; rename or combine tools that overlap"],
+          [
+            "Wrong tool chosen",
+            "Rewrite the description; rename or combine tools that overlap"
+          ],
           [
             "Wrong value or format passed",
             "Fix the parameter description and add `input_examples`"
           ],
-          ["Tools that do different jobs", "Keep them separate and describe each one's output"]
+          [
+            "Tools that do different jobs",
+            "Keep them separate and describe each one's output"
+          ]
         ]
       },
       "stemSignals": [
@@ -219,12 +228,27 @@
         "Note that `errorCategory` and `isRetryable` are the guide's pattern for the content of an error result. They are not fields defined by the MCP specification, which has only `isError` and the result content. Write instructive errors: say what went wrong and what to try next."
       ],
       "conceptTable": {
-        "headers": ["Error kind", "What the response should say"],
+        "headers": [
+          "Error kind",
+          "What the response should say"
+        ],
         "rows": [
-          ["Transient (a timeout)", "Retryable: trying again may work"],
-          ["Validation (invalid input)", "Which field failed and what was expected"],
-          ["Business (a policy violation)", "Not retryable, with a customer-friendly reason"],
-          ["Permission", "Not retryable by the same caller; say access was refused"]
+          [
+            "Transient (a timeout)",
+            "Retryable: trying again may work"
+          ],
+          [
+            "Validation (invalid input)",
+            "Which field failed and what was expected"
+          ],
+          [
+            "Business (a policy violation)",
+            "Not retryable, with a customer-friendly reason"
+          ],
+          [
+            "Permission",
+            "Not retryable by the same caller; say access was refused"
+          ]
         ]
       },
       "stemSignals": [
@@ -418,12 +442,27 @@
         "Parallel tool use is on by default. `disable_parallel_tool_use: true` goes inside `tool_choice`; with `any` or `tool` it limits the response to exactly one call."
       ],
       "conceptTable": {
-        "headers": ["`tool_choice`", "What it does"],
+        "headers": [
+          "`tool_choice`",
+          "What it does"
+        ],
         "rows": [
-          ["`auto`", "Claude decides whether to call a tool; a text reply is possible"],
-          ["`any`", "Claude must call one of the provided tools, and chooses which"],
-          ["`{\"type\": \"tool\", \"name\": ...}`", "Claude must call that named tool"],
-          ["`none`", "No tool use"]
+          [
+            "`auto`",
+            "Claude decides whether to call a tool; a text reply is possible"
+          ],
+          [
+            "`any`",
+            "Claude must call one of the provided tools, and chooses which"
+          ],
+          [
+            "`{\"type\": \"tool\", \"name\": ...}`",
+            "Claude must call that named tool"
+          ],
+          [
+            "`none`",
+            "No tool use"
+          ]
         ]
       },
       "stemSignals": [
@@ -1369,11 +1408,23 @@
         "The exam guide's rule is shared team tooling in project `.mcp.json`, and personal or experimental servers in user-level `~/.claude.json`. If the same server is defined twice, local wins over project, and project wins over user."
       ],
       "conceptTable": {
-        "headers": ["Scope", "Where and who"],
+        "headers": [
+          "Scope",
+          "Where and who"
+        ],
         "rows": [
-          ["Local (default)", "The current project, only you; stored in `~/.claude.json`"],
-          ["Project", "`.mcp.json` at the project root; shared through version control"],
-          ["User", "All your projects, only you; stored in `~/.claude.json`"]
+          [
+            "Local (default)",
+            "The current project, only you; stored in `~/.claude.json`"
+          ],
+          [
+            "Project",
+            "`.mcp.json` at the project root; shared through version control"
+          ],
+          [
+            "User",
+            "All your projects, only you; stored in `~/.claude.json`"
+          ]
         ]
       },
       "stemSignals": [
@@ -2204,6 +2255,2035 @@
           "kind": "skilljar",
           "title": "Claude Code 101: The explore → plan → code → commit workflow",
           "url": "https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S1-004",
+      "explanation": "The agent picks the right tool but fills its parameter with the wrong value: the account number instead of a meter ID. The definition gives it nothing to go on: the description says only 'Returns meter reads.' and `meter_id` is a bare string. The fix is in the parameter's description: what a meter ID looks like, an example, where it comes from (the `meters` list in `get_account`), and that it is not the account number.",
+      "options": {
+        "a": {
+          "reasoning": "`tool_choice` decides which tool the model calls, not what value it passes. The log shows `get_account` was already fetched just before, so the account details were there; the agent didn't know which field was the meter ID. Forcing a tool suits a step that gets skipped.",
+          "tempting": "Making sure the account is loaded first sounds like it supplies the missing data."
+        },
+        "b": {
+          "reasoning": "Describing what the tool returns is good practice, but the calls fail on the way in, not on the way out. A better output description helps when the wrong tool is chosen; here the right tool gets the wrong input.",
+          "tempting": "It does improve the vague description, which is part of the problem."
+        },
+        "c": {
+          "reasoning": "This fixes the part at fault. A wrong value or format is fixed in the parameter description, with the format, an example and the source of the value, and the definition is all the model sees of the tool. The 18% of calls with account numbers now have a clear alternative to reach for."
+        },
+        "d": {
+          "reasoning": "It says what not to send but not what a meter ID looks like or where to find one, so the agent still has to guess which field to use. The format belongs in the parameter description, which travels with the tool.",
+          "tempting": "A loud rule against the exact mistake in the log feels direct."
+        }
+      },
+      "concept": [
+        "Claude never sees the code behind a tool, only the definition you send: the name, the description, the input schema and optional input examples. When Claude misuses a tool, look at the definition first and fix only the part at fault. A wrong tool chosen points to the description; a wrong value or format passed points to the parameter's description and `input_examples`.",
+        "Each parameter has its own description in `input_schema`, and that is where a format such as `E-0048213` goes. Write descriptions as if briefing a new colleague, making implicit context explicit, such as which field of another tool's result the value comes from.",
+        "`tool_choice` controls whether and which tool is called: `auto`, `any`, a forced named tool, or `none`. It does not shape the values the model puts into a call."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "\"description\": \"Returns meter reads.\"",
+          "meaning": "A minimal description with nothing about inputs."
+        },
+        {
+          "phrase": "\"meter_id\": {\"type\": \"string\"}",
+          "meaning": "The parameter has no description or format, so any string looks valid."
+        },
+        {
+          "phrase": "`4471-0093` is the account number",
+          "meaning": "Right tool, wrong value: a parameter problem, not a selection problem."
+        },
+        {
+          "phrase": "fetched just before",
+          "meaning": "The data was already loaded, so forcing `get_account` adds nothing."
+        }
+      ],
+      "lookFor": [
+        "A fix to the `meter_id` parameter description: format, example and source.",
+        "A fix aimed at the input, not the output.",
+        "Guidance that travels with the tool, not a separate prompt rule."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It controls which tool runs, not the value passed, and `get_account` already ran."
+        },
+        {
+          "option": "b",
+          "reason": "It describes outputs while the calls fail on input."
+        },
+        {
+          "option": "d",
+          "reason": "It forbids the mistake without saying what to send."
+        }
+      ],
+      "rule": "When the agent calls the right tool with the wrong value, fix the parameter description: give the format, an example and where the value comes from.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Writing effective tools for agents",
+          "url": "https://www.anthropic.com/engineering/writing-tools-for-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Creating tools that Claude picks",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/creating-tools-that-claude-picks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S1-005",
+      "explanation": "The hook works: no credit above $250 goes through. The trouble comes earlier. The agent settles on the amount and promises it in the same reply as the tool call, and the definition it reads for `apply_bill_credit` says only 'Applies a credit to a bill.' The 2,000-word policy section already states the limit, and rewording it changed nothing. Putting the limit and the route above it into the tool's description puts the boundary where the decision is made, while the hook keeps enforcing it.",
+      "options": {
+        "a": {
+          "reasoning": "Descriptions are the main signal the model uses for a tool, and good descriptions include boundaries and when not to use the tool. Naming the $250 limit and the `escalate_to_agent` route there means the agent meets the limit while it is about to offer a credit. The hook stays, so the rule is still guaranteed."
+        },
+        "b": {
+          "reasoning": "A specific deny reason helps the agent recover after a denial, but here the promise is already in the reply written alongside the call. It would be the fix if the trouble began after the denial, as with a generic 'Blocked by policy' reason.",
+          "tempting": "Better deny reasons are a real fix for hooks that confuse the agent."
+        },
+        "c": {
+          "reasoning": "The description change is right, but a description steers the model; it does not enforce anything. Removing the hook makes the approval rule depend on the model reading well on every call, and a money rule needs the deterministic check kept.",
+          "tempting": "It has the right description change and looks simpler."
+        },
+        "d": {
+          "reasoning": "A screening agent on every draft reply adds a model call and a delay to all chats, to catch a gap that a sentence in the tool's definition closes. The guide prefers a root-cause, proportionate fix to an added layer.",
+          "tempting": "It would catch the promise before the customer sees it."
+        }
+      },
+      "concept": [
+        "Tool descriptions are the primary mechanism for tool selection, and the exam guide says they should include input formats, example queries, edge cases and boundaries. Detailed descriptions are by far the most important factor in tool performance: cover what the tool does, when to use it and when not to, and its caveats.",
+        "Saying when not to use a tool, and naming what to use instead, helps Claude avoid the wrong move. For `apply_bill_credit`, that means the $250 limit and `escalate_to_agent` above it.",
+        "A description guides; it does not guarantee. A hook is deterministic code, and a `PreToolUse` hook can deny the call with a reason Claude sees, so the rule still holds on the rare turn the description is missed. The two layers do different jobs."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "has a policy section stating the $250 approval limit",
+          "meaning": "The textbook prompt fix is already in place."
+        },
+        {
+          "phrase": "reads only \"Applies a credit to a bill.\"",
+          "meaning": "The tool's own definition says nothing about the limit."
+        },
+        {
+          "phrase": "promised a $300 credit in the same turn as the tool call",
+          "meaning": "The decision is made while using the tool, before any denial."
+        },
+        {
+          "phrase": "Rewording the policy section last month changed nothing",
+          "meaning": "More prompt work is not the next layer."
+        }
+      ],
+      "lookFor": [
+        "The boundary and its escalation route written into the tool's description.",
+        "The hook kept as enforcement.",
+        "A fix that acts before the promise, not after the denial."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It acts after the denial, when the promise has already been made."
+        },
+        {
+          "option": "c",
+          "reason": "It drops the code check on a money rule."
+        },
+        {
+          "option": "d",
+          "reason": "It adds a model call to every chat for a one-line definition gap."
+        }
+      ],
+      "rule": "Write a tool's boundaries into its description so the agent knows them when it decides, and keep the hook to enforce them.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: hooks reference",
+          "url": "https://code.claude.com/docs/en/hooks"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Creating tools that Claude picks",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/creating-tools-that-claude-picks"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Hooks",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/hooks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S1-006",
+      "explanation": "'Operation failed' hides two different failures behind one message: a start date outside the 30-day window, which the customer can fix by picking another date, and the billing system being down. The agent can't tell them apart, so it escalates. A validation error that names `start_date` and the allowed range tells the agent what to ask the customer; the call is not retryable as sent, but the agent can make it again with a corrected date, so the chat keeps going.",
+      "options": {
+        "a": {
+          "reasoning": "A business-rule error with a note that a person must change the date tells the agent this is a policy refusal it cannot settle, so it keeps escalating chats the customer could finish by picking a date inside the window. A business error that needs a person fits a request no date could satisfy, such as an account barred from plans.",
+          "tempting": "A 30-day window sounds like a policy, and a non-retryable business error is a textbook pattern."
+        },
+        "b": {
+          "reasoning": "Calling it transient sends the agent to repeat the same call, which fails again because the date is unchanged. Transient and retryable fit the other case behind 'Operation failed', the billing system being down.",
+          "tempting": "It reports an error kind and keeps the agent from escalating."
+        },
+        "c": {
+          "reasoning": "The plan is created with a start date the customer never agreed to, and the agent doesn't know it was changed, so it may confirm the wrong date. A failure should look like a failure so the agent can act on it.",
+          "tempting": "It avoids an error and keeps the chat moving."
+        },
+        "d": {
+          "reasoning": "The input is wrong, not the system. Naming the field and the allowed range is an instructive error: it says what went wrong and what to try next. Claude can usually correct an invalid call when the error says what was missing, so the agent asks for a date inside the window and calls again."
+        }
+      },
+      "concept": [
+        "In MCP, a tool execution error comes back in the tool result with `isError: true`, so the model can see it and handle it. The exam guide's pattern for the content of that result is an `errorCategory` (transient, validation, business, permission), an `isRetryable` flag and a readable description. These fields are not part of the MCP specification; they are the guide's pattern.",
+        "Write instructive errors: say what went wrong and what to try next, not just 'failed'. Tool functions should validate their inputs and raise clear, meaningful errors, and Claude may then call the tool again with corrected parameters.",
+        "A uniform 'Operation failed' prevents the right recovery. Here the agent's fallback is to escalate, which is why 31% of plan requests end with a person."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Failure",
+          "What the result should say"
+        ],
+        "rows": [
+          [
+            "Start date outside the window",
+            "Validation: not retryable as sent; the field and the allowed range, so the agent calls again with a corrected date"
+          ],
+          [
+            "Billing system down",
+            "Transient: retryable as it stands, after a pause"
+          ],
+          [
+            "Account barred from plans",
+            "Business: not retryable, with a plain reason the agent can pass on"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "accepts a `start_date` up to 30 days from today",
+          "meaning": "A date inside the window succeeds, so this is an input the customer can change."
+        },
+        {
+          "phrase": "the same response it gives when the billing system is down",
+          "meaning": "One message covers two failures that need different responses."
+        },
+        {
+          "phrase": "31% of plan requests now end in `escalate_to_agent`",
+          "meaning": "The agent can't recover from the vague error, so it hands over."
+        },
+        {
+          "phrase": "a customer offered a date inside the window usually takes it",
+          "meaning": "Asking for a new date would resolve most of these chats."
+        }
+      ],
+      "lookFor": [
+        "An error that names the field and the allowed values.",
+        "A category that matches the cause: bad input, not policy or outage.",
+        "A result that lets the agent correct the call, not repeat it unchanged."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A business error that needs a person makes the agent hand over a date the customer can change."
+        },
+        {
+          "option": "b",
+          "reason": "The same call would fail again, because the date is unchanged."
+        },
+        {
+          "option": "c",
+          "reason": "It hides the change and gives the customer a date they never agreed to."
+        }
+      ],
+      "rule": "When an input is out of range, return a validation error naming the field and the allowed values, so the agent can ask for a corrected value and call again.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "MCP specification: tools (2025-06-18)",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Handle tool calls",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Tool functions",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/tool-functions"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S1-007",
+      "explanation": "The gap to the 75% target is rare requests the agent escalates because it has no tool for them. The proposal closes that by loading all 19 endpoints onto the support agent, but the trial shows the cost: wrong-tool picks on common requests rose from 2% to 9%. Keeping the support agent on its five core tools protects the 92% of common contacts, and a billing-changes subagent with a few tools for the rare workflows lets those requests be resolved instead of escalated.",
+      "options": {
+        "a": {
+          "reasoning": "Descriptions are worth improving, but the trial already showed 19 tools on one agent raising wrong picks to 9%. Too many tools makes selection less reliable however each is described; the guide's figure is about 4 to 5 per agent, not 18 or more.",
+          "tempting": "Better descriptions are the first fix for most tool-selection problems."
+        },
+        "b": {
+          "reasoning": "Each agent gets the tools its role needs. The support agent keeps the five tools that cover 92% of contacts, so its selection stays reliable, and the billing-changes subagent has a few tools built for the rare workflows, so direct-debit changes and meter-exchange bookings are handled instead of escalated."
+        },
+        "c": {
+          "reasoning": "It protects tool selection, but it leaves the resolution rate at 71% against a 75% target, and the rare requests are where the gap is. Escalating rare requests would be fine if the target were already met.",
+          "tempting": "Five tools covering 92% of contacts sounds like enough."
+        },
+        "d": {
+          "reasoning": "A prefix changes names, not the number of choices: the agent still weighs 19 tools on each turn, which is what raised the wrong-pick rate. Renaming helps when two similar tools overlap, not when the list is too long.",
+          "tempting": "It looks like a cheap way to steer the agent toward the common tools."
+        }
+      },
+      "concept": [
+        "The exam guide warns that too many tools, for example 18 instead of about 4 to 5, makes tool selection less reliable, and that each agent should have only the tools its role needs. More tools do not always give better outcomes; too many or overlapping tools can distract agents.",
+        "Don't wrap every API endpoint as a tool; build a few tools for high-impact workflows. Fewer, more capable tools reduce selection ambiguity.",
+        "Limiting a subagent's tools to what its job needs also makes each role clearer. The rare workflows go to a billing-changes subagent with a few tools built for them, not a copy of every remaining endpoint, which would bring back the long list."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "71% of contacts without a person against its 75% target",
+          "meaning": "Doing nothing leaves the target missed."
+        },
+        {
+          "phrase": "the agent escalates because it has no tool for them",
+          "meaning": "The gap is a capability gap, so the rare tools have to live somewhere."
+        },
+        {
+          "phrase": "cover 92% of contacts",
+          "meaning": "The core role needs only a handful of tools."
+        },
+        {
+          "phrase": "wrong-tool picks on common requests rose from 2% to 9%",
+          "meaning": "Evidence that a long tool list hurts the common cases."
+        }
+      ],
+      "lookFor": [
+        "A short core tool list kept on the support agent.",
+        "A few tools for the rare workflows on a subagent scoped to them.",
+        "A design that closes the resolution gap rather than accepting it."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "19 tools on one agent already raised wrong picks to 9%."
+        },
+        {
+          "option": "c",
+          "reason": "It leaves resolution at 71% against a 75% target."
+        },
+        {
+          "option": "d",
+          "reason": "Renaming doesn't shorten the list the agent chooses from."
+        }
+      ],
+      "rule": "Keep each agent's tool list short and scoped to its role; put rare capabilities on a scoped subagent instead of loading every endpoint onto one agent.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Writing effective tools for agents",
+          "url": "https://www.anthropic.com/engineering/writing-tools-for-agents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: Designing effective subagents",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/designing-effective-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S1-008",
+      "explanation": "The first request must produce a `get_account` call, and later turns must stay free to answer in text or call `get_meter_reads`. A forced `tool_choice` naming `get_account` gives the first guarantee; switching back to `auto` gives the second. The prompt rule is already in place and still misses 9% of chats, so the guarantee has to come from the setting.",
+      "options": {
+        "a": {
+          "reasoning": "`any` makes the model use one of the provided tools but not a particular one, so the opening call could be `get_meter_reads` and the reply could still lack the balance. `any` fits a step where any of several tools is acceptable.",
+          "tempting": "It guarantees a tool call on the first request, which sounds like the requirement."
+        },
+        "b": {
+          "reasoning": "Forcing `get_account` on every request means every response starts with that tool call, so no turn can end in a plain explanation or call `get_meter_reads`. Forcing suits only the step that must come first.",
+          "tempting": "It certainly loads the account, and fresh data each turn sounds safe."
+        },
+        "c": {
+          "reasoning": "With a forced tool, the response starts with the `tool_use` block, so no text comes before `get_account` on the first request. After that, `auto` lets the model decide whether to call a tool, so explanations come back as text and `get_meter_reads` stays available."
+        },
+        "d": {
+          "reasoning": "The prompt already says to call `get_account` first, and 9% of chats still skip it. Moving the rule up and adding an example may lower that, but `auto` still lets the model answer before calling any tool.",
+          "tempting": "Prompt placement and examples often do help."
+        }
+      },
+      "concept": [
+        "`tool_choice` has four values. `auto` lets Claude decide whether to call a tool and is the default when tools are provided; `any` makes it use one of the provided tools without naming which; `{\"type\": \"tool\", \"name\": ...}` forces that tool; `none` prevents tool use. With `any` or a forced tool, the response starts with the `tool_use` block, so no text comes before it.",
+        "The exam guide's skill is to use forced selection so a specific tool runs first in a pipeline. Set the forced value on the request where that step must happen, not on the whole conversation.",
+        "Model caveat: on some current models, which the docs list as Opus 5.5, Sonnet 5.5 and the Fable and Mythos 5.x models, `any` and forced `tool` return a 400 error, and they cannot be combined with manual extended thinking. The exam guide's `tool_choice` answers assume a model that supports them."
+      ],
+      "conceptTable": {
+        "headers": [
+          "`tool_choice`",
+          "What it does"
+        ],
+        "rows": [
+          [
+            "`auto`",
+            "Claude decides whether to call a tool; a text reply is possible"
+          ],
+          [
+            "`any`",
+            "Claude must call one of the provided tools, and chooses which"
+          ],
+          [
+            "`{\"type\": \"tool\", \"name\": ...}`",
+            "Claude must call that named tool"
+          ],
+          [
+            "`none`",
+            "No tool use"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "before calling `get_account`, and quotes a wrong balance",
+          "meaning": "The first step is skipped; one specific tool must run first."
+        },
+        {
+          "phrase": "The system prompt already says to call `get_account` first",
+          "meaning": "The prompt fix is in place and not enough."
+        },
+        {
+          "phrase": "most turns are plain explanations",
+          "meaning": "Later turns must be allowed to answer in text."
+        },
+        {
+          "phrase": "some later turns need `get_meter_reads`",
+          "meaning": "Later turns must be free to choose another tool."
+        }
+      ],
+      "lookFor": [
+        "A tool forced by name on the first request only.",
+        "`auto` restored for later turns.",
+        "A named tool rather than `any`, because one specific tool must run."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "`any` doesn't make the first call `get_account`."
+        },
+        {
+          "option": "b",
+          "reason": "It rules out text answers and other tools on every later turn."
+        },
+        {
+          "option": "d",
+          "reason": "`auto` with a prompt rule is the setup that already misses 9%."
+        }
+      ],
+      "rule": "To make one tool run first, force it by name on the first request, then switch `tool_choice` back to `auto` for the turns that follow.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S1-010",
+      "explanation": "`update_account` was added for address changes but can write any of 60 fields, including at least 9 that change what a customer owes. Setting `credit_balance` through it skipped the hook on `apply_bill_credit` entirely. A blocklist hook would have to keep up with a schema that grows most quarters. Replacing the generic tool with `update_contact_details`, which accepts contact fields alone, makes a balance change through it impossible, so every credit goes through `apply_bill_credit` and its hook.",
+      "options": {
+        "a": {
+          "reasoning": "It blocks today's 9 money fields at the right point, but it is a list someone must keep in step with a schema that adds fields most quarters, and any new money field is open until someone notices. A blocklist suits a short, fixed set of dangerous inputs.",
+          "tempting": "It uses a `PreToolUse` hook, the right enforcement point, and keeps address changes working."
+        },
+        "b": {
+          "reasoning": "A clearer description makes misuse less likely, but the tool can still write `credit_balance`, and credits up to $400 have already gone through it. A description steers; where money is involved, the tool's contract must make the wrong call impossible.",
+          "tempting": "Descriptions are the main signal for tool use, and this one names the right tool for balances."
+        },
+        "c": {
+          "reasoning": "Each address change would wait for a person, though these are 6% of contacts and must stay self-service. Escalation suits decisions that need a human, not routine edits a narrower tool can make safe.",
+          "tempting": "A person checking each change would certainly catch a balance edit."
+        },
+        "d": {
+          "reasoning": "This replaces a generic tool with a constrained one. A tool that accepts address, phone and email alone cannot touch a balance, however many fields billing adds, so balances change only through `apply_bill_credit`, where the hook enforces the $250 rule. Address changes stay self-service."
+        }
+      },
+      "concept": [
+        "The exam guide's Task 2.3 skill is replacing generic tools with constrained alternatives, such as replacing `fetch_url` with a `load_document` tool that validates document URLs. A constrained tool that validates its input makes out-of-scope calls impossible, where a prompt rule only makes them less likely.",
+        "Don't wrap every API endpoint; build a few tools for high-impact workflows. A tool that writes any field is a wrapper around the whole account record, so it carries every risk that record holds.",
+        "SDK hooks are attached to tools with matchers, so a hook guards the tool it is attached to. A generic tool that reaches the same data by another path goes around it, which is how `credit_balance` was set without the `apply_bill_credit` hook firing."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "a generic `update_account(field, value)` tool, added so it could change addresses",
+          "meaning": "A broad tool given for a narrow job."
+        },
+        {
+          "phrase": "at least 9 of which change what a customer owes",
+          "meaning": "The tool reaches money fields outside its purpose."
+        },
+        {
+          "phrase": "the billing team adds fields most quarters",
+          "meaning": "Any blocklist would keep falling behind."
+        },
+        {
+          "phrase": "never saw",
+          "meaning": "The money control sits on another tool, so this path skips it."
+        },
+        {
+          "phrase": "must stay self-service",
+          "meaning": "Address changes cannot be pushed to a person."
+        }
+      ],
+      "lookFor": [
+        "A purpose-built tool limited to the fields its job needs.",
+        "Money changes left to the one tool the hook guards.",
+        "No list that must keep up with a growing schema."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "The blocklist falls behind as billing adds fields."
+        },
+        {
+          "option": "b",
+          "reason": "The tool can still write `credit_balance`."
+        },
+        {
+          "option": "c",
+          "reason": "It sends routine, self-service changes to a person."
+        }
+      ],
+      "rule": "Replace a generic tool that can reach dangerous fields with a constrained tool whose contract allows only what its job needs, so misuse is impossible rather than unlikely.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Writing effective tools for agents",
+          "url": "https://www.anthropic.com/engineering/writing-tools-for-agents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: hooks",
+          "url": "https://code.claude.com/docs/en/agent-sdk/hooks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S6-004",
+      "explanation": "The subagent spends about 15 model turns per claim calling `search_policy_docs` just to learn which wordings exist for the product. The exam guide's answer to exploratory calls like these is an MCP resource that exposes the content catalogue. A resource templated by product lets the pipeline attach the list for the claim's product, and because it is read from the policy team's server, the quarterly revisions come through without changes to the pipeline.",
+      "options": {
+        "a": {
+          "reasoning": "Resources expose read-only data identified by URIs; a client can list them and read one, and the content can go into the prompt so Claude needn't call a tool to fetch it. A templated resource takes a parameter, here the product, so each claim gets only its product's list. The subagent then opens just the wordings it needs."
+        },
+        "b": {
+          "reasoning": "Copying the list into the system prompt removes the searches, but the copy goes stale when the policy team revises the wordings, which nobody tells the pipeline team about. It also sends all 120 names with every claim.",
+          "tempting": "It is quick to do, and the subagent sees the list before its first call."
+        },
+        "c": {
+          "reasoning": "A cache answers each search faster, but the subagent still makes the same 15 calls, and each one is a model turn. The cost is in those turns, not in the server's response time.",
+          "tempting": "Caching is a standard fix for repeated lookups."
+        },
+        "d": {
+          "reasoning": "It uses a resource, but attaches the complete text of each wording for the product instead of the list of what exists. At about 40 pages each, with two needed per check, that adds far more to each claim than the searches it replaces.",
+          "tempting": "It uses the right MCP feature and removes the searches."
+        }
+      },
+      "concept": [
+        "The exam guide lists MCP resources as a way to expose content catalogues, such as issues, documents or schemas, so that the agent can see what exists without making exploratory tool calls.",
+        "In MCP, resources expose read-only data identified by URIs, like GET handlers. A client can list them and read one by URI, and the content can be put into the prompt so Claude does not need a tool call to fetch it. Resources can be direct, with a fixed URI, or templated, with parameters in the URI. Tools are model-controlled, while resources are application-driven, so the application decides when to attach one."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "calls `search_policy_docs` about 15 times, each a model turn",
+          "meaning": "Exploratory calls whose cost is model turns."
+        },
+        {
+          "phrase": "to find out which wordings exist for the claim's product",
+          "meaning": "The agent is discovering a catalogue."
+        },
+        {
+          "phrase": "revises the wordings on the server each quarter without telling the pipeline team",
+          "meaning": "A copy kept outside the server goes stale."
+        },
+        {
+          "phrase": "Each wording runs to about 40 pages, and a check usually needs two",
+          "meaning": "Attach the list, not every document."
+        }
+      ],
+      "lookFor": [
+        "A resource that lists what exists, read from the server.",
+        "A list scoped to the claim's product.",
+        "No static copy in the prompt and no whole-document attachment."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A pasted list goes stale at the next quarterly revision."
+        },
+        {
+          "option": "c",
+          "reason": "A cache leaves the 15 model turns in place."
+        },
+        {
+          "option": "d",
+          "reason": "It attaches whole documents when the agent needs the list of what exists."
+        }
+      ],
+      "rule": "When an agent spends tool calls discovering what exists, expose the catalogue as an MCP resource and let it fetch only what it needs.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "MCP specification: resources (2025-06-18)",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/resources"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to Model Context Protocol: Defining resources",
+          "url": "https://academy.claude.com/courses/introduction-to-model-context-protocol/defining-resources"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S6-005",
+      "explanation": "The subagent hit an intermittent 503 on one page and passed up only `OCR failed`, so the coordinator restarted the whole claim. The guide's rule is that subagents recover locally from transient failures and pass up only what they cannot resolve, with what was attempted and the partial results. Here that means a few retries of page 3 with a pause, and if it still fails, the 8 good pages plus an error that names the page, the attempts and the error type.",
+      "options": {
+        "a": {
+          "reasoning": "A local retry clears most of these 503s in seconds. If page 3 still fails, the coordinator gets the 8 pages and an error saying what failed, what was tried and that it is transient, so it can redo one page rather than the claim. Capping the retries keeps the subagent from looping."
+        },
+        "b": {
+          "reasoning": "The report is good, but it hands up a transient error that the subagent could clear itself in seconds. The guide passes up only failures the subagent cannot resolve, so this report fits a page that still fails after local retries.",
+          "tempting": "It returns the partial results and a precise error, which looks complete."
+        },
+        "c": {
+          "reasoning": "The local retry is right, but calling 8 pages the whole invoice hides the missing page, so adjudication may decide on an incomplete document. A failure that remains must be reported, not dropped.",
+          "tempting": "It keeps the claim moving tonight."
+        },
+        "d": {
+          "reasoning": "Backoff spaces the restarts out, but each restart throws away the 8 good pages and the other documents and does them again. A bare error also gives the coordinator nothing to recover with.",
+          "tempting": "Exponential backoff is a standard way to handle intermittent errors."
+        }
+      },
+      "concept": [
+        "The exam guide separates transient errors, such as timeouts, from validation, business and permission errors. Its skill for subagents is to recover locally from transient failures and pass to the coordinator only the errors they cannot resolve, with what was attempted and any partial results.",
+        "In MCP, a tool execution error comes back in the tool result with `isError: true`, so the agent can see it and react. Write errors that say what went wrong and what to try next, and cap retries, because the model may call the tool again after an error.",
+        "Only a subagent's final message comes back to the coordinator, so everything the coordinator needs to recover, the pages read, the page that failed and what was tried, must be in that message."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`page 3: 503 Service Unavailable (attempt 1)`",
+          "meaning": "One attempt, on one page."
+        },
+        {
+          "phrase": "returns only `OCR failed`",
+          "meaning": "A generic message with no partial results."
+        },
+        {
+          "phrase": "restarts the whole claim and re-runs every document",
+          "meaning": "The coordinator throws away good work."
+        },
+        {
+          "phrase": "intermittent and usually clear within seconds",
+          "meaning": "A transient error the subagent can retry itself."
+        },
+        {
+          "phrase": "must still reach adjudication tonight",
+          "meaning": "A 40-minute restart is costly."
+        }
+      ],
+      "lookFor": [
+        "A capped local retry for the transient error.",
+        "Partial results returned with any failure that remains.",
+        "An error that names the page, the attempts and the error type."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It passes up a transient error before trying to clear it."
+        },
+        {
+          "option": "c",
+          "reason": "It reports a partial invoice as complete."
+        },
+        {
+          "option": "d",
+          "reason": "It keeps the bare error and restarts the whole claim each time."
+        }
+      ],
+      "rule": "Let a subagent retry transient errors itself, and pass up only what still fails, with the partial results and what it tried.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "MCP specification: tools (2025-06-18)",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Handle tool calls",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: What are subagents?",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/what-are-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S6-006",
+      "explanation": "One committed `.mcp.json` must start the OCR server on machines that use the standard path and on machines that set `OCR_BIN`. `.mcp.json` supports `${VAR:-default}` in `command`, so `${OCR_BIN:-/opt/ocr/bin/ocr-mcp}` takes `OCR_BIN` where it is set and the standard path elsewhere, with no new setup on any machine.",
+      "options": {
+        "a": {
+          "reasoning": "Claude Code expands `${VAR}` and `${VAR:-default}` in `command`, `args`, `env`, `url` and `headers`. With a default, the laptops and CI runners that don't set `OCR_BIN` get the standard path, and the six developers and the ARM agents get their own."
+        },
+        "b": {
+          "reasoning": "Plain `${OCR_BIN}` has no default. On the laptops and CI runners that don't set it, the variable is unset and Claude Code warns, and the standard path those machines need is no longer in the file.",
+          "tempting": "It keeps machine-specific paths out of the repository."
+        },
+        "c": {
+          "reasoning": "Expansion in `env` sets a variable for the server, but the server is still started from the hard-coded path, which doesn't exist on the ARM agents. The variable has to be in `command` to change which binary runs.",
+          "tempting": "It does use expansion, the feature the problem calls for."
+        },
+        "d": {
+          "reasoning": "A local-scope entry takes precedence over the project one, so it would work, but it is setup on each affected machine, which the platform lead ruled out. Local scope suits a personal or experimental server.",
+          "tempting": "Precedence means the override really would win on those machines."
+        }
+      },
+      "concept": [
+        "Project-scope MCP servers live in `.mcp.json` at the repository root, which is checked into version control so everyone gets the same servers. Local and user scopes are stored in `~/.claude.json` and apply only to you. When the same server is defined twice, local wins over project, and project wins over user.",
+        "`.mcp.json` supports `${VAR}` and `${VAR:-default}` in `command`, `args`, `env`, `url` and `headers`, so a team shares one config while each person supplies secrets and machine-specific paths from their environment. A variable that is unset and has no default triggers a warning."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "commits a `.mcp.json`",
+          "meaning": "Shared project config."
+        },
+        {
+          "phrase": "`\"command\": \"/opt/ocr/bin/ocr-mcp\"`",
+          "meaning": "A hard-coded path that fails on some machines."
+        },
+        {
+          "phrase": "which don't set `OCR_BIN`",
+          "meaning": "Plain expansion would have no value there."
+        },
+        {
+          "phrase": "already set `OCR_BIN` to its location",
+          "meaning": "The variable exists where the path differs."
+        },
+        {
+          "phrase": "without adding per-machine setup to any of them",
+          "meaning": "Rules out local overrides and new variables."
+        }
+      ],
+      "lookFor": [
+        "Expansion inside `command`.",
+        "A default for machines without the variable.",
+        "One committed server definition."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Without a default, machines that don't set `OCR_BIN` lose the path."
+        },
+        {
+          "option": "c",
+          "reason": "Expansion in `env` leaves the hard-coded command unchanged."
+        },
+        {
+          "option": "d",
+          "reason": "Local entries are per-machine setup, which was ruled out."
+        }
+      ],
+      "rule": "Use `${VAR:-default}` in `.mcp.json` when a value differs on some machines: the variable where it is set, the default everywhere else.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: connect to MCP servers",
+          "url": "https://code.claude.com/docs/en/mcp"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: MCP",
+          "url": "https://academy.claude.com/courses/claude-code-101/mcp"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S6-007",
+      "explanation": "Write replaced `review_routing.py` with a regenerated 3,000-line version and lost a function. A one-value change needs Edit, which replaces one exact string and leaves the rest of the file alone. `REVIEW_THRESHOLD = 0.85` appears once, so it is a unique anchor; the bare value 0.85 is not, because it appears in four other places.",
+      "options": {
+        "a": {
+          "reasoning": "Edit's `old_string` must match exactly and appear once. The assignment line does, so Edit changes that line and nothing else, and no function can go missing."
+        },
+        "b": {
+          "reasoning": "`replace_all: true` changes each match, so the four unrelated 0.85 values would change too. The documented way to make a repeated string unique is to add surrounding context, which the full assignment line does.",
+          "tempting": "It avoids rewriting the file and is a real Edit option."
+        },
+        "c": {
+          "reasoning": "Write overwrites the file with the full content given, so all 3,000 lines are regenerated again. Read plus Write is the guide's fallback when Edit has no unique anchor, and here it has one.",
+          "tempting": "Reading first seems to make the rewrite safer."
+        },
+        "d": {
+          "reasoning": "Changing the file in place avoids a rewrite, but the pattern `0.85` matches each line holding the value, including the four unrelated ones. A bare-value pattern suits a value that should change wherever it appears.",
+          "tempting": "It changes the file in place without the model regenerating it."
+        }
+      },
+      "concept": [
+        "Read and Write handle whole files; Edit makes targeted changes by matching unique text. Write creates a file or overwrites it with the full content given; it does not append or merge.",
+        "Edit's `old_string` must match character for character and appear exactly once. If it appears more than once, add surrounding context to make it unique, or set `replace_all: true` when every occurrence should change. When no unique anchor exists, the guide's fallback is Read plus Write. Edit needs the file to have been read earlier in the conversation."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "a 3,000-line module",
+          "meaning": "Regenerating it risks losing lines."
+        },
+        {
+          "phrase": "Claude used Write and regenerated the whole file",
+          "meaning": "A whole-file tool used for a one-line change."
+        },
+        {
+          "phrase": "The assignment line appears once in the file",
+          "meaning": "A unique anchor for Edit."
+        },
+        {
+          "phrase": "the value 0.85 also appears in four unrelated places",
+          "meaning": "The bare value is not a safe anchor."
+        }
+      ],
+      "lookFor": [
+        "Edit with an `old_string` that appears once.",
+        "Nothing outside the target line changed.",
+        "No whole-file rewrite."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "`replace_all` on the bare value changes four unrelated lines."
+        },
+        {
+          "option": "c",
+          "reason": "Write regenerates the whole file again."
+        },
+        {
+          "option": "d",
+          "reason": "The `sed` pattern also hits the unrelated values."
+        }
+      ],
+      "rule": "For a targeted change, use Edit with an `old_string` that appears once; keep Write for new files and full rewrites.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: tools reference",
+          "url": "https://code.claude.com/docs/en/tools-reference"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S6-008",
+      "explanation": "The subclasses of `DocumentExtractor` sit in files with unrelated names, and they are registered in two ways. A Grep for class definitions that subclass `DocumentExtractor` finds every extractor, whatever its file is called. A Grep for `@register_extractor`, with a Read of `pipeline/config.py`, finds both kinds of registration. Targeted searches and one file read give the full picture without reading 600 files.",
+      "options": {
+        "a": {
+          "reasoning": "Grep searches file contents with regular expressions, so a search for the base class in class definitions finds every subclass wherever it lives, `garage.py` included, registered or not."
+        },
+        "b": {
+          "reasoning": "Glob matches file paths, and the stem says the subclasses sit in files such as `garage.py` that do not contain the word extractor. A name pattern would list some files and miss others.",
+          "tempting": "Extractors in files named after the base class would be the usual layout."
+        },
+        "c": {
+          "reasoning": "Registration happens in two places, and this covers both: the decorator search finds each class registered on its own definition, and `pipeline/config.py` is one file to read for the classes added by name."
+        },
+        "d": {
+          "reasoning": "It finds the decorated classes only and reports them as the whole set, so those added by name in `pipeline/config.py` are missing without any sign. A partial list is presented as complete.",
+          "tempting": "The decorator is the obvious marker of a registered extractor."
+        },
+        "e": {
+          "reasoning": "Reading 600 files would overrun the context budget before the list is complete. Targeted searches find the same classes and registrations for a fraction of the reading.",
+          "tempting": "It is thorough and cannot miss a file."
+        }
+      },
+      "concept": [
+        "Grep searches file contents, such as function names, error messages and imports, with ripgrep regular expressions. Glob finds files by path pattern, such as `**/*.js` for `.js` files at any depth. Use Grep when what you need is in the code and Glob when it is in the file name.",
+        "Build understanding step by step: Grep for the entry points, then Read only the files that matter, such as one registry file, rather than every file in the repository. Anthropic's Claude Code course teaches the same order: let Claude read the relevant files and gather context first, then plan."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "files such as `garage.py` and `hospital_bills.py`, not named after the base class",
+          "meaning": "File names won't find the classes."
+        },
+        {
+          "phrase": "some classes use the `@register_extractor` decorator, and others are added by name in `pipeline/config.py`",
+          "meaning": "One search term misses part of the registrations."
+        },
+        {
+          "phrase": "about 600 files, too many to read within the context budget",
+          "meaning": "Rules out reading every file."
+        }
+      ],
+      "lookFor": [
+        "A content search for the class definitions that subclass the base.",
+        "A search for the decorator plus a read of the registry file.",
+        "No file-name matching and no full read."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The file names do not follow the pattern."
+        },
+        {
+          "option": "d",
+          "reason": "It misses the classes registered in `pipeline/config.py` and calls the list complete."
+        },
+        {
+          "option": "e",
+          "reason": "Reading every file overruns the context budget."
+        }
+      ],
+      "rule": "Grep for what the code contains, such as a base class or a decorator, and Read only the few files that matter; use Glob only when the file names follow the pattern.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: tools reference",
+          "url": "https://code.claude.com/docs/en/tools-reference"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The explore → plan → code → commit workflow",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S3-007",
+      "explanation": "One `query` string has to carry three incompatible syntaxes, so the model must pair each agency with the right format on every call. The team already tried the documented fix for wrong formats, a parameter description with the syntax and `input_examples`, and errors only fell from 14% to 11%. The next layer is the tool contract itself: split `fetch_dataset` into one purpose-specific tool per query family, each with its own input schema. With the two catalogue tools that gives five tools, within the 4 to 5 the guide recommends.",
+      "options": {
+        "a": {
+          "reasoning": "Each tool then accepts one syntax, with its own schema and examples, so the model chooses the tool for the family instead of composing the right format inside one free-text field. Three families keep the subagent at five tools."
+        },
+        "b": {
+          "reasoning": "Parameter descriptions and `input_examples` are the documented fix for wrong formats, and the team has already added both. Regrouping the same guidance still leaves one `query` string for three formats.",
+          "tempting": "It is the textbook fix, and a clearer grouping sounds like an improvement."
+        },
+        "c": {
+          "reasoning": "Agencies that share a syntax would get near-identical tools, and the subagent would hold eleven, well past the 4 to 5 that keep selection reliable. Splitting per agency would fit only if each agency had its own syntax.",
+          "tempting": "It applies the right move, splitting, as thoroughly as possible."
+        },
+        "d": {
+          "reasoning": "It adds an agent and a hand-off for a problem in one tool's interface, and the builder faces the same three-syntax problem. A separate agent fits work that needs its own context, not an input format.",
+          "tempting": "A dedicated builder sounds like it would get the syntax right every time."
+        }
+      },
+      "concept": [
+        "Tool descriptions are the main way Claude chooses and uses tools. When Claude passes a wrong value or format, the documented fix is the parameter's description and `input_examples`, which show what a valid input looks like. Measure the change with an eval.",
+        "When that is not enough, the exam guide's next step is to split a generic tool into purpose-specific tools with defined input and output contracts. Tools that do different jobs stay separate, while tools that overlap should be combined.",
+        "Fewer, more capable tools reduce selection ambiguity, and too many or overlapping tools can distract agents. The guide's figure is about 4 to 5 tools per agent, so a split should create as few tools as the distinct jobs need."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Problem",
+          "Fix"
+        ],
+        "rows": [
+          [
+            "Wrong format, guidance missing",
+            "Parameter description and `input_examples`"
+          ],
+          [
+            "One parameter must carry several incompatible formats",
+            "One purpose-specific tool per format family"
+          ],
+          [
+            "Several thin tools return parts of the same thing",
+            "Combine them into one tool"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "SDMX keys ... SQL-like filters ... a series path",
+          "meaning": "Three incompatible input formats share one parameter."
+        },
+        {
+          "phrase": "already put each agency's syntax into the `query` parameter's description and added `input_examples`",
+          "meaning": "The textbook fix has been tried."
+        },
+        {
+          "phrase": "fell only from 14% to 11%",
+          "meaning": "Better guidance helped little; the contract is the problem."
+        },
+        {
+          "phrase": "Its only other tools are `search_catalogue` and `get_series_metadata`",
+          "meaning": "Count the tools: three new ones make five, nine make eleven."
+        }
+      ],
+      "lookFor": [
+        "A split along the lines where the inputs really differ.",
+        "A tool count that stays near 4 to 5.",
+        "A fix in the tool interface, not a new agent."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The same parameter guidance was already tried and barely moved the rate."
+        },
+        {
+          "option": "c",
+          "reason": "Nine tools, several near-identical, push the subagent to eleven."
+        },
+        {
+          "option": "d",
+          "reason": "A new agent for an interface problem is over-engineering."
+        }
+      ],
+      "rule": "When better parameter guidance doesn't fix a tool that must accept incompatible formats, split it into one purpose-specific tool per format, keeping the agent near 4 to 5 tools.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Writing effective tools for agents",
+          "url": "https://www.anthropic.com/engineering/writing-tools-for-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Creating tools that Claude picks",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/creating-tools-that-claude-picks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S3-008",
+      "explanation": "`load_document` reports a failure as ordinary content, so the subagent reads \"ERROR 504: upstream timeout\" as the document's text and concludes the report has no data. MCP has a flag for exactly this: a tool execution error is returned in the result with `isError: true`, so the model can see the call failed. Adding the kind of failure (transient) and what to do (retry after a short pause, since these timeouts clear within a minute) lets the subagent recover instead of reporting a gap.",
+      "options": {
+        "a": {
+          "reasoning": "`isError: true` marks the result as a failure, not content. Marking it transient, giving the document ID and saying a retry after a short pause usually works make it an instructive error: the subagent retries the load and analyses the real text."
+        },
+        "b": {
+          "reasoning": "The model still has to spot a failure inside ordinary content, and a report that quotes an error code would confuse it. The tool can set the failure signal itself, so the prompt shouldn't have to guess it.",
+          "tempting": "The error text is already there; one prompt rule seems to finish the job."
+        },
+        "c": {
+          "reasoning": "An empty result marked `isError: false` tells the subagent the load worked and found nothing, which is the same \"no data\" mistake that reached 7 briefings.",
+          "tempting": "It stops error text being read as document content, and it names the document."
+        },
+        "d": {
+          "reasoning": "A longer wait avoids some timeouts, but those that remain still come back as plain text and are read as content. Tuning the wait fits once failures are flagged.",
+          "tempting": "Most timeouts clear within a minute, so a 90-second wait would catch many."
+        }
+      },
+      "concept": [
+        "MCP has two error mechanisms. Protocol errors are JSON-RPC errors, for example an unknown tool. Tool execution errors are returned in the tool result with `isError: true`, so the model can see them and handle them.",
+        "The exam guide's pattern for the content of an error result is a category (transient, validation, business or permission), whether it is retryable, and a readable description. Those fields are the guide's pattern, not part of the MCP specification.",
+        "Write instructive errors: say what went wrong and what to try next, not just \"failed\". After an error Claude may call the tool again, so cap retries in your loop."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Result",
+          "What the agent concludes"
+        ],
+        "rows": [
+          [
+            "Error text as ordinary content",
+            "The document says this"
+          ],
+          [
+            "Empty content with `isError: false`",
+            "The document is empty"
+          ],
+          [
+            "`isError: true`, transient, retry advice",
+            "The load failed; try again shortly"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "returns them as ordinary results",
+          "meaning": "The failure is not flagged, so it looks like content."
+        },
+        {
+          "phrase": "\"contains no data on regional uptake\"",
+          "meaning": "A failed load was read as a document with nothing in it."
+        },
+        {
+          "phrase": "Most upstream timeouts clear within a minute",
+          "meaning": "The error is transient, so the result should say a retry is worth it."
+        },
+        {
+          "phrase": "the server's 30-second limit is often hit",
+          "meaning": "Pulls toward a longer wait, which doesn't fix how failures are reported."
+        }
+      ],
+      "lookFor": [
+        "The failure flagged with `isError: true`.",
+        "The kind of failure and whether a retry helps.",
+        "Nothing that makes a failure look like content or an empty document."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It leaves failure detection to the prompt when the tool can flag it."
+        },
+        {
+          "option": "c",
+          "reason": "An empty successful result looks like a document with no data."
+        },
+        {
+          "option": "d",
+          "reason": "Remaining timeouts are still read as content."
+        }
+      ],
+      "rule": "Report a tool failure as an error with isError set, its kind and whether a retry helps, never as ordinary content or an empty result.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "MCP specification: tools (2025-06-18)",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Handle tool calls",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S3-009",
+      "explanation": "About 80% of synthesis's re-checks compare a figure with a table the run has already retrieved, yet each one goes through the coordinator and the dataset subagent, adding about 6 hours. The governance rule covers new fetches, not reading what is already in hand. So the common case gets a narrow tool on synthesis, `verify_fact`, limited to retrieved sources, and claims that need data the run has not retrieved go back through the coordinator as open gaps in synthesis's final message, where new fetches stay logged.",
+      "options": {
+        "a": {
+          "reasoning": "A narrow tool for the common case removes most of the round trips. It reads only retrieved sources, so it makes no new agency fetch and the governance rule still holds."
+        },
+        "b": {
+          "reasoning": "Claims that need data the run has not retrieved still need a fresh fetch, which synthesis may not make itself. Listing them all as open gaps in one final message, the only thing the coordinator sees, lets the coordinator delegate those fetches together instead of one re-delegation per check, and then re-invoke synthesis once with the results, the guide's refine-and-re-invoke loop. The new fetches stay with the dataset subagent and the coordinator's log, and only this small share waits on them, so the rest of synthesis isn't held up."
+        },
+        "c": {
+          "reasoning": "It puts a broad tool outside synthesis's role, and its fetches would skip the dataset subagent and the coordinator's log that governance requires.",
+          "tempting": "It removes the round trips completely."
+        },
+        "d": {
+          "reasoning": "Direct traffic between subagents leaves the coordinator out, so the dataset subagent's fetches go unlogged and the hub's consistent error handling is lost.",
+          "tempting": "It is faster than going through the hub, and the dataset subagent still does the fetching."
+        },
+        "e": {
+          "reasoning": "Most checks already have their table in hand and still make the coordinator round trip, so fetching more tables up front doesn't remove the routing delay. Which data the rest need only becomes clear as the draft is written, so a fetch list chosen at the start can't cover them, and fetching every table synthesis might check adds load to agency databases that already time out under load.",
+          "tempting": "Caching is a familiar way to cut waiting, the fetches stay with the dataset subagent and the coordinator's log, and more tables in hand would leave more claims for a local check."
+        }
+      },
+      "concept": [
+        "The exam guide's skill is to give an agent a scoped cross-role tool for its common need, such as `verify_fact` for a synthesis agent, while complex cases still go through the coordinator. Agents with tools outside their role tend to misuse them, so a broad fetch tool on synthesis is the wrong way to save time.",
+        "Limit each subagent's tools to what its job needs; it prevents side effects and makes each role clearer. A scoped tool gives just enough capability for the common case.",
+        "In a hub-and-spoke design the coordinator manages communication, routing and error handling between subagents. Only a subagent's final message comes back to the parent, so anything the coordinator must act on, such as unverified figures, has to be in that message."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "about 80%, compare a figure with a table the run has already retrieved",
+          "meaning": "Most checks read sources already retrieved."
+        },
+        {
+          "phrase": "The rest need data the run hasn't retrieved, and which data is needed only becomes clear as the draft is written",
+          "meaning": "These claims can't be foreseen, so they need new fetches made later, through the coordinator."
+        },
+        {
+          "phrase": "add about 6 hours to a 48-hour run",
+          "meaning": "The cost of routing every check through the hub."
+        },
+        {
+          "phrase": "Each check now goes through the coordinator, which re-delegates it to the dataset subagent",
+          "meaning": "The delay is the routing, not missing data, so fetching more data up front does not remove it."
+        },
+        {
+          "phrase": "every new fetch from an agency must be made by the dataset subagent and logged by the coordinator",
+          "meaning": "Rules out giving synthesis a fetch tool or bypassing the hub for fetches."
+        }
+      ],
+      "lookFor": [
+        "A narrow tool that covers the common case and nothing more.",
+        "Uncommon cases routed back through the coordinator.",
+        "The governance rule intact for new fetches."
+      ],
+      "eliminate": [
+        {
+          "option": "c",
+          "reason": "A broad fetch tool on synthesis breaks the governance rule."
+        },
+        {
+          "option": "d",
+          "reason": "Direct subagent traffic leaves the coordinator's log out."
+        },
+        {
+          "option": "e",
+          "reason": "Most checks already have their table and still wait on the coordinator; which data the rest need only becomes clear during drafting, and fetching every likely table loads databases that already time out."
+        }
+      ],
+      "rule": "Give an agent a narrow cross-role tool for its common need, and route the cases that tool can't settle through the coordinator.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: subagents",
+          "url": "https://code.claude.com/docs/en/agent-sdk/subagents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: Designing effective subagents",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/designing-effective-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S3-010",
+      "explanation": "The coordinator was given the 12 search and fetch tools its subagents use, so it now does 40% of the fetching itself, fills its context with raw results and slows every run. An agent with tools outside its role tends to use them, and 15 tools also make selection less reliable. The fix is to give the coordinator only what its role needs, `Task` and its two review tools, and leave searching and fetching to the subagents.",
+      "options": {
+        "a": {
+          "reasoning": "Without fetch tools the coordinator can't fetch, so the 40% goes back to the subagents, its context stays free for review, and it chooses among three tools instead of 15."
+        },
+        "b": {
+          "reasoning": "The coordinator still holds 15 tools, and the fetch tools it holds keep inviting it to fetch. A prompt line fits a judgment the agent should make; here the tools themselves are outside its role.",
+          "tempting": "It keeps the flexibility the refactor wanted and states the right division of work."
+        },
+        "c": {
+          "reasoning": "Trimming slows how fast the context fills, but the coordinator still does 40% of the fetching while the subagents sit idle.",
+          "tempting": "It treats the context filling, the most visible symptom."
+        },
+        "d": {
+          "reasoning": "It adds an agent to make a decision the coordinator already owns, and the coordinator still holds tools it shouldn't use.",
+          "tempting": "A dedicated decision-maker sounds like it would restore delegation."
+        }
+      },
+      "concept": [
+        "The exam guide says too many tools, such as 18 instead of 4 to 5, make tool selection less reliable, and that agents given tools outside their role tend to misuse them. The fix is scoped access: give each agent only the tools its role needs.",
+        "More tools do not always give better outcomes; too many or overlapping tools can distract agents. Limiting a subagent's tools to what its job needs prevents side effects and makes each role clearer.",
+        "A coordinator's role is to decompose, delegate and aggregate. Its tools should match that role: `Task` to delegate, plus whatever it uses to review results."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "given all 12 search and fetch tools its subagents use",
+          "meaning": "Worker tools on the coordinator: tools outside its role."
+        },
+        {
+          "phrase": "does about 40% of the fetching itself",
+          "meaning": "It uses the tools it was given, which is the misuse the guide warns about."
+        },
+        {
+          "phrase": "without losing the review step",
+          "meaning": "The coordinator keeps its review tools."
+        }
+      ],
+      "lookFor": [
+        "Tools matched to the coordinator's role.",
+        "Worker tools left with the workers.",
+        "No new agent to make a decision the coordinator already owns."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The 15 tools stay, so the coordinator can still fetch."
+        },
+        {
+          "option": "c",
+          "reason": "The coordinator still does the fetching."
+        },
+        {
+          "option": "d",
+          "reason": "A new agent for a decision the coordinator already makes."
+        }
+      ],
+      "rule": "Give each agent only the tools its role needs; a coordinator holding worker tools starts doing the workers' jobs.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Writing effective tools for agents",
+          "url": "https://www.anthropic.com/engineering/writing-tools-for-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: Designing effective subagents",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/designing-effective-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S4-005",
+      "explanation": "Added without a scope, the server sits at local scope: this project, only her. She needs it in all her repositories and in nobody else's sessions, which is exactly user scope, stored in her `~/.claude.json`.",
+      "options": {
+        "a": {
+          "reasoning": "User scope makes a server available in all her projects, only to her, stored in `~/.claude.json`. It covers the five repositories and any new service she is asked to profile, and changes nothing for her teammates."
+        },
+        "b": {
+          "reasoning": "Project scope means `.mcp.json` at the project root, checked into version control so everyone who clones gets the server, and their sessions ask them to approve it.",
+          "tempting": "It makes the server load in each repository she uses."
+        },
+        "c": {
+          "reasoning": "`CLAUDE.md` gives Claude instructions; it does not configure MCP servers. Servers are added at a scope (local, project or user), and only then are their tools available in the session.",
+          "tempting": "The user-level file loads in all her projects."
+        },
+        "d": {
+          "reasoning": "It works for today's repositories but has to be repeated for each new one; user scope does it once for all her projects.",
+          "tempting": "It keeps the server private, which is half the requirement."
+        }
+      },
+      "concept": [
+        "Claude Code has three scopes for MCP servers. Local is the default: the current project, only you, stored in `~/.claude.json` under that project. Project is `.mcp.json` at the project root, checked into version control so everyone gets the same servers. User makes a server available in all your projects, only to you, also stored in `~/.claude.json`.",
+        "The exam guide's split is project `.mcp.json` for shared team servers and user-level `~/.claude.json` for personal or experimental ones. Interactive sessions ask for approval before using servers from a project's `.mcp.json`, so a personal server committed there reaches every teammate.",
+        "When the same server is defined at more than one scope, local wins over project, and project over user."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Scope",
+          "Who gets it, and where it is stored"
+        ],
+        "rows": [
+          [
+            "Local (default)",
+            "Only you, in the current project; `~/.claude.json`"
+          ],
+          [
+            "Project",
+            "Everyone who clones; `.mcp.json` in version control"
+          ],
+          [
+            "User",
+            "Only you, in all your projects; `~/.claude.json`"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "without choosing a scope",
+          "meaning": "The default, local scope, applies."
+        },
+        {
+          "phrase": "not in the five other service repositories",
+          "meaning": "Local scope covers one project."
+        },
+        {
+          "phrase": "often asked to profile a new service at short notice",
+          "meaning": "Per-repository setup won't keep up."
+        },
+        {
+          "phrase": "her teammates' sessions must stay as they are",
+          "meaning": "Nothing goes into committed files."
+        }
+      ],
+      "lookFor": [
+        "A private scope that spans all her projects.",
+        "No change to committed files."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It shares the server with every teammate who clones."
+        },
+        {
+          "option": "c",
+          "reason": "Instructions in `CLAUDE.md` do not connect an MCP server."
+        },
+        {
+          "option": "d",
+          "reason": "It must be repeated for every new repository."
+        }
+      ],
+      "rule": "Personal MCP servers you want everywhere go at user scope; local scope is one project, and project scope is the team's `.mcp.json`.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: connect to MCP servers",
+          "url": "https://code.claude.com/docs/en/mcp"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: MCP",
+          "url": "https://academy.claude.com/courses/claude-code-101/mcp"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S4-006",
+      "explanation": "The assistant picks tools from their definitions, and this one says it searches by ID. A question about why code changed has no ID, so the assistant reaches for Grep. The fix is the description itself: what the tool accepts, what it returns and which questions it is for.",
+      "options": {
+        "a": {
+          "reasoning": "Detailed descriptions are the biggest factor in how well tools are used. Saying it takes free text, returns resolution notes and linked commits, and answers questions about why code changed gives the assistant a reason to choose it over Grep for the depot-capacity question."
+        },
+        "b": {
+          "reasoning": "Fix only the part at fault: a wrong tool chosen points to the description, a wrong value passed points to the parameter's description and examples. Here the tool isn't chosen at all, and an ID example makes it look even more like an ID lookup.",
+          "tempting": "It edits the tool's description."
+        },
+        "c": {
+          "reasoning": "The name changes, but the description still says \"by ID\", and Claude reads the whole definition.",
+          "tempting": "Names do signal purpose."
+        },
+        "d": {
+          "reasoning": "A hook on the word \"why\" blocks legitimate code searches and doesn't fix why the tool is passed over.",
+          "tempting": "It forces the right tool for this kind of question."
+        }
+      },
+      "concept": [
+        "Claude never sees the code behind a tool, only its definition (name, description, input schema) and the results it returns. When Claude misuses a tool, look at the definition first.",
+        "Detailed descriptions are by far the most important factor in tool performance: say what the tool does, when to use it and when not to, what each parameter means, and caveats such as what it does not return. Aim for at least three or four sentences.",
+        "The exam guide's Task 2.4 skill: improve MCP tool descriptions so the agent doesn't prefer built-ins like Grep over a more capable MCP tool. Fix only the part at fault: a wrong tool chosen points to the description; a wrong value passed points to the parameter description and input examples."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "\"Search tickets by ID.\"",
+          "meaning": "The description undersells the tool."
+        },
+        {
+          "phrase": "takes free-text questions and returns matching tickets with their resolution notes and linked commits",
+          "meaning": "The tool can answer the question."
+        },
+        {
+          "phrase": "ran Grep over code comments",
+          "meaning": "A built-in won the choice."
+        },
+        {
+          "phrase": "Neither `CLAUDE.md` nor the system prompt says anything",
+          "meaning": "Nothing else is steering; the definition is the cause."
+        }
+      ],
+      "lookFor": [
+        "A rewritten description of inputs, outputs and purpose.",
+        "A fix to tool choice, not to input format."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It fixes the input format, not the choice of tool."
+        },
+        {
+          "option": "c",
+          "reason": "The misleading description stays."
+        },
+        {
+          "option": "d",
+          "reason": "It blocks real searches and leaves the cause in place."
+        }
+      ],
+      "rule": "When a built-in wins over a better MCP tool, rewrite the MCP tool's description: what it takes, what it returns and which questions it answers.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Creating tools that Claude picks",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/creating-tools-that-claude-picks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S4-007",
+      "explanation": "Picking files by name found 14 files called Surcharge, including dead code, and missed the live calculation in `PricingEngine`. The guide's approach is incremental: Grep for the entry point, the `/quote` route, then Read from there, following the calls, to the code that actually runs. And before explaining a class, search for its callers: a class nothing calls, like `LegacySurchargeCalculator`, is not part of what runs.",
+      "options": {
+        "a": {
+          "reasoning": "Grep searches file contents, so it finds the route mapping however files are named. Starting from the handler ties the investigation to the request that runs in production."
+        },
+        "b": {
+          "reasoning": "A file name says what a class is called, not whether anything calls it. Searching the code for a class's name shows whether anything reaches it; nothing calls `LegacySurchargeCalculator`, so it stays out of an answer that must describe production."
+        },
+        "c": {
+          "reasoning": "Glob matches file paths, so any wider pattern still selects by name, and `PricingEngine` stays out.",
+          "tempting": "The first Glob was too narrow, so a wider one looks like the fix."
+        },
+        "d": {
+          "reasoning": "Bash `find` is another name search; Glob already finds files by path pattern.",
+          "tempting": "Case-insensitive matching across the checkout sounds more thorough."
+        },
+        "e": {
+          "reasoning": "The code can answer the question, so handing it back to the engineer escalates something the assistant can resolve itself.",
+          "tempting": "Checking with the engineer feels careful."
+        }
+      },
+      "concept": [
+        "Glob finds files by path pattern; Grep searches file contents with regular expressions. A file name says what a file is called, not whether anything calls it.",
+        "The exam guide's Task 2.5 skill: build understanding incrementally. Grep for entry points, then Read to follow imports and calls, and trace usage across wrapper modules by finding exported names and searching for them.",
+        "Read returns a file's contents with line numbers, so the assistant can follow each call into the file where it is defined."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "Glob with `**/*Surcharge*`",
+          "meaning": "A search by name."
+        },
+        {
+          "phrase": "nothing has called since 2021",
+          "meaning": "Name matches include dead code."
+        },
+        {
+          "phrase": "two method calls below the `/quote` handler",
+          "meaning": "The live path starts at the route."
+        },
+        {
+          "phrase": "in files without \"Surcharge\" in their names",
+          "meaning": "No name search can reach it."
+        }
+      ],
+      "lookFor": [
+        "A content search for the entry point.",
+        "A search for a class's callers before it is explained."
+      ],
+      "eliminate": [
+        {
+          "option": "c",
+          "reason": "It still selects files by name."
+        },
+        {
+          "option": "d",
+          "reason": "Another name search, run through Bash."
+        },
+        {
+          "option": "e",
+          "reason": "The code can answer it."
+        }
+      ],
+      "rule": "To explain what runs, Grep for the entry point and for each class's callers; don't pick files by name.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: tools reference",
+          "url": "https://code.claude.com/docs/en/tools-reference"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S4-008",
+      "explanation": "The question is about the past: when and why a value changed. Grep searches the files as they are now, which hold `MAX_STOPS = 20`, so the empty search for 25 tells the assistant the old value is gone, not when it went. Past values live in version control, which the assistant reaches by running git through Bash. `git log -S` lists the commits that changed how often a string appears, so for `MAX_STOPS = 25` the latest is the change to 20, and its message names the ticket.",
+      "options": {
+        "a": {
+          "reasoning": "Bash runs shell commands, so it can query git history. `git log -S` lists the commits that changed how often `MAX_STOPS = 25` appears; the latest is the change to 20, and Fleetway's commit messages name the ticket behind it."
+        },
+        "b": {
+          "reasoning": "Grep searches file contents, and only the contents that exist now. Even if a doc or build file still held 25, today's files can't say when or why it changed.",
+          "tempting": "Widening a search is the usual move after an empty result."
+        },
+        "c": {
+          "reasoning": "Today's code shows how 20 is used, not when or why it was chosen, so the answer would be a guess.",
+          "tempting": "Reading the code feels like evidence."
+        },
+        "d": {
+          "reasoning": "The file's past values already live in version control, which Bash can query; building and maintaining a new tool adds machinery for one command's work.",
+          "tempting": "It extends Grep-style search into history."
+        }
+      },
+      "concept": [
+        "Grep searches file contents with ripgrep regular expressions. It reads the files in the checkout, so it answers where a string appears now, not where it used to be.",
+        "A file's past values live in version control, not in its current contents. Bash runs shell commands, so a question about history goes to git through Bash, where `git log -S <string>` lists the commits that changed how often the string appears. Bash needs permission by default; Read, Glob and Grep do not, inside the working directory.",
+        "The exam guide's Task 2.5: pick each built-in for what it does. Grep for content, Glob for paths, Read and Write for whole files, Edit for targeted changes."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "when and why `MAX_STOPS` ... dropped from 25 to 20",
+          "meaning": "A question about history."
+        },
+        {
+          "phrase": "Grep for `MAX_STOPS = 25` returns no matches",
+          "meaning": "No current file holds the old value."
+        },
+        {
+          "phrase": "commit messages name the ticket behind each change",
+          "meaning": "The why is in the commit history."
+        },
+        {
+          "phrase": "no comment near the constant explains it",
+          "meaning": "The code itself can't answer."
+        }
+      ],
+      "lookFor": [
+        "A git history search run through Bash.",
+        "Not another search of the current files."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It still searches the current files only."
+        },
+        {
+          "option": "c",
+          "reason": "It infers history from today's code."
+        },
+        {
+          "option": "d",
+          "reason": "It rebuilds what version control already holds."
+        }
+      ],
+      "rule": "Grep answers where something is now; when and why it changed lives in version history, reached through Bash.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: tools reference",
+          "url": "https://code.claude.com/docs/en/tools-reference"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S4-009",
+      "explanation": "`config/*.yml` returned only the files directly inside `config/`, so the pattern didn't reach into subfolders. The regional files sit two and three levels down, and more are coming. `**` matches any number of nested folders, so `config/**/*.yml` lists them all, at any depth, without changing the pattern later.",
+      "options": {
+        "a": {
+          "reasoning": "Glob matches file paths, and a pattern such as `**/*.js` matches files at any depth. `config/**/*.yml` therefore covers the 12 top-level files and both regional layouts."
+        },
+        "b": {
+          "reasoning": "It reaches one folder down, to `config/regions/`, but not the files in `config/regions/eu/` or deeper.",
+          "tempting": "It extends the first search by one level."
+        },
+        "c": {
+          "reasoning": "It covers the two-level regions but misses `config/regions/us/west/sea.yml`, and each new depth needs a new pattern.",
+          "tempting": "It names the regional folder exactly."
+        },
+        "d": {
+          "reasoning": "Grep searches file contents, not paths, so it finds files whose text mentions `.yml`.",
+          "tempting": "Grep sounds like a search of the whole tree."
+        }
+      },
+      "concept": [
+        "Glob finds files by path pattern; Grep searches file contents. The exam guide: Grep for content such as function names, error messages and imports; Glob for file names and extensions.",
+        "In a Glob pattern, `**` matches any number of nested folders: `**/*.js` matches `.js` files at any depth. The first search in the stem shows that `config/*.yml` matched only files directly inside `config/`."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`{\"pattern\": \"config/*.yml\"}`",
+          "meaning": "Only one folder level."
+        },
+        {
+          "phrase": "all directly inside `config/`",
+          "meaning": "Subfolders weren't searched."
+        },
+        {
+          "phrase": "a level deeper, as in `config/regions/us/west/sea.yml`",
+          "meaning": "The folder depth varies by region."
+        },
+        {
+          "phrase": "nobody wants to update the pattern each time",
+          "meaning": "It must cover any depth."
+        }
+      ],
+      "lookFor": [
+        "A path pattern with `**`.",
+        "Glob, not Grep."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It stops one folder down."
+        },
+        {
+          "option": "c",
+          "reason": "It misses the deeper regions."
+        },
+        {
+          "option": "d",
+          "reason": "It searches contents, not paths."
+        }
+      ],
+      "rule": "To list files by name at any depth, use Glob with `**`, such as `config/**/*.yml`.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: tools reference",
+          "url": "https://code.claude.com/docs/en/tools-reference"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S6-003",
+      "explanation": "The five policy tools overlap: each returns one fact from the same record, so the subagent must choose among near-identical tools and makes 3 to 4 calls per claim. One `get_policy(policy_number, sections)` tool removes the choice that causes the 8% of wrong picks and turns 3 to 4 calls into one. This combining advice comes from Anthropic Academy rather than the exam guide's task statements.",
+      "options": {
+        "a": {
+          "reasoning": "Combining overlapping tools into one with a parameter that selects what to return is Anthropic Academy's fix for tools that each return one fact about the same record. The subagent no longer has to pick between five similar tools, and it fetches what it needs in one call."
+        },
+        "b": {
+          "reasoning": "Better descriptions are the usual first fix and would help somewhat, but five tools over one record stay easy to confuse, and the subagent still makes 3 to 4 calls per claim. Rewriting descriptions is the fix when tools do different jobs, like the claim-history tools.",
+          "tempting": "Descriptions are the main signal for tool selection, and this rewrite adds an example and pointers between the tools."
+        },
+        "c": {
+          "reasoning": "A sixth tool overlaps all five, adding another near-identical choice rather than removing any, so wrong picks can rise. A broader tool suits a real gap, not tools that already split one record.",
+          "tempting": "One call returning everything would cut the number of calls."
+        },
+        "d": {
+          "reasoning": "A new subagent adds a component and a handoff through the coordinator for every policy fact, and the five-way choice simply moves with the tools. A separate agent suits a separate role.",
+          "tempting": "It gives the coverage subagent fewer tools to choose from."
+        }
+      },
+      "concept": [
+        "The exam guide treats tool descriptions as the primary mechanism for tool selection and warns that ambiguous or overlapping tools cause misrouting. Its skills include renaming tools and rewriting descriptions to remove overlap, and splitting generic tools into purpose-specific ones.",
+        "Anthropic Academy's lesson on creating tools that Claude picks adds the other direction: combine tools that overlap, such as several tools each returning one fact about the same record, into one tool with a parameter that selects what to return, while tools that do different jobs stay separate. In its example, six thin tools became three and the eval score rose from 14 to 26 of 30.",
+        "The tool-definition docs note that fewer, more capable tools reduce selection ambiguity, and Anthropic's engineering post on writing tools warns that too many or overlapping tools can distract agents.",
+        "This question is marked beyond the exam guide: the guide's own wording covers descriptions and splitting, and the combining rule comes from the Academy course."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "five tools that each return one fact from the same policy record",
+          "meaning": "The tools overlap; they are slices of one record."
+        },
+        {
+          "phrase": "3 to 4 of these calls per claim",
+          "meaning": "The split also costs calls and latency."
+        },
+        {
+          "phrase": "calls the wrong one, for example `get_policy_dates` when it needs the excess",
+          "meaning": "The selection problem comes from near-identical tools."
+        },
+        {
+          "phrase": "also holds three claim-history tools",
+          "meaning": "Tools with different jobs exist too, and should stay separate."
+        }
+      ],
+      "lookFor": [
+        "One tool for the one record, with a parameter that selects the parts.",
+        "Fewer calls per claim as well as fewer wrong picks.",
+        "No extra overlapping tool and no new agent."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Five overlapping tools stay confusable and still cost several calls."
+        },
+        {
+          "option": "c",
+          "reason": "A sixth overlapping tool adds to the choice instead of removing it."
+        },
+        {
+          "option": "d",
+          "reason": "A new subagent adds a handoff and moves the problem with the tools."
+        }
+      ],
+      "rule": "When several tools each return a slice of the same record, combine them into one tool with a parameter that selects what to return; keep tools with different jobs separate.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Writing effective tools for agents",
+          "url": "https://www.anthropic.com/engineering/writing-tools-for-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Creating tools that Claude picks",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/creating-tools-that-claude-picks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S6-004",
+      "explanation": "A lapsed policy is a business-rule refusal: trying again cannot change it. The generic `\"Rejected\"` gives the agent no way to tell it from a timeout, so it retries three times, and it gives reviewers no reason, so each of about 90 claims a night costs 10 minutes of searching. Returning the error as category `business`, not retryable, with the lapse date and loss date fixes both.",
+      "options": {
+        "a": {
+          "reasoning": "The category and the retryable flag tell the agent to stop at once, and the dates in the message travel with the claim to review, so reviewers see why it was refused. This is the guide's pattern for business-rule violations: not retryable, with a readable explanation."
+        },
+        "b": {
+          "reasoning": "The dates would reach the reviewers, but labelling a lapse as transient and retryable keeps the wasted retries on every refused claim. That category is right for the adjudication timeouts, which do clear on retry.",
+          "tempting": "It adds the reason the reviewers need and still ends in review."
+        },
+        "c": {
+          "reasoning": "Reporting success hides the refusal. The agent believes the claim went through, nothing reaches the review queue, and lapsed claims sit unseen in the adjudication system.",
+          "tempting": "It stops the retries, since there is no error to retry."
+        },
+        "d": {
+          "reasoning": "With one generic message the agent cannot tell a lapse from a timeout, so a no-retry rule also stops retries of timeouts that would clear, and reviewers still get no reason. The tool's error has to carry the category and the cause.",
+          "tempting": "It stops the retries without changing the tool."
+        }
+      },
+      "concept": [
+        "The exam guide's error pattern for MCP tools: signal failure with the `isError` flag, and tell transient errors (timeouts), validation errors, business-rule errors and permission errors apart. A uniform \"Operation failed\" stops the agent from choosing the right recovery, and retryable versus non-retryable metadata prevents wasted retries. For a business-rule violation, return a non-retryable error with a clear explanation.",
+        "In the MCP specification, tool execution errors are returned inside the tool result with `isError: true`, so the model can see and handle them. Fields such as `errorCategory` and `isRetryable` are not part of the specification; they are the exam guide's pattern for what the error result should contain.",
+        "Anthropic's guidance on handling tool calls says to write instructive errors that say what went wrong and what to try next, rather than a bare failure."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Error kind",
+          "What the result should say"
+        ],
+        "rows": [
+          [
+            "Transient, such as an adjudication timeout",
+            "Retryable; the agent can try again"
+          ],
+          [
+            "Business rule, such as a lapsed policy",
+            "Not retryable, with the reason (here the lapse and loss dates)"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "returns `{\"isError\": true, \"message\": \"Rejected\"}`",
+          "meaning": "A generic error with no category or reason."
+        },
+        {
+          "phrase": "retries each such claim three times",
+          "meaning": "The agent can't tell this refusal is permanent."
+        },
+        {
+          "phrase": "reviewers spend roughly 10 minutes on each one finding the lapse",
+          "meaning": "The reason needs to travel with the claim."
+        },
+        {
+          "phrase": "a timeout inside the adjudication system, do clear when tried again",
+          "meaning": "Some errors are retryable, so the error must say which kind it is."
+        }
+      ],
+      "lookFor": [
+        "A business category and a not-retryable flag.",
+        "The specific reason in the message.",
+        "No success status and no prompt rule standing in for the error contract."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Marking a permanent refusal as retryable keeps the wasted retries."
+        },
+        {
+          "option": "c",
+          "reason": "A success status hides the refusal from the agent and the reviewers."
+        },
+        {
+          "option": "d",
+          "reason": "A generic message can't separate lapses from timeouts or explain the refusal."
+        }
+      ],
+      "rule": "Return business-rule refusals as non-retryable errors that state the specific reason, so the agent stops retrying and the next handler knows why.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "MCP specification: tools (2025-06-18)",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/tools"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Handle tool calls",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S6-005",
+      "explanation": "The extraction subagents hold `route_to_review`, a routing decision outside their role. Each sees one bill, so it sends a clear page to review over one faint field, and together they would queue about 2,000 bills a night against capacity for about 1,800 documents of every type. The coordinator sees the whole claim and the night's queue, so it should make the routing call from the fields and calibrated field-level confidences the subagents send back.",
+      "options": {
+        "a": {
+          "reasoning": "Taking the tool away removes the misuse at its source, and the subagents' job shrinks to extraction. The coordinator, which owns routing and sees the whole claim, picks the bills that need a reviewer."
+        },
+        "b": {
+          "reasoning": "A call cap stops the overflow but chooses bills by arrival time: a costly doubtful bill after the cutoff goes unreviewed while earlier clear bills took the places. The subagents still make a decision outside their role. A `PreToolUse` gate suits a rule that each call can be judged by on its own.",
+          "tempting": "It enforces the capacity limit in code, which sounds like the reliable choice."
+        },
+        "c": {
+          "reasoning": "A shared table routes around the coordinator, which loses sight of what is queued and why, and each subagent still decides alone what to flag, so the table outgrows the reviewers' capacity.",
+          "tempting": "Reviewers could sort the table by confidence."
+        },
+        "d": {
+          "reasoning": "A queue-status tool widens the subagents' role instead of narrowing it, and each still judges its bill alone while racing the others for places. Queue state is the coordinator's concern.",
+          "tempting": "Each subagent would know when the queue is nearly full."
+        }
+      },
+      "concept": [
+        "The exam guide notes that agents with tools outside their specialisation tend to misuse them, and that each agent should get only the tools its role needs. Its skills include restricting each subagent's tool set to its role and routing complex cases through the coordinator, which manages communication, error handling and routing in a hub-and-spoke design.",
+        "Anthropic Academy's lesson on designing subagents says to limit a subagent's tools to what its job needs, which prevents side effects and makes each role clearer. In the Agent SDK, the `tools` field of a subagent's `AgentDefinition` sets the tools it can use.",
+        "The deciding detail is what each agent can see. A subagent that sees one bill cannot weigh it against a night's queue; the coordinator, which sees the whole claim and the queue, can."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "an extraction subagent holding `extract_fields`, `read_page` and `route_to_review`",
+          "meaning": "A routing tool sits with an extraction role."
+        },
+        {
+          "phrase": "often for one faint field on an otherwise clear page",
+          "meaning": "The subagents are misusing the routing tool."
+        },
+        {
+          "phrase": "about 2,000 bills a night, while the 12 reviewers can check about 1,800 documents of every type",
+          "meaning": "Review places are scarce across the whole pipeline."
+        },
+        {
+          "phrase": "Each subagent sees only its own bill; the coordinator sees the whole claim and the night's review queue",
+          "meaning": "The routing decision belongs where the wider view is."
+        }
+      ],
+      "lookFor": [
+        "The routing tool removed from the extraction role.",
+        "Subagents returning fields with confidences instead of routing.",
+        "The coordinator deciding what goes to review."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A call cap picks by arrival time and leaves the decision with the wrong role."
+        },
+        {
+          "option": "c",
+          "reason": "A shared table bypasses the coordinator and still overflows."
+        },
+        {
+          "option": "d",
+          "reason": "Another tool widens the role instead of narrowing it."
+        }
+      ],
+      "rule": "Give each subagent only the tools its role needs; decisions that need the whole picture, such as review routing, belong to the coordinator.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 2 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: subagents",
+          "url": "https://code.claude.com/docs/en/agent-sdk/subagents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: Designing effective subagents",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/designing-effective-subagents"
         }
       ],
       "verifiedAt": "2026-11-19"

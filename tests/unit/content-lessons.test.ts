@@ -72,7 +72,7 @@ describe('validating lessons', () => {
   it('rejects an unknown question id', () => {
     const r = raw();
     lesson(r, 'S1-002').questionId = 'S1-099';
-    expectError(r, 'S1-099', 'not in the practice files');
+    expectError(r, 'S1-099', 'not in the question or mock files');
   });
 
   it('rejects a question from another domain', () => {
@@ -192,6 +192,48 @@ describe('importing lessons', () => {
     const r = raw();
     lesson(r, 'S1-002').questionId = 'S1-099';
     expect(() => importContent(getDb(), r)).toThrow('S1-099');
+  });
+});
+
+describe('lessons for mock questions', () => {
+  const mockPaper = (r: RawContent) => r.mockFiles[0].data as { status?: 'draft' | 'ready' };
+  const withMockLesson = (r: RawContent, id = 'M1-S1-001') => {
+    const l = structuredClone(lesson(r, 'S1-002'));
+    l.questionId = id;
+    file(r).lessons.push(l);
+  };
+  const lessonRows = (id: string) =>
+    getDb().all<{ n: number }>(sql`select count(*) as n from question_lesson where question_id = ${id}`)[0].n;
+
+  it('accepts a lesson in the domain file of the question and imports it', () => {
+    const r = raw();
+    withMockLesson(r);
+    expect(validateContent(r).errors).toEqual([]);
+    importContent(getDb(), r);
+    expect(lessonRows('M1-S1-001')).toBe(1);
+  });
+
+  it('rejects the lesson in another domain file and an unknown mock id', () => {
+    const r = raw();
+    withMockLesson(r);
+    file(r).domain = 'D2';
+    const hit = validateContent(r).errors.filter((e) => e.id === 'M1-S1-001');
+    expect(hit.some((e) => e.message.includes('question is in D1, file is D2'))).toBe(true);
+    const r2 = raw();
+    withMockLesson(r2, 'M9-S1-001');
+    const hit2 = validateContent(r2).errors.filter((e) => e.id === 'M9-S1-001');
+    expect(
+      hit2.some((e) => e.message.includes('lesson is for a question that is not in the question or mock files')),
+    ).toBe(true);
+  });
+
+  it('skips lessons of a draft paper without throwing', () => {
+    const r = raw();
+    withMockLesson(r);
+    mockPaper(r).status = 'draft';
+    expect(() => importContent(getDb(), r)).not.toThrow();
+    expect(lessonRows('M1-S1-001')).toBe(0);
+    expect(rowCount()).toBe(2);
   });
 });
 

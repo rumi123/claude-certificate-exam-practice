@@ -379,7 +379,7 @@ function checkLesson(
 ): void {
   const err = (m: string) => out.error(file, m, l.questionId);
   if (!target) {
-    err('lesson is for a question that is not in the practice files');
+    err('lesson is for a question that is not in the question or mock files');
     return;
   }
   if (target.domain !== fileDomain) err(`question is in ${target.domain}, file is ${fileDomain}`);
@@ -519,14 +519,16 @@ export function validateContent(raw: RawContent): ValidationResult {
     const seen = checkQuestionFiles(questionFiles, refs, out);
     checkMockFiles(mockFiles, seen, refs, out);
     const targets = new Map<string, LessonTarget>();
-    for (const f of questionFiles) {
-      for (const q of f.data.questions) {
+    const addTargets = (questions: Question[]) => {
+      for (const q of questions) {
         targets.set(q.id, {
           domain: refs.taskDomain.get(q.primaryTask) ?? 'unknown',
           options: q.options.map((o) => ({ id: o.id, correct: o.correct })),
         });
       }
-    }
+    };
+    for (const f of questionFiles) addTargets(f.data.questions);
+    for (const f of mockFiles) addTargets(f.data.questions);
     checkLessonFiles(lessonFiles, targets, out);
     if (flashcards) checkFlashcards(raw.flashcards.file, flashcards, syllabus, refs, out);
     if (cheatsheet) checkCheatsheet(raw.cheatsheet.file, cheatsheet, refs, out);

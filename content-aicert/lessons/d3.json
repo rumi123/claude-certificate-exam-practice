@@ -2078,6 +2078,2163 @@
         }
       ],
       "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S2-003",
+      "explanation": "The engineer expected the nearer file to replace the root one, but CLAUDE.md files stack: the root and `engine/CLAUDE.md` are both loaded and their content is concatenated. Engine sessions therefore carry `tabs everywhere` and `4 spaces` together, and emphasis on one line does not remove the other. Rewording the root rule so it covers only `gameplay/` and `tools/` removes the contradiction at its source.",
+      "options": {
+        "a": {
+          "reasoning": "A scoped rule loads only for engine files, but the root file still loads with `tabs everywhere`, so engine edits still carry both instructions. Moving the engine rule changes when it loads, not the conflict. A scoped rule would suit an engine convention with no rival rule in the root.",
+          "tempting": "Path-scoped rules are the documented way to target one area of the codebase."
+        },
+        "b": {
+          "reasoning": "This removes the conflict but turns a team convention into personal files. Each gameplay and tools engineer, and each monthly new hire, would need to add the line, and anyone who skips it gets no tab rule. User-level files suit personal preferences, not studio standards.",
+          "tempting": "It does remove the conflicting line from engine sessions."
+        },
+        "c": {
+          "reasoning": "CLAUDE.md files do not override each other: the root and engine files load together and their text is concatenated. With `tabs everywhere` still in the root, engine sessions carry two rules that contradict. Scoping the root rule to `gameplay/` and `tools/` removes the conflict and leaves the engine file's 4-space rule unopposed."
+        },
+        "d": {
+          "reasoning": "This rests on the same misreading that caused the problem: that the engine file replaces the root file. The root file still loads with its tab rule, so the copy only adds duplicated text that can drift. A standalone file would help only if files overrode each other.",
+          "tempting": "It matches the engineer's model of a nearer file taking over."
+        }
+      },
+      "concept": [
+        "Claude Code does not choose one CLAUDE.md over another. The files in the hierarchy are all loaded and their content is concatenated, with content nearer the working directory coming later. A subdirectory file such as `engine/CLAUDE.md` loads the first time Claude reads or edits a file in that subtree, next to the root file that loaded at launch.",
+        "Because both files are in context, two rules that contradict each other both reach Claude. Rules work best when they are specific and checkable, so the fix is to word each rule for the place it applies.",
+        "Only the project files are shared through version control. User-level files belong to one person, so moving a team convention into them makes it depend on each engineer's setup."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "expected it to replace the root file for engine work",
+          "meaning": "The misreading: files stack, they do not override."
+        },
+        {
+          "phrase": "`Indent with tabs everywhere.`",
+          "meaning": "The root rule's scope includes engine code."
+        },
+        {
+          "phrase": "prefixed it with `IMPORTANT:`, yet the mixing continued",
+          "meaning": "Emphasis was tried; the conflict is still in context."
+        },
+        {
+          "phrase": "Gameplay and tools code must keep tabs",
+          "meaning": "The tab rule has to stay shared for those trees."
+        }
+      ],
+      "lookFor": [
+        "A change that removes the contradiction rather than reinforcing one side.",
+        "Team conventions kept in committed project files."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "The root tab rule still loads next to the scoped engine rule."
+        },
+        {
+          "option": "b",
+          "reason": "A team convention would depend on each engineer's personal file."
+        },
+        {
+          "option": "d",
+          "reason": "The engine file does not replace the root file, so the tab rule still loads."
+        }
+      ],
+      "rule": "CLAUDE.md files at every level load together and stack; when two levels conflict, rescope the broader rule instead of expecting the nearer file to win.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: A CLAUDE.md that follows",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/a-claude-md-that-follows"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The CLAUDE.md file",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-claude-md-file"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S2-004",
+      "explanation": "The lead wants facts before edits: which memory files are in her session. `/memory` lists the CLAUDE.md and other memory files loaded in the session, so running it where the problem shows answers that directly. The other options trust Claude's own account, look for the cause in a file that works for others, or change files before the cause is known.",
+      "options": {
+        "a": {
+          "reasoning": "Claude's account of which files it loaded is its own explanation, not a record of what is in context, so it can be wrong in either direction. It sounds like the most direct check, but `/memory` gives the actual list.",
+          "tempting": "It asks the very session that shows the problem."
+        },
+        "b": {
+          "reasoning": "`/init` produces a starting CLAUDE.md; it says nothing about which memory files her session loaded, which is what the lead wants to know first. Comparing wording also looks for the cause in a file that already works for two teammates. `/init` suits a project that has no CLAUDE.md yet.",
+          "tempting": "Comparing against a fresh file seems to test whether the rule itself is the problem."
+        },
+        "c": {
+          "reasoning": "Copying the rules edits a shared file before the cause is known, and loads the tools rules in every engine and gameplay session. If the cause is something else, the change only adds clutter for 45 engineers.",
+          "tempting": "The root file is known to load, so the rules would reach her."
+        },
+        "d": {
+          "reasoning": "`/memory` lists the CLAUDE.md and other memory files loaded in the session, which is what the lead wants to know before anything is edited. If `tools/CLAUDE.md` is missing, the cause is loading; if it is listed, the cause is in what the rule says."
+        }
+      },
+      "concept": [
+        "`/memory` lists the CLAUDE.md and other memory files loaded in the current session and can open one for editing. It is the documented way to check which files are actually in play. `/init` does something else: it generates a starting CLAUDE.md.",
+        "A subdirectory CLAUDE.md such as `tools/CLAUDE.md` loads on demand, the first time Claude reads, writes or edits a file in that subtree. Whether it is loaded can therefore differ between sessions, which is why the check runs in the session that shows the problem."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "Claude ignores `tools/CLAUDE.md`",
+          "meaning": "A symptom that could be loading or wording."
+        },
+        {
+          "phrase": "two teammates say the same file works for them",
+          "meaning": "The file itself may be fine; check her session."
+        },
+        {
+          "phrase": "first wants to know which memory files her session has actually loaded",
+          "meaning": "A diagnosis before any edit."
+        }
+      ],
+      "lookFor": [
+        "A command that lists the loaded memory files.",
+        "A check run before any file is changed."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Claude's own account is not a record of what is loaded."
+        },
+        {
+          "option": "b",
+          "reason": "`/init` produces a starting file and shows nothing about what her session loaded."
+        },
+        {
+          "option": "c",
+          "reason": "Editing the root file changes shared config before the cause is known."
+        }
+      ],
+      "rule": "Before changing CLAUDE.md files to fix ignored instructions, run `/memory` to see which memory files the session has loaded.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The CLAUDE.md file",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-claude-md-file"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S2-005",
+      "explanation": "Two pasted copies drift because QA has to remember both. An `@` import lets each directory CLAUDE.md include one shared file, so a single edit reaches both areas. Because the imports sit in the two directory files, the checklist loads only when Claude works in `engine/` or `tools/packager/`, and gameplay sessions stay free of it.",
+      "options": {
+        "a": {
+          "reasoning": "An `@` import pulls one file into each directory CLAUDE.md, so QA edits a single checklist and both areas get the change. Each directory file loads only when Claude works in its subtree, and the import loads with it, so gameplay sessions never carry the 2,000 tokens."
+        },
+        "b": {
+          "reasoning": "This gives one copy, but an import in the root file loads up front in every session, so all gameplay and other tools work carries the 2,000-token checklist. A root import suits guidance that every session needs.",
+          "tempting": "It has a single copy and the shortest import setup."
+        },
+        "c": {
+          "reasoning": "A CI job that polices two copies is extra machinery where one shared file would do: QA still edits both copies, and each update needs two matching changes. A check like this suits copies that cannot be shared, such as generated files.",
+          "tempting": "It would have caught the forgotten packager update."
+        },
+        "d": {
+          "reasoning": "User-level files apply only to their owner and are not shared through git, so engine and packager engineers would stop getting the checklist at all. QA would also end up with one copy per QA engineer, not one for the studio.",
+          "tempting": "It puts the checklist in the hands of the team that owns it."
+        }
+      },
+      "concept": [
+        "`@path/to/file` in a CLAUDE.md imports another file. Relative paths resolve from the importing file, and imports can nest. Pointing CLAUDE.md at an existing document with `@` replaces pasted copies.",
+        "Imports organize; they do not shrink context. An imported file is expanded in place and loads with the file that imports it. Imported from the root file, it loads up front in every session; imported from a subdirectory CLAUDE.md, it loads when that subdirectory file does, the first time Claude works in that subtree.",
+        "User-level files belong to one person and are not shared through version control."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "pasted into both `engine/CLAUDE.md` and `tools/packager/CLAUDE.md`",
+          "meaning": "Two copies of one document, the cause of the drift."
+        },
+        {
+          "phrase": "the two now disagree on save-data rules",
+          "meaning": "One source file is needed."
+        },
+        {
+          "phrase": "Gameplay work and the rest of `tools/` never need the checklist",
+          "meaning": "The include must stay in the two directory files, not the root."
+        }
+      ],
+      "lookFor": [
+        "One source file included by reference where it is needed.",
+        "An include placed at the level where the guidance applies."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A root import loads the checklist in every session."
+        },
+        {
+          "option": "c",
+          "reason": "Two copies remain; the check only reports drift."
+        },
+        {
+          "option": "d",
+          "reason": "User-level files are not shared, so engine engineers lose the checklist."
+        }
+      ],
+      "rule": "Keep a shared standards document in one file and `@` import it from each directory CLAUDE.md that needs it; an import loads wherever its importing file loads.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The CLAUDE.md file",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-claude-md-file"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: A CLAUDE.md that follows",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/a-claude-md-that-follows"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S2-006",
+      "explanation": "The command works; the problem is that it lives in one person's user folder. Project commands in `.claude/commands/` are shared through version control, so committing the file gives every clone the same `/perf-capture`, and later edits arrive with a pull. A project skill in `.claude/skills/` would share it the same way.",
+      "options": {
+        "a": {
+          "reasoning": "A committed source file still leaves a copy step for each person, which is how the three versions arose. New hires who skip the step miss the command, and each later edit has to be copied again by each engineer. User-level commands suit a tool one person keeps for herself.",
+          "tempting": "Copying from one committed file looks like it keeps every engineer on the same version."
+        },
+        "b": {
+          "reasoning": "A CLAUDE.md section loads into every session for all 45 engineers, though most rarely take a capture, and it adds no `/perf-capture` command to invoke. CLAUDE.md suits standards that apply to all work; on-demand procedures belong in commands or skills.",
+          "tempting": "The project CLAUDE.md is committed and reaches everyone."
+        },
+        "c": {
+          "reasoning": "Project commands in `.claude/commands/` are shared through version control, so everyone who clones the repository has `/perf-capture`, and an edit reaches all 45 engineers on their next pull. That ends the three hand-copied versions and needs no step from new hires."
+        },
+        "d": {
+          "reasoning": "Rebuilding a working prompt command as a server is more to build and maintain, when the only problem is where the file lives. An MCP server suits access to an external system that Claude has no other way to reach.",
+          "tempting": "A committed `.mcp.json` also reaches every clone."
+        }
+      },
+      "concept": [
+        "Project commands in `.claude/commands/` are shared through version control; user commands in `~/.claude/commands/` belong to one person. Project skills in `.claude/skills/<name>/SKILL.md` are shared the same way: anyone who clones the repository gets them, and updates arrive on the next pull.",
+        "`.claude/commands/*.md` files still work as slash commands, and skills are the recommended form for new work. Skills load on demand, while CLAUDE.md loads into every conversation; use CLAUDE.md for project-wide standards and commands or skills for task procedures that are only sometimes needed."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "It lives in her `~/.claude/commands/perf-capture.md`",
+          "meaning": "A user-level command, visible only to her."
+        },
+        {
+          "phrase": "now run three different versions",
+          "meaning": "Hand copying causes drift."
+        },
+        {
+          "phrase": "without any per-person setup",
+          "meaning": "The file must be committed with the repository."
+        },
+        {
+          "phrase": "most engineers take a capture only a few times a year",
+          "meaning": "An on-demand procedure, not always-loaded guidance."
+        }
+      ],
+      "lookFor": [
+        "A committed project location for the command.",
+        "Updates that reach everyone through git."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Per-person copies are what produced three versions."
+        },
+        {
+          "option": "b",
+          "reason": "CLAUDE.md loads for everyone in every session and creates no command."
+        },
+        {
+          "option": "d",
+          "reason": "A server is far more than moving one file into the repository."
+        }
+      ],
+      "rule": "Commit commands the team needs to `.claude/commands/` (or a project skill in `.claude/skills/`); keep `~/.claude/commands/` for personal ones.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: extend Claude with skills",
+          "url": "https://code.claude.com/docs/en/skills"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to agent skills: Sharing skills",
+          "url": "https://academy.claude.com/courses/introduction-to-agent-skills/sharing-skills"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to agent skills: Skills vs. other Claude Code features",
+          "url": "https://academy.claude.com/courses/introduction-to-agent-skills/skills-vs-other-claude-code-features"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S2-007",
+      "explanation": "She needs two things at once: her own variant, and the team's version unchanged and still callable. A personal skill in `~/.claude/skills/` is available only to her, and a new name keeps both commands available: the directory name, or the frontmatter `name` when set, becomes the command, so the copy needs a new directory and a new `name`. The same-name copy fails on the second need, because a personal skill overrides a project skill of the same name, and `CLAUDE.local.md` would change every run of the team skill.",
+      "options": {
+        "a": {
+          "reasoning": "Her personal folder is the right place for a variant, but the name does more than set her command: for the same name the personal layer outranks the project layer, so `/shader-test` would always run her deep version and the team's version could no longer be run for her normal reviews. Keeping the name suits a version meant to replace the team's every time.",
+          "tempting": "Personal skills in `~/.claude/skills/` are the right place for her own version."
+        },
+        "b": {
+          "reasoning": "`extends` is not a skill frontmatter field, so the file would hold only her two steps with no base procedure to run. A personal variant is a full copy of the skill under its own name.",
+          "tempting": "It avoids duplicating the team's procedure."
+        },
+        "c": {
+          "reasoning": "`CLAUDE.local.md` is personal, but it loads in each of her sessions in the repository, so the extra steps would apply to her normal reviews too. It fits personal instructions for all her work in one repository, not a variant she calls only sometimes.",
+          "tempting": "`CLAUDE.local.md` is personal and stays out of git."
+        },
+        "d": {
+          "reasoning": "A personal skill in `~/.claude/skills/` is available only to her, and the frontmatter `name`, when set, becomes the command, so a copy that kept `name: shader-test` would still answer to the old name. The new name is what lets both skills exist side by side: `/shader-test-deep` for deep reviews, `/shader-test` for the team's version. The project file is untouched, so teammates see no change."
+        }
+      },
+      "concept": [
+        "Project skills in `.claude/skills/` are shared through git; personal skills in `~/.claude/skills/` are available only to their owner. The exam guide puts personal customizations of a team skill in `~/.claude/skills/` under different names, so they do not affect teammates.",
+        "When skill names clash, enterprise (managed) skills override personal ones, and personal skills override project ones. A personal variant with the team skill's name would replace the team version for her, so a variant that must live next to the original needs a name of its own.",
+        "The directory name, or the frontmatter `name` when one is set, becomes the command you type. A copy in a new directory that keeps `name: shader-test` still answers to the old name, so a variant needs a new `name` as well as a new directory.",
+        "`CLAUDE.local.md` is a personal memory file for one repository, kept out of git, and loads in each session there. It is for personal instructions that always apply, not for a procedure used only sometimes."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "For her own deep reviews",
+          "meaning": "A personal variant, not a team change."
+        },
+        {
+          "phrase": "she still runs the team's `/shader-test` as it is",
+          "meaning": "Both versions must stay callable."
+        },
+        {
+          "phrase": "her 44 teammates must see no change to the shared skill",
+          "meaning": "The project skill stays untouched."
+        }
+      ],
+      "lookFor": [
+        "A personal skill location.",
+        "A new directory and a new `name`, so both commands can be invoked."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "For the same name the personal skill outranks the team's, so she loses the team version."
+        },
+        {
+          "option": "b",
+          "reason": "`extends` is not a skill frontmatter field."
+        },
+        {
+          "option": "c",
+          "reason": "`CLAUDE.local.md` would add the steps to her normal reviews as well."
+        }
+      ],
+      "rule": "Put a personal variant of a team skill in `~/.claude/skills/` under a new name, so the team's version stays unchanged and both remain callable.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: extend Claude with skills",
+          "url": "https://code.claude.com/docs/en/skills"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to agent skills: Sharing skills",
+          "url": "https://academy.claude.com/courses/introduction-to-agent-skills/sharing-skills"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S2-008",
+      "explanation": "The rule loads before any file is opened, which is how a rule with no path scope behaves. `paths` is the only frontmatter key a rule reads, so `globs` is ignored and the file loads at launch for every session. Renaming the key to `paths` keeps both patterns, so the rule covers the C++ in both trees and stays out of Lua sessions.",
+      "options": {
+        "a": {
+          "reasoning": "A rule can list patterns in several trees, so the cause is wrong, and `engine/CLAUDE.md` would miss the C++ under `tools/packager/`. A directory file suits a convention that belongs to one tree.",
+          "tempting": "Directory CLAUDE.md files do load only for their subtree."
+        },
+        "b": {
+          "reasoning": "The patterns were never applied, because the key that holds them is ignored. Any pattern under `globs`, broad or narrow, leaves the file loading at launch. A broader pattern would be right only if a working `paths` key matched too few files.",
+          "tempting": "It edits the line that looks responsible for scoping."
+        },
+        "c": {
+          "reasoning": "Rules read only the `paths` frontmatter key. With `globs`, the file has no scope and loads at launch like the project CLAUDE.md, which is why Lua sessions see it from the first prompt. Renaming the key keeps both C++ patterns and makes the rule load only for matching files."
+        },
+        "d": {
+          "reasoning": "Every `.md` file under `.claude/rules/` is discovered, subfolders included, so moving the file changes nothing about when it loads. Subfolders organize rules; only `paths` makes a rule conditional.",
+          "tempting": "Grouping rule files by language looks like a way to scope them."
+        }
+      },
+      "concept": [
+        "Every `.md` file under `.claude/rules/` is discovered, subfolders included. A rule with no `paths` frontmatter loads at launch, like the project CLAUDE.md. A rule with `paths:`, a YAML list of globs, loads only when Claude works with a matching file.",
+        "`paths` is the only frontmatter key a rule reads; any other key is ignored. Patterns are relative to the project root, and one rule can list patterns in several directory trees."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`globs: [\"engine/**/*.cpp\", \"tools/packager/**/*.cpp\"]`",
+          "meaning": "The patterns are fine; the key name is not one a rule reads."
+        },
+        {
+          "phrase": "from the first prompt of a session, before it has opened any file",
+          "meaning": "The rule loads at launch, so it has no working scope."
+        },
+        {
+          "phrase": "must keep covering both C++ trees",
+          "meaning": "A single directory file cannot cover the packager."
+        }
+      ],
+      "lookFor": [
+        "A cause that explains loading at launch.",
+        "A fix that keeps both trees in scope."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A directory file misses the packager, and rules can span trees."
+        },
+        {
+          "option": "b",
+          "reason": "The `globs` key is ignored whatever patterns it holds."
+        },
+        {
+          "option": "d",
+          "reason": "Subfolders of `.claude/rules/` are discovered too."
+        }
+      ],
+      "rule": "A `.claude/rules/` file is conditional only when its frontmatter uses the `paths` key; with any other key it loads at launch.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S2-009",
+      "explanation": "The crash is traced, the fix is decided and it is about three lines in one function, with unit tests that cover it. That is the simple, well-scoped change the exam guide assigns to direct execution. The certification rules call for a careful check of the change, which reading the diff and running the tests provide; they don't turn a decided three-line fix into a planning task.",
+      "options": {
+        "a": {
+          "reasoning": "Naming the file, function and clamp keeps Claude from exploring, and the diff and the unit tests give a real check before the commit."
+        },
+        "b": {
+          "reasoning": "Plan mode is for large changes, several valid approaches, architectural decisions and multi-file changes. Here the one fix is already chosen.",
+          "tempting": "The teammate's rule and the certification rules both point to it."
+        },
+        "c": {
+          "reasoning": "The clamp inside the function covers every caller, so tracing callers across two directories finds nothing the fix needs.",
+          "tempting": "Exploring callers before touching engine code feels careful."
+        },
+        "d": {
+          "reasoning": "The session that wrote a change is not the best judge of it; the check should come from the engineer reading the diff or a clean context.",
+          "tempting": "It keeps direct execution and adds a review."
+        }
+      },
+      "concept": [
+        "The exam guide: use plan mode for complex tasks (large changes, several valid approaches, architectural decisions, multi-file changes), and direct execution for simple, well-scoped changes such as a single-file bug fix or adding a validation check.",
+        "In plan mode Claude reads files and runs commands to explore but cannot edit; it proposes a plan you review and approve before any change. The plan is the best place to course-correct, because no code has been written yet.",
+        "Being specific saves context: a vague prompt makes Claude explore more, so name the file, the symptom and what \"fixed\" looks like. The session that wrote a change is not the best judge of it, so the review comes from a person or a clean context."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Change",
+          "Mode"
+        ],
+        "rows": [
+          [
+            "One file, cause known, fix decided",
+            "Direct execution, then review the diff"
+          ],
+          [
+            "Many files or several possible approaches",
+            "Plan mode first"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "The audio lead has decided the fix",
+          "meaning": "No design choice is left open."
+        },
+        {
+          "phrase": "at the top of that function",
+          "meaning": "One function in one file."
+        },
+        {
+          "phrase": "the existing audio unit tests cover it",
+          "meaning": "A ready check for the change."
+        },
+        {
+          "phrase": "a teammate suggests plan mode for any change in `engine/`",
+          "meaning": "A pull toward the heavier mode."
+        }
+      ],
+      "lookFor": [
+        "Direct execution for a decided, single-file fix.",
+        "A specific prompt naming file, function and change.",
+        "A review that does not come from the writing session."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Nothing is left to plan; the fix is decided and in one function."
+        },
+        {
+          "option": "c",
+          "reason": "The clamp covers every caller, so tracing them adds nothing."
+        },
+        {
+          "option": "d",
+          "reason": "The writing session reviewing its own diff is not an independent check."
+        }
+      ],
+      "rule": "Use direct execution for a decided, single-file fix and review the diff; keep plan mode for large, multi-file or open design work.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: common workflows (plan mode)",
+          "url": "https://code.claude.com/docs/en/common-workflows"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The explore → plan → code → commit workflow",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Context management",
+          "url": "https://academy.claude.com/courses/claude-code-101/context-management"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Code review",
+          "url": "https://academy.claude.com/courses/claude-code-101/code-review"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S2-010",
+      "explanation": "The work has two phases with different needs. Finding which of three subsystems drops the press is open-ended exploration, which plan mode allows safely because Claude can read but not edit. The fix that follows is one line with a known cause, which is the kind of change direct execution is for. Combining the two is the exam guide's pattern for this situation.",
+      "options": {
+        "a": {
+          "reasoning": "Guards in all three subsystems change code before the cause is known, and at least two of them patch places that are not at fault. A guard can also hide the real drop instead of fixing it.",
+          "tempting": "It covers every candidate at once and needs no investigation."
+        },
+        "b": {
+          "reasoning": "Where the event is lost is still open across three subsystems, and plan mode lets Claude read and trace the code without editing anything. The trace turns an unclear bug into a known one-line change."
+        },
+        "c": {
+          "reasoning": "A rework of event queuing across three subsystems is an architectural change, and the bug needs one line. Planning it would put Friday's build at risk for a design nobody asked for.",
+          "tempting": "Plan mode is the documented choice for multi-subsystem changes."
+        },
+        "d": {
+          "reasoning": "A new session throws away the trace that found the cause, so Claude would have to work it out from the QA report a second time. Continuing in the same session keeps the findings for the fix.",
+          "tempting": "A clean session feels tidy for the implementation step."
+        },
+        "e": {
+          "reasoning": "Once the cause is confirmed the change is small and well understood, which is when direct execution fits. Leaving plan mode for the one-line fix and reviewing the diff gets the patch into Friday's build without another planning round."
+        }
+      },
+      "concept": [
+        "Plan mode allows safe exploration before committing to changes: Claude reads files and runs commands but cannot edit until you approve. The plan is the best place to course-correct, because no code has been written yet.",
+        "Direct execution suits simple, well-scoped changes. The exam guide combines the two: plan mode to investigate, then direct execution to implement once the change is clear."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "the team has not traced which one drops it",
+          "meaning": "The cause is open; investigation comes first."
+        },
+        {
+          "phrase": "three subsystems",
+          "meaning": "Exploration spans several areas of code."
+        },
+        {
+          "phrase": "expects the fix to be one line once the cause is found",
+          "meaning": "The implementation itself is small."
+        },
+        {
+          "phrase": "the patch must make Friday's build",
+          "meaning": "No time for a redesign."
+        }
+      ],
+      "lookFor": [
+        "An investigation phase with no edits.",
+        "A direct, small implementation once the cause is known."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Guards everywhere change code before the cause is known."
+        },
+        {
+          "option": "c",
+          "reason": "A redesign is far more than a one-line fix needs."
+        },
+        {
+          "option": "d",
+          "reason": "A new session discards the trace that found the cause."
+        }
+      ],
+      "rule": "Investigate an unclear cause in plan mode, then leave plan mode and implement the small, known fix by direct execution.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: common workflows (plan mode)",
+          "url": "https://code.claude.com/docs/en/common-workflows"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The explore → plan → code → commit workflow",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S2-011",
+      "explanation": "The hire is in a domain she does not know, and QA has already found requirements she had not heard of. That is where the interview pattern fits: Claude asks questions that surface considerations she would not think to raise, and the answers become a spec. Examples and tests are strong techniques, but they can only encode requirements someone already knows.",
+      "options": {
+        "a": {
+          "reasoning": "Examples clarify a transformation whose requirements are known but read inconsistently. Here some requirements are unknown, and examples built from QA's two rejections can only teach those two.",
+          "tempting": "Concrete examples are the standard fix when Claude misreads a requirement."
+        },
+        "b": {
+          "reasoning": "Tests first is the right loop once the requirements are known. Built from QA's two findings, the suite would pass while requirements nobody has named stay missing, so the next rejection would come from certification.",
+          "tempting": "Test-driven iteration is the textbook way to refine generated code."
+        },
+        "c": {
+          "reasoning": "In an unfamiliar domain the gaps are things she does not know to ask about. Having Claude interview her surfaces considerations she would not think to raise before code is written, and the spec gives the implementation a full set of requirements instead of the two QA happened to find."
+        },
+        "d": {
+          "reasoning": "A broader instruction leaves Claude to guess what certification requires, which is how the first draft went wrong. Nothing in it names the specific considerations, so the gaps stay hidden until QA or certification finds them.",
+          "tempting": "It states the real goal in plain words."
+        }
+      },
+      "concept": [
+        "The interview pattern has Claude ask questions to surface considerations the developer may not have anticipated. Ask Claude to interview you about requirements before it builds, then work from the resulting spec.",
+        "Concrete input and output examples and test-first iteration work once the requirements are known: examples show a transformation that prose leaves unclear, and tests give Claude a pass-or-fail check to iterate against."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "came from web development",
+          "meaning": "The domain is unfamiliar to her."
+        },
+        {
+          "phrase": "trophy rules she has never worked with",
+          "meaning": "Some requirements are unknown, not just misread."
+        },
+        {
+          "phrase": "two requirements she had not known about",
+          "meaning": "Known gaps hint at others no one has named."
+        },
+        {
+          "phrase": "each failed submission costs the studio a resubmission slot",
+          "meaning": "Finding requirements before code matters."
+        }
+      ],
+      "lookFor": [
+        "A step that surfaces unknown requirements before code is written.",
+        "A spec the implementation then follows."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Examples can only cover the two requirements already found."
+        },
+        {
+          "option": "b",
+          "reason": "Tests from two findings leave the unknown requirements untested."
+        },
+        {
+          "option": "d",
+          "reason": "A vaguer prompt leaves Claude guessing again."
+        }
+      ],
+      "rule": "When the domain is unfamiliar, have Claude interview you to surface requirements first, then build from the resulting spec.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Providing examples",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/providing-examples"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S2-012",
+      "explanation": "The job has two separate gaps. `--bare` skips CLAUDE.md, so the fixtures and standards in `tools/CLAUDE.md` never reach it; removing the flag lets `-p` load the same context as an interactive session. And CLAUDE.md cannot say which cases are already tested, so the existing tests for the changed modules have to be in the prompt. Each change fixes one of the two symptoms.",
+      "options": {
+        "a": {
+          "reasoning": "`--bare` skips CLAUDE.md files, the root one included, so moving the notes leaves them just as invisible to the job. It also puts tools-only text into each engineer's sessions. The move would help only a run that loads the root file but not `tools/CLAUDE.md`.",
+          "tempting": "The root file is the most widely loaded memory file."
+        },
+        "b": {
+          "reasoning": "`--bare` skips CLAUDE.md files, hooks, skills, plugins and MCP discovery, so the job never sees the fixtures and standards in `tools/CLAUDE.md`. Without it, `-p` loads the same context as an interactive session, and the 70% of tests that built their own folders can use `asset_tree` instead."
+        },
+        "c": {
+          "reasoning": "A schema controls the shape of the output, so each test could report a `fixture` value, but the job still does not know `asset_tree` exists or which cases are covered. Structured output suits a pipeline that has to parse findings.",
+          "tempting": "Structured output is the standard CI improvement for `claude -p`."
+        },
+        "d": {
+          "reasoning": "CLAUDE.md can say which fixtures exist, but not which cases the current tests cover. Giving Claude the existing tests for each changed module lets it add only missing cases, which targets the 40% that repeated `tools/tests/`."
+        },
+        "e": {
+          "reasoning": "A resumed session keeps the generator's own context, and that context still lacks the existing tests and the fixtures, so it has nothing to judge duplicates against. The session that wrote the tests is also not the best judge of them.",
+          "tempting": "A review step after generation sounds like a safeguard."
+        }
+      },
+      "concept": [
+        "`-p` runs Claude Code with one prompt and no interactive UI. Without `--bare` it loads the same context as an interactive session, including CLAUDE.md. `--bare` skips CLAUDE.md, hooks, skills, plugins and MCP discovery, which suits identical CI setups but drops project guidance.",
+        "The exam guide has CI runs rely on CLAUDE.md for testing standards and available fixtures, and on the existing test files in context so suggestions do not duplicate them.",
+        "`--output-format json` with `--json-schema` makes output match a schema, which is about shape, not content. The session that wrote something is not the best judge of it; review from a clean context."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "claude -p --bare",
+          "meaning": "This flag skips CLAUDE.md files."
+        },
+        {
+          "phrase": "`tools/CLAUDE.md` documents the testing standards and the shared fixtures",
+          "meaning": "The guidance exists but never reaches the job."
+        },
+        {
+          "phrase": "copied from a lint job that uses `--bare`",
+          "meaning": "A pull toward keeping the flag."
+        },
+        {
+          "phrase": "40% repeated cases already in `tools/tests/`",
+          "meaning": "Claude was not given the existing tests."
+        }
+      ],
+      "lookFor": [
+        "A change that lets CI load the project's CLAUDE.md.",
+        "The existing tests given to Claude in context."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "`--bare` skips the root CLAUDE.md too."
+        },
+        {
+          "option": "c",
+          "reason": "A schema shapes output but adds no knowledge of fixtures or tests."
+        },
+        {
+          "option": "e",
+          "reason": "The resumed generator lacks the existing tests and reviews its own work."
+        }
+      ],
+      "rule": "In CI, let Claude Code load the project's CLAUDE.md (no `--bare`) for standards and fixtures, and put the existing tests in the prompt to avoid duplicates.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: run Claude Code programmatically (non-interactive mode)",
+          "url": "https://code.claude.com/docs/en/headless"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Scheduled tasks and headless",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/routines-and-headless"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Code review",
+          "url": "https://academy.claude.com/courses/claude-code-101/code-review"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S2-013",
+      "explanation": "The guide follows a file type, `.lua`, and one of the three Lua directories is mostly C++. Directory CLAUDE.md files load for any work in their tree, so the proposal would keep loading the guide for daily C++ binding work in `engine/script/`. A rule in `.claude/rules/` scoped to `**/*.lua` loads only when Claude works with a Lua file, wherever it sits, which is what the exam guide means by glob rules beating directory files for conventions that cross directories.",
+      "options": {
+        "a": {
+          "reasoning": "The three directory files load when Claude works on any file in their trees, and `engine/script/` holds 20 C++ binding files edited daily. Those C++ sessions would keep loading the 3,000-token guide. A directory file suits a convention that covers every file in one tree.",
+          "tempting": "It covers all three Lua trees with one shared guide file."
+        },
+        "b": {
+          "reasoning": "This saves the most tokens for C++ work, but Lua edits in `engine/script/` and `tools/lua/` would lose the style guide. It would fit only if all the studio's Lua lived under `gameplay/`.",
+          "tempting": "Most Lua work happens in `gameplay/`."
+        },
+        "c": {
+          "reasoning": "An import loads up front with the file that imports it, so the root import still puts 3,000 tokens into every session. A line asking Claude to set the text aside does not take it out of context; the C++ sessions pay the same as now.",
+          "tempting": "It keeps the guide in one place and needs the smallest edit."
+        },
+        "d": {
+          "reasoning": "A path-scoped rule loads only when Claude works with a matching file, so `**/*.lua` brings the guide in for Lua in all three trees and nowhere else. C++ binding work in `engine/script/` stays free of it, and the guide stays one committed file."
+        }
+      },
+      "concept": [
+        "A rule in `.claude/rules/` with path globs in its frontmatter loads only when Claude reads, writes or edits a matching file, which keeps irrelevant guidance out of context. `**` matches any number of nested folders, so `**/*.lua` targets a file type anywhere in the repository.",
+        "A subdirectory CLAUDE.md loads the first time Claude works on any file in its subtree. It fits a convention for one directory tree; a convention that follows a file type, or spans separate directories, fits one path-scoped rule.",
+        "Imports organize but do not shrink context: an imported file loads with the file that imports it."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "so every session carries it, though most of the 45 engineers work only in C++",
+          "meaning": "Most sessions pay for guidance they never use."
+        },
+        {
+          "phrase": "Lua lives in `gameplay/`, in `tools/lua/`, and in `engine/script/`",
+          "meaning": "The convention crosses three trees."
+        },
+        {
+          "phrase": "beside 20 C++ binding files that engine engineers edit daily",
+          "meaning": "One tree is mostly C++, so a directory-level load is too broad."
+        }
+      ],
+      "lookFor": [
+        "Loading tied to the file type, not the directory.",
+        "One committed copy of the guide."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "C++ binding sessions in `engine/script/` would still load the guide."
+        },
+        {
+          "option": "b",
+          "reason": "Lua in two of the three trees would lose the guide."
+        },
+        {
+          "option": "c",
+          "reason": "The root import keeps the guide in every session's context."
+        }
+      ],
+      "rule": "For a convention tied to a file type across several directories, use one `.claude/rules/` file scoped by a glob such as `**/*.lua`, not directory CLAUDE.md files.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: A CLAUDE.md that follows",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/a-claude-md-that-follows"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S2-014",
+      "explanation": "Tests first was already done, and it worked for behaviour and edge cases. The gap is that the suite says nothing about speed, so a cache at 1.4 ms passes every test. The exam guide's test-first skill includes performance: add a test that fails above the 0.5 ms budget in the benchmark scene, then iterate by sharing its failures, with the 38 existing tests still guarding correctness.",
+      "options": {
+        "a": {
+          "reasoning": "A standing note makes Claude aware of the budget, but nothing measures whether a change meets it, and the 38 tests would pass at 1.4 ms just as they do now. A CLAUDE.md line suits a convention that review can check by eye.",
+          "tempting": "Engine-wide limits belong in the engine's CLAUDE.md."
+        },
+        "b": {
+          "reasoning": "Redesigning throws away a cache that already passes 38 tests, and without a performance test the new design is no better measured than the old one. Comparing designs in plan mode suits an open architectural choice made before code exists.",
+          "tempting": "A 3x overrun looks like a design problem."
+        },
+        "c": {
+          "reasoning": "The suite covered behaviour and edge cases but not performance, so 1.4 ms passed every check. A test that fails above 0.5 ms in the benchmark scene turns the budget into a pass-or-fail check, and sharing its failures lets Claude iterate while the 38 tests guard correctness."
+        },
+        "d": {
+          "reasoning": "A test whose expected value comes from the optimised code records whatever time that code gets, even 1.4 ms, so it passes by definition. The test must state the 0.5 ms budget before the work, like the other 38.",
+          "tempting": "It does add a performance test to the suite."
+        }
+      },
+      "concept": [
+        "Test-driven iteration means writing the test suite first, covering expected behaviour, edge cases and performance, then iterating by sharing test failures with Claude. A requirement with no test is a requirement Claude cannot check its work against.",
+        "Give Claude a check that returns pass or fail and make sure the tests are a reliable source of truth. Tests written from the finished code can encode its flaws instead of the requirement."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "she wrote the test suite first",
+          "meaning": "The textbook step was done; look for what it left out."
+        },
+        {
+          "phrase": "covering normal paths, blocked tiles and invalidation",
+          "meaning": "Behaviour and edge cases, but no performance."
+        },
+        {
+          "phrase": "the cache takes 1.4 ms per frame in the 200-agent benchmark scene, but the console budget is 0.5 ms",
+          "meaning": "A numeric requirement with no test behind it."
+        },
+        {
+          "phrase": "must keep passing the 38 tests",
+          "meaning": "Keep the existing suite as a guard."
+        }
+      ],
+      "lookFor": [
+        "A test that encodes the stated budget before the work.",
+        "Iteration on that test's failures."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A note does not measure the budget, and the 38 tests pass at 1.4 ms."
+        },
+        {
+          "option": "b",
+          "reason": "A redesign discards working code and still has nothing measuring speed."
+        },
+        {
+          "option": "d",
+          "reason": "An expected value taken from the result passes by definition."
+        }
+      ],
+      "rule": "Write tests for performance budgets as well as behaviour and edge cases before iterating, so Claude has a pass-or-fail check for every requirement.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Verification skills",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/verification-skills"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The explore → plan → code → commit workflow",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S5-007",
+      "explanation": "The criteria live in the tech lead's user-level `~/.claude/CLAUDE.md`, which applies only to him and is not shared through git. A fresh CI runner and his teammates' machines never see it. The committed root `CLAUDE.md` is the project file every clone loads, and a `claude -p` run loads CLAUDE.md like an interactive session, so it reaches every engineer and every CI run.",
+      "options": {
+        "a": {
+          "reasoning": "`CLAUDE.local.md` is personal to one repository and kept out of git, so CI checkouts and teammates never receive it.",
+          "tempting": "It sits in the repository root, next to the code."
+        },
+        "b": {
+          "reasoning": "This reaches CI only through a copy that drifts, and teammates' local reviews still lack the criteria.",
+          "tempting": "It fixes the CI symptom without touching the repository."
+        },
+        "c": {
+          "reasoning": "A second copy in the CI prompt drifts from the source and does nothing for local reviews.",
+          "tempting": "The CI job is where the failure shows, so the fix seems to belong there."
+        },
+        "d": {
+          "reasoning": "The project file is the one level shared through version control, and `-p` runs load it, so every clone and CI checkout gets the same criteria."
+        }
+      },
+      "concept": [
+        "CLAUDE.md files come at several levels: user `~/.claude/CLAUDE.md` for one person across all projects, project `./CLAUDE.md` or `./.claude/CLAUDE.md` shared with the team through git, and `./CLAUDE.local.md` for one person in one repository, kept out of git. Only the project file is shared.",
+        "Without `--bare`, a `-p` run loads the same context as an interactive session, including CLAUDE.md. For Claude Code's GitHub Actions, the docs put review criteria and project rules in the root CLAUDE.md.",
+        "Personal preferences that should not affect teammates belong in the user-level file; team standards belong in the project file."
+      ],
+      "conceptTable": {
+        "headers": [
+          "File",
+          "Who gets it"
+        ],
+        "rows": [
+          [
+            "`~/.claude/CLAUDE.md`",
+            "One user, in all of their projects"
+          ],
+          [
+            "`./CLAUDE.md` (committed)",
+            "Everyone who clones the repository, CI included"
+          ],
+          [
+            "`./CLAUDE.local.md`",
+            "One user in one repository, kept out of git"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "into his `~/.claude/CLAUDE.md`",
+          "meaning": "A user-level file applies only to its owner."
+        },
+        {
+          "phrase": "runs `claude -p` on a fresh runner",
+          "meaning": "CI has no engineer's user file."
+        },
+        {
+          "phrase": "teammates' local reviews do the same",
+          "meaning": "The problem is the layer, not something specific to CI."
+        },
+        {
+          "phrase": "without per-machine setup",
+          "meaning": "The fix must travel with the repository."
+        }
+      ],
+      "lookFor": [
+        "A committed project file.",
+        "A location every clone and CI checkout loads.",
+        "No copies that can drift."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "The local file stays out of git."
+        },
+        {
+          "option": "b",
+          "reason": "It fixes CI only, through a drifting copy."
+        },
+        {
+          "option": "c",
+          "reason": "A second copy that doesn't help local reviews."
+        }
+      ],
+      "rule": "Put team review criteria in the committed project CLAUDE.md; user-level and local files reach only their owner and never a CI runner.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: GitHub Actions",
+          "url": "https://code.claude.com/docs/en/github-actions"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The CLAUDE.md file",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-claude-md-file"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Scheduled tasks and headless",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/routines-and-headless"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S5-008",
+      "explanation": "Without `-p`, `claude \"...\"` opens an interactive session: it answers the first prompt and then waits for the next message, which on a CI runner never comes. `-p` runs the prompt once, prints the result and exits, so the job finishes on its own. Adding `--output-format json` gives the next pipeline step a JSON object to read.",
+      "options": {
+        "a": {
+          "reasoning": "Claude Code has no `--auto-confirm` flag; `-p` is the documented way to run with nobody present, and it never asks for input.",
+          "tempting": "It sounds like a CI convenience flag that other tools offer."
+        },
+        "b": {
+          "reasoning": "`-p` makes the run non-interactive and `--output-format json` makes its result machine-readable, which covers both needs in the stem."
+        },
+        "c": {
+          "reasoning": "A shorter timeout only makes each run fail faster; each run would still hang and produce nothing.",
+          "tempting": "Failing fast and rerunning is a common CI habit."
+        },
+        "d": {
+          "reasoning": "`--output-format` specifies the output format for print mode (`-p`); without `-p` the command still opens an interactive session that waits, whatever the output format.",
+          "tempting": "It names the right output flag for the next step."
+        }
+      },
+      "concept": [
+        "`-p` (`--print`) runs one prompt with no interactive UI, prints the result and exits, so it can be piped like any shell tool. The exam guide's CI skill is to run Claude Code with `-p` so a pipeline never hangs waiting for input.",
+        "`--output-format json` returns a JSON object with the text in `result` plus `session_id` and cost metadata; adding `--json-schema` makes the output match a schema, delivered in `structured_output`.",
+        "`--output-format` (`text`, `json`, `stream-json`) specifies the output format for print mode (`-p`). Without `-p` the command opens an interactive session whatever the output format."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "runs `claude \"Audit services/ for PCI logging issues\"`",
+          "meaning": "There is no `-p`, so this is an interactive session."
+        },
+        {
+          "phrase": "sat waiting for input until the job's 6-hour timeout ended it",
+          "meaning": "The session is waiting for a person who isn't there."
+        },
+        {
+          "phrase": "must finish with nobody present",
+          "meaning": "The run has to be non-interactive."
+        },
+        {
+          "phrase": "pass its output to the next step",
+          "meaning": "The result should be machine-readable."
+        }
+      ],
+      "lookFor": [
+        "`-p` in the command.",
+        "A structured output format for the next step.",
+        "No invented flags."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "There is no `--auto-confirm` flag."
+        },
+        {
+          "option": "c",
+          "reason": "A shorter timeout leaves each run hanging."
+        },
+        {
+          "option": "d",
+          "reason": "Without `-p` the session stays interactive."
+        }
+      ],
+      "rule": "In CI, run Claude Code with `-p`, and add `--output-format json` when a later step reads the result.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: run Claude Code programmatically (non-interactive mode)",
+          "url": "https://code.claude.com/docs/en/headless"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Scheduled tasks and headless",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/routines-and-headless"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: CLI reference",
+          "url": "https://code.claude.com/docs/en/cli-reference"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S4-010",
+      "explanation": "She needs three things at once: the values loaded without pasting, only in `route-planner`, and kept from her 119 teammates. `CLAUDE.local.md` is the memory file for exactly that: personal, for one repository, kept out of git.",
+      "options": {
+        "a": {
+          "reasoning": "Local memory, `./CLAUDE.local.md`, is personal for one repository and kept out of git. It loads in her sessions in `route-planner` and nowhere else."
+        },
+        "b": {
+          "reasoning": "The project `CLAUDE.md` is shared with the team through git, so all 119 engineers get her values; a note asking Claude to ignore them isn't a boundary.",
+          "tempting": "It is the repository's own memory file."
+        },
+        "c": {
+          "reasoning": "The user-level `~/.claude/CLAUDE.md` is personal but applies to all her projects, so the other four repositories get the wrong sandbox.",
+          "tempting": "It is personal and not shared."
+        },
+        "d": {
+          "reasoning": "A rule in the repository's `.claude/rules/` is project configuration, and `**/*` matches any file Claude works with, so teammates load it too.",
+          "tempting": "Path rules sound narrowly scoped."
+        }
+      },
+      "concept": [
+        "Claude Code reads memory files from several places: managed policy (org-wide, set by the platform team), user `~/.claude/CLAUDE.md` (personal, all projects), project `./CLAUDE.md` or `./.claude/CLAUDE.md` (shared with the team through git), and local `./CLAUDE.local.md` (personal for one repository, kept out of git).",
+        "Only the project file is shared through version control; user and local files belong to one person. The files are not overridden: they all load and stack.",
+        "Personal preferences that should not affect teammates go in the user-level file, or in `CLAUDE.local.md` when they belong to one repository."
+      ],
+      "conceptTable": {
+        "headers": [
+          "File",
+          "Who and where"
+        ],
+        "rows": [
+          [
+            "`~/.claude/CLAUDE.md`",
+            "You, in all your projects"
+          ],
+          [
+            "`./CLAUDE.md`",
+            "The whole team, this repository (in git)"
+          ],
+          [
+            "`./CLAUDE.local.md`",
+            "You, this repository only (kept out of git)"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "her personal sandbox ... two test accounts she owns",
+          "meaning": "Personal values."
+        },
+        {
+          "phrase": "In the four other repositories she works in, those values would point Claude at the wrong service",
+          "meaning": "Not the user-level file."
+        },
+        {
+          "phrase": "the 119 other engineers must not get them",
+          "meaning": "Not the project file."
+        },
+        {
+          "phrase": "only in that one repository",
+          "meaning": "One repository, one person."
+        }
+      ],
+      "lookFor": [
+        "A personal file scoped to one repository.",
+        "Kept out of git."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It is shared with all 119 engineers."
+        },
+        {
+          "option": "c",
+          "reason": "It loads in all her repositories."
+        },
+        {
+          "option": "d",
+          "reason": "Project configuration that teammates load too."
+        }
+      ],
+      "rule": "Personal notes for one repository go in `CLAUDE.local.md`; `~/.claude/CLAUDE.md` is for all your projects, and `CLAUDE.md` is for the team.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: A CLAUDE.md that follows",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/a-claude-md-that-follows"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The CLAUDE.md file",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-claude-md-file"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S4-011",
+      "explanation": "Everyone else gets the updated skill, his clone is current, and his machine has a personal skill with the same name. When skill names clash, personal skills override project ones, so his year-old copy answers `/explain-module` on his laptop. Removing or renaming it is a local fix that leaves the team's command alone.",
+      "options": {
+        "a": {
+          "reasoning": "Precedence when names clash: enterprise over personal, personal over project. The directory name, or the frontmatter `name` when set, becomes the command, so his copy must go or get a new folder and a new `name`."
+        },
+        "b": {
+          "reasoning": "Project skills arrive with a pull, but his clone is current; the project skill just isn't the one that runs.",
+          "tempting": "A missed update is usually a missed pull."
+        },
+        "c": {
+          "reasoning": "Renaming the project skill changes the command for everyone to fix one laptop, and the command must stay `/explain-module`.",
+          "tempting": "It does end the name clash."
+        },
+        "d": {
+          "reasoning": "Which skill answers a name is decided by precedence between skill levels, not by an instruction to the model.",
+          "tempting": "It names the exact conflict."
+        }
+      },
+      "concept": [
+        "Project skills live in `.claude/skills/<name>/SKILL.md` and are shared through git: anyone who clones gets them, and updates arrive on the next pull. Personal skills live in `~/.claude/skills/` and are available only to that user.",
+        "When skill names clash, enterprise (managed) skills override personal ones, and personal skills override project ones. A stale personal copy with the team's name therefore hides the team skill's updates from that one person.",
+        "The directory name, or the frontmatter `name` when one is set, becomes the command you type. The exam guide puts personal variants in `~/.claude/skills/` under different names, so they sit beside the team version instead of replacing it."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "One engineer still gets last year's format",
+          "meaning": "Something local to him."
+        },
+        {
+          "phrase": "his clone is up to date with `main`",
+          "meaning": "The project file isn't the problem."
+        },
+        {
+          "phrase": "`ls ~/.claude/skills` lists `explain-module`",
+          "meaning": "A personal skill with the team skill's name."
+        },
+        {
+          "phrase": "The team's command must stay `/explain-module`",
+          "meaning": "Change his copy, not the team's."
+        }
+      ],
+      "lookFor": [
+        "The personal copy removed or renamed.",
+        "No change to the project skill."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "His clone is already current."
+        },
+        {
+          "option": "c",
+          "reason": "It changes the command for all 120 engineers."
+        },
+        {
+          "option": "d",
+          "reason": "Precedence isn't set by instructions."
+        }
+      ],
+      "rule": "A personal skill with a project skill's name overrides it; give personal variants their own name, and remove stale copies.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: extend Claude with skills",
+          "url": "https://code.claude.com/docs/en/skills"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to agent skills: Sharing skills",
+          "url": "https://academy.claude.com/courses/introduction-to-agent-skills/sharing-skills"
+        }
+      ],
+      "verifiedAt": "2026-11-23"
+    },
+    {
+      "questionId": "M2-S4-012",
+      "explanation": "Moving the rules into imported files kept them loading at launch, because imports are expanded in place. And Java and Python share packages, so directory files can't separate them. Rule files in `.claude/rules/` with `paths` globs on file extensions load only when Claude works with a matching file.",
+      "options": {
+        "a": {
+          "reasoning": "A rule with `paths:` loads only when Claude reads, writes or edits a matching file, and `**` matches any number of folders. The Java rules come in for `.java` files and the Python rules for `.py` files, wherever they sit."
+        },
+        "b": {
+          "reasoning": "A subdirectory `CLAUDE.md` loads when Claude works in its subtree, which separates languages only when they live in separate trees. Here they share packages.",
+          "tempting": "Directory files are the usual way to scope by area."
+        },
+        "c": {
+          "reasoning": "A rule with no `paths` loads at launch, like `.claude/CLAUDE.md`, so both languages still load in every session.",
+          "tempting": "It puts the rules in the right folder."
+        },
+        "d": {
+          "reasoning": "Shorter files cost less, but the Java rules still load into Python sessions and some rules are lost.",
+          "tempting": "It cuts the token count directly."
+        }
+      },
+      "concept": [
+        "`@path` imports keep `CLAUDE.md` modular, but they organise rather than shrink context: imported files are expanded in place and load up front with the file that imports them.",
+        "Every `.md` file under `.claude/rules/` is discovered. A rule with no `paths` frontmatter loads at launch. A rule with `paths:`, a list of globs relative to the project root, loads only when Claude works with a matching file. `**` matches any number of nested folders.",
+        "The exam guide prefers path rules over subdirectory `CLAUDE.md` files for conventions that follow a file type across directories, such as `**/*.test.tsx`; a directory file fits a convention for one directory tree."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "To save context ... `@docs/java-style.md` and `@docs/python-style.md`",
+          "meaning": "Imports were the attempted fix."
+        },
+        {
+          "phrase": "still carry the 6,000 tokens of Java rules",
+          "meaning": "Imports load at launch."
+        },
+        {
+          "phrase": "side by side in most packages",
+          "meaning": "Directory files can't separate the languages."
+        }
+      ],
+      "lookFor": [
+        "Rule files with `paths` globs by extension.",
+        "Nothing that loads both languages at launch."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The languages share packages, so directories can't split them."
+        },
+        {
+          "option": "c",
+          "reason": "With no `paths`, a rule loads at launch."
+        },
+        {
+          "option": "d",
+          "reason": "The Java rules still load in every session."
+        }
+      ],
+      "rule": "Imports organise but still load at launch; to load a convention only for certain files, use a `.claude/rules/` file with `paths`.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: A CLAUDE.md that follows",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/a-claude-md-that-follows"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S4-013",
+      "explanation": "She wants a proposal she can approve before any edit, and her uncommitted work must stay untouched. Plan mode does both: Claude explores without editing, proposes a plan, and changes start only after she approves it.",
+      "options": {
+        "a": {
+          "reasoning": "In plan mode Claude reads files and runs commands to explore but cannot edit, and proposes a plan to review and approve before any change. The plan is also the best place to course-correct, because no code has been written yet."
+        },
+        "b": {
+          "reasoning": "The Explore subagent is read-only, with Write and Edit denied, and returns a summary, not a plan she approves that then drives the change.",
+          "tempting": "It guarantees no edits."
+        },
+        "c": {
+          "reasoning": "In auto-accept edits mode Claude creates and edits files in the working directory without prompting, which is how last week's run changed three files. A line in the prompt asks for restraint without enforcing it.",
+          "tempting": "It states exactly what she wants."
+        },
+        "d": {
+          "reasoning": "A separate clone keeps edits away from her work but doesn't stop Claude editing before she has seen the approach, and a fresh clone lacks her two days of uncommitted changes, including the open files that call `CarrierClient`, so the proposal would ignore them.",
+          "tempting": "It isolates her uncommitted work."
+        }
+      },
+      "concept": [
+        "The exam guide: plan mode for complex tasks, and for safe exploration before committing to changes; direct execution for simple, well-scoped changes.",
+        "In plan mode Claude reads files and runs commands to explore but cannot edit; it proposes a plan you review and approve before any change. Enter it with Shift+Tab or `--permission-mode plan`. After approval, Claude works through the plan in the chosen permission mode.",
+        "Permission modes set when Claude asks first. `default` (labelled Manual) prompts before most file edits; `acceptEdits` creates and edits files in the working directory without prompting. Shift+Tab cycles `default` → `acceptEdits` → `plan`.",
+        "The built-in Explore subagent is a fast, read-only agent for searching and analysing code: Write and Edit are denied. It does the reading in its own context and returns a summary, which keeps the main conversation clean."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "two days of uncommitted work",
+          "meaning": "Edits must not happen early."
+        },
+        {
+          "phrase": "with edits auto-accepted",
+          "meaning": "Last week's edits went through without a prompt."
+        },
+        {
+          "phrase": "the assistant also \"tidied\" three files",
+          "meaning": "The mode let edits through that nobody asked for."
+        },
+        {
+          "phrase": "read and approve the approach before any file changes",
+          "meaning": "A plan to approve."
+        },
+        {
+          "phrase": "doesn't want to commit or stash her work",
+          "meaning": "Protection has to come from the mode."
+        }
+      ],
+      "lookFor": [
+        "Exploration without edits.",
+        "A plan approved before changes begin."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It returns a summary, not a plan to approve."
+        },
+        {
+          "option": "c",
+          "reason": "A request, not enforcement, in a mode that edits without asking."
+        },
+        {
+          "option": "d",
+          "reason": "It still edits before she sees the approach."
+        }
+      ],
+      "rule": "When you need to approve an approach before any file changes, use plan mode: Claude explores, proposes, and edits only after approval.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: common workflows",
+          "url": "https://code.claude.com/docs/en/common-workflows"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The explore → plan → code → commit workflow",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: subagents",
+          "url": "https://code.claude.com/docs/en/sub-agents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: choose a permission mode",
+          "url": "https://code.claude.com/docs/en/permission-modes"
+        }
+      ],
+      "verifiedAt": "2026-11-24"
+    },
+    {
+      "questionId": "M2-S4-014",
+      "explanation": "Five corrections in one session have each fixed one thing and broken another, and the context is now full of failed attempts. Claude Code's best practices say to correct course early and, after repeated failed corrections, to clear the session and write a better prompt. She now knows the three rules, so a fresh, precise prompt can carry them.",
+      "options": {
+        "a": {
+          "reasoning": "`/clear` removes the five failed attempts from the context; the new prompt states the three rules, including the `pickupAt` conversion, and the cases that broke, so Claude starts from what she has learned."
+        },
+        "b": {
+          "reasoning": "`/compact` summarises the conversation and can lose details, and the summary still carries the failed approaches into the sixth try.",
+          "tempting": "It frees space without starting over."
+        },
+        "c": {
+          "reasoning": "The session judging its own attempts stays anchored on them, and the next try builds on a version she knows is wrong.",
+          "tempting": "Learning from the attempts sounds efficient."
+        },
+        "d": {
+          "reasoning": "Plan mode keeps the same crowded context, and the approach isn't the open question: she already knows the rules.",
+          "tempting": "Planning before acting is good practice."
+        }
+      },
+      "concept": [
+        "Claude Code's best practices: correct course early, and after repeated failed corrections in one session, clear the context and start again with a better prompt. The exam guide's Task 3.5 says to put interacting problems in a single message rather than fixing them one at a time, which is why the fresh prompt states all the rules together.",
+        "Every file read and tool result fills the context window. `/compact` summarises the conversation to free space but can lose details.",
+        "Being specific saves context: name the file, the symptom and what \"fixed\" looks like. A prompt that states the rules learned from the failures gives the fresh session the target directly."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "corrected the assistant five times",
+          "meaning": "Repeated failed corrections."
+        },
+        {
+          "phrase": "each fix restores one field and breaks another",
+          "meaning": "The loop isn't converging."
+        },
+        {
+          "phrase": "she now knows the three rules",
+          "meaning": "A precise prompt is now possible."
+        },
+        {
+          "phrase": "the code it last produced is wrong anyway",
+          "meaning": "Nothing in the session is worth keeping."
+        }
+      ],
+      "lookFor": [
+        "Clearing the session.",
+        "A new prompt that states the learned rules."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It keeps a summary of the failures."
+        },
+        {
+          "option": "c",
+          "reason": "The session judges its own attempts."
+        },
+        {
+          "option": "d",
+          "reason": "It keeps the crowded context."
+        }
+      ],
+      "rule": "After repeated failed corrections, `/clear` and start again with a prompt that states what the failures taught you.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Context management",
+          "url": "https://academy.claude.com/courses/claude-code-101/context-management"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S4-015",
+      "explanation": "The 40 tests were written from the refactored code, so they encoded its per-leg rounding and passed. With \"quotes must not change\" as the requirement, today's behaviour is the reference: write tests that pin it before refactoring, then iterate on failures. The 2019 wiki page can't serve as that reference, because the class has changed 60 times since.",
+      "options": {
+        "a": {
+          "reasoning": "Tests written first, against today's behaviour, make any change to a quote fail before it ships; sharing each failure with Claude drives the refactor until the tests pass."
+        },
+        "b": {
+          "reasoning": "Tests written from finished code can encode its bugs, which is how per-leg rounding passed 40 tests.",
+          "tempting": "It still produces a complete test suite."
+        },
+        "c": {
+          "reasoning": "Writing tests first is right, but a 2019 page isn't a reliable source of truth for a class changed 60 times since.",
+          "tempting": "It follows the tests-first order."
+        },
+        "d": {
+          "reasoning": "A rule asks; a failing test checks. And tests written afterwards would again encode the change.",
+          "tempting": "It names the exact risk."
+        }
+      },
+      "concept": [
+        "The exam guide's test-driven iteration: write tests first, covering behaviour, edge cases and performance, then iterate by sharing the failures with Claude.",
+        "Give Claude a check that returns pass or fail, and make sure the tests are a reliable source of truth. Tests written from the finished code can encode its bugs, and a test loosened to pass is a warning sign.",
+        "When the requirement is that behaviour must not change, the behaviour that runs today is the reference, so the tests come from current outputs, not from an old document or from the new code."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "then wrote 40 tests against the refactored code",
+          "meaning": "The tests came from the new code."
+        },
+        {
+          "phrase": "3% of quotes now differ by one cent",
+          "meaning": "The tests encoded the change."
+        },
+        {
+          "phrase": "The wiki's pricing page dates from 2019, and the class has had 60 commits since",
+          "meaning": "The page is no reference."
+        },
+        {
+          "phrase": "quotes must not change",
+          "meaning": "Today's behaviour is the target."
+        }
+      ],
+      "lookFor": [
+        "Tests of current behaviour, written before the change.",
+        "Iteration on failing tests."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Tests from the new code encode its changes."
+        },
+        {
+          "option": "c",
+          "reason": "An out-of-date page as the reference."
+        },
+        {
+          "option": "d",
+          "reason": "A rule can't detect a changed quote."
+        }
+      ],
+      "rule": "Before refactoring untested code, pin its current behaviour in tests, then refactor against them; tests written afterwards only confirm what the new code does.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Verification skills",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/verification-skills"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Code review",
+          "url": "https://academy.claude.com/courses/claude-code-101/code-review"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The explore → plan → code → commit workflow",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-explore-plan-code-commit-workflow"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S5-005",
+      "explanation": "The import `@~/cobalt-standards/review-criteria.md` resolves to each machine's home directory, so each laptop loads whatever its own clone holds and a fresh CI runner loads nothing. The criteria change with the code, so they need to travel with it. Committing the file to the monorepo and importing it by a relative path gives every checkout, laptop or runner, the version that matches the code.",
+      "options": {
+        "a": {
+          "reasoning": "Cloning on the runner makes the import resolve in CI, but laptops still drift with their own clones and the runner gets the latest standards rather than the version that matches the PR.",
+          "tempting": "It fixes the CI symptom with one pipeline step."
+        },
+        "b": {
+          "reasoning": "CI follows one copy and laptops another, so developers with old clones still get different rules. Two copies of the same criteria drift apart.",
+          "tempting": "It gets the criteria into the CI run directly."
+        },
+        "c": {
+          "reasoning": "A committed file imported by a relative path ships with every checkout at the version that matches the code, so laptops and CI apply the same criteria."
+        },
+        "d": {
+          "reasoning": "User-level files are personal and not shared through git, so each copy drifts separately and none follows the code.",
+          "tempting": "Every session loads the user-level file."
+        }
+      },
+      "concept": [
+        "CLAUDE.md can import other files with `@path/to/file`. Relative paths resolve from the importing file, and `~` home paths and absolute paths also work; a home path loads whatever that machine has at that location.",
+        "Only the project CLAUDE.md, committed to the repository, is shared through version control. The user file `~/.claude/CLAUDE.md` belongs to one person. Using `@` with a path to a file in the project points CLAUDE.md at project docs instead of pasting them.",
+        "Without `--bare`, `claude -p` loads the same context as an interactive session, including CLAUDE.md and its imports, so a committed import reaches CI runs too."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`@~/cobalt-standards/review-criteria.md`",
+          "meaning": "The import points into each machine's home directory."
+        },
+        {
+          "phrase": "The criteria change along with the code",
+          "meaning": "The criteria need to be versioned with the code."
+        },
+        {
+          "phrase": "two developers with older clones got different rules",
+          "meaning": "Per-machine copies drift."
+        },
+        {
+          "phrase": "runs `claude -p` on fresh runners",
+          "meaning": "A fresh runner has only what is in the repository."
+        }
+      ],
+      "lookFor": [
+        "Team instructions committed to the repository.",
+        "An import path that resolves inside the checkout.",
+        "One copy, versioned with the code."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Fixes CI only, and not at the version that matches the code."
+        },
+        {
+          "option": "b",
+          "reason": "Keeps two drifting copies."
+        },
+        {
+          "option": "d",
+          "reason": "User-level files are personal and unshared."
+        }
+      ],
+      "rule": "Keep files that a project CLAUDE.md imports in the repository and import them by a relative path, so every checkout loads the same version.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: run Claude Code programmatically (non-interactive mode)",
+          "url": "https://code.claude.com/docs/en/headless"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: The CLAUDE.md file",
+          "url": "https://academy.claude.com/courses/claude-code-101/the-claude-md-file"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S5-006",
+      "explanation": "`allowed-tools: Read, Grep, Bash` pre-approves those tools for the turn in which the skill runs, and a bare `Bash` pre-approves every shell command, so `curl` ran with no approval. Scoping the entry to `Bash(npm test *)` keeps the test run unattended, while `curl` and other commands go back to the runner's normal permission settings, which approve only `npm test` and `git` commands.",
+      "options": {
+        "a": {
+          "reasoning": "`context: fork` runs the skill in a forked subagent so its output stays out of the main conversation; it does not change which commands are approved.",
+          "tempting": "Isolation sounds like a security boundary."
+        },
+        "b": {
+          "reasoning": "Scoping `Bash` to `Bash(npm test *)` pre-approves only the test command the skill needs; other shell commands follow the runner's permission settings."
+        },
+        "c": {
+          "reasoning": "An instruction usually holds but is not enforced, and the policy on network calls cannot rest on the model while `Bash` stays pre-approved.",
+          "tempting": "It names exactly the behaviour the team wants."
+        },
+        "d": {
+          "reasoning": "`disallowed-tools: Bash` removes the shell while the skill is active, which also stops `npm test`, so the skill could no longer check its tests.",
+          "tempting": "It does stop `curl`, with a real field that removes tools."
+        }
+      },
+      "concept": [
+        "In skill frontmatter, `allowed-tools` pre-approves tools: the listed tools run without a permission prompt during the turn that invoked the skill, and every other tool stays available under the normal permission settings. `disallowed-tools` is the field that removes tools while the skill is active.",
+        "Listing `Bash` alone pre-approves shell commands in general. Narrow it to a pattern such as `Bash(git status *)`, or here `Bash(npm test *)`, so only the commands the skill needs skip the permission check.",
+        "Exam note: the exam guide describes `allowed-tools` as a way to restrict tool access. The current docs say it pre-approves and removes nothing. Here both readings point the same way: the fix is to scope the `Bash` entry.",
+        "`context: fork` runs a skill in a forked subagent and returns only its result, which keeps verbose output out of the conversation; it is not a permission control."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`allowed-tools: Read, Grep, Bash`",
+          "meaning": "Every shell command is pre-approved while the skill runs."
+        },
+        {
+          "phrase": "runs `npm test` on them",
+          "meaning": "The skill does need one shell command."
+        },
+        {
+          "phrase": "the runner's settings approve only `npm test` and `git` commands",
+          "meaning": "Without the skill's pre-approval, `curl` would not be approved."
+        },
+        {
+          "phrase": "without any approval",
+          "meaning": "The pre-approval, not a missing rule, let it through."
+        }
+      ],
+      "lookFor": [
+        "A `Bash(...)` pattern that names only the needed command.",
+        "Keeping the commands the skill needs working.",
+        "Permission configuration rather than an instruction."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Forking isolates context, not permissions."
+        },
+        {
+          "option": "c",
+          "reason": "An instruction is not enforcement."
+        },
+        {
+          "option": "d",
+          "reason": "Removing `Bash` also removes `npm test`."
+        }
+      ],
+      "rule": "`allowed-tools` pre-approves what it lists; scope `Bash` to the exact commands a skill needs so everything else keeps the normal permission check.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: extend Claude with skills",
+          "url": "https://code.claude.com/docs/en/skills"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to agent skills: Configuration and multi-file skills",
+          "url": "https://academy.claude.com/courses/introduction-to-agent-skills/configuration-and-multi-file-skills"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S5-007",
+      "explanation": "The conventions apply to a family of directories that grows every month and shares one naming pattern, `services/card-<name>/`. One rule in `.claude/rules/` with `paths: [\"services/card-*/**\"]` loads whenever Claude works on a file in any card service, including ones created later, and never in the other 90 directories. It also replaces the pasted copies, so nothing depends on someone remembering to add one.",
+      "options": {
+        "a": {
+          "reasoning": "The rule file is right, but a list of today's directories misses each new card service until someone edits it.",
+          "tempting": "It uses the correct mechanism with explicit paths."
+        },
+        "b": {
+          "reasoning": "The root file loads in every session, so the 90 directories that don't need the conventions would carry them too.",
+          "tempting": "It guarantees new services are covered."
+        },
+        "c": {
+          "reasoning": "A template still leaves one copy per service, so updates must be made in each file and the copies drift.",
+          "tempting": "It automates the step teams keep forgetting."
+        },
+        "d": {
+          "reasoning": "A glob on the naming pattern matches every card service, present and future, and loads the rule only when Claude works on one of their files."
+        }
+      },
+      "concept": [
+        "A file in `.claude/rules/` with `paths:` frontmatter (a list of globs) loads only when Claude works with a matching file. Patterns are relative to the project root; `**` matches any number of nested folders and a single `*` stays inside one folder, so `services/card-*/**` matches every file under any `card-` directory.",
+        "Glob rules beat per-directory CLAUDE.md files for conventions that span several directories, because one rule covers all of them and new ones that match the pattern.",
+        "Every line of CLAUDE.md competes for attention, so conventions that apply to a few areas should not be loaded everywhere."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "always named `services/card-<name>/`",
+          "meaning": "A glob can match the whole family by name."
+        },
+        {
+          "phrase": "3 of the last 5 shipped without the copy",
+          "meaning": "Copies per directory are the failure."
+        },
+        {
+          "phrase": "The other 90 directories under `services/` don't need them",
+          "meaning": "Loading everywhere is ruled out."
+        }
+      ],
+      "lookFor": [
+        "One rule file instead of copies.",
+        "A glob that matches new directories without edits.",
+        "Loading limited to the matching paths."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Misses each new card service until the list is edited."
+        },
+        {
+          "option": "b",
+          "reason": "Loads in the 90 directories that don't need it."
+        },
+        {
+          "option": "c",
+          "reason": "Keeps drifting copies."
+        }
+      ],
+      "rule": "For conventions shared by a family of directories, use one path-scoped rule whose glob matches the family's naming pattern.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage Claude's memory (CLAUDE.md, imports, rules)",
+          "url": "https://code.claude.com/docs/en/memory"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: A CLAUDE.md that follows",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/a-claude-md-that-follows"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S5-008",
+      "explanation": "Two problems show in the re-review. It quotes deleted code because the resumed session carries the previous day's file reads, and 9 of the 11 files have since been rewritten. It repeats fixed and dismissed findings because it has no record of their status. A new `claude -p` run on the current diff fixes the first; putting the earlier findings, each with its status, into the prompt fixes the second.",
+      "options": {
+        "a": {
+          "reasoning": "Telling a resumed session which files changed is right when most earlier context still holds. With 9 of 11 files rewritten, the session is mostly stale reads, so a fresh run with a summary is more reliable.",
+          "tempting": "It reuses the earlier review and names the changed files, a recommended resume practice."
+        },
+        "b": {
+          "reasoning": "A fresh run on the current diff reads every file as it stands, so the review matches the PR as it will merge and stops quoting deleted code."
+        },
+        "c": {
+          "reasoning": "A filter on the output cannot tell fixed from dismissed from open, lets reworded repeats through and leaves the stale quotes in place.",
+          "tempting": "It removes duplicates without changing the review job."
+        },
+        "d": {
+          "reasoning": "The review must judge the whole PR, and a diff of only the new commits hides how they fit with the rest of it. It also does nothing about repeated findings.",
+          "tempting": "It avoids re-reading code that was reviewed before."
+        },
+        "e": {
+          "reasoning": "Earlier findings with their status tell the reviewer what is fixed, dismissed or still open, so it reports only new or open issues."
+        }
+      },
+      "concept": [
+        "In CI, `claude -p` runs one prompt non-interactively. `--resume <session_id>` continues an earlier session with its full context, including file contents as they were when they were read.",
+        "Resume when most of the earlier context is still valid, and tell the session which files changed. When much of it is stale, a fresh start with a structured summary of what matters is more reliable.",
+        "On a re-review after new commits, include the earlier findings in the prompt so the reviewer does not post duplicate comments; marking each one fixed, dismissed or open lets it report only what is new or still open."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "rewrote 9 of the 11 files reviewed the day before",
+          "meaning": "Most of the resumed context is stale."
+        },
+        {
+          "phrase": "quoted code that no longer exists",
+          "meaning": "The reviewer is reading old file contents."
+        },
+        {
+          "phrase": "re-posted 4 findings the author had fixed and 2 the team had dismissed",
+          "meaning": "The reviewer lacks the status of earlier findings."
+        },
+        {
+          "phrase": "must judge the PR as it will merge",
+          "meaning": "The review covers the whole current PR, not only the new commits."
+        }
+      ],
+      "lookFor": [
+        "A fresh run on the current diff when most context is stale.",
+        "Earlier findings passed in with their status.",
+        "Fixes in the review's input, not filters on its output."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Resuming suits mostly valid context; here most files changed."
+        },
+        {
+          "option": "c",
+          "reason": "Filters after the fact and keeps stale quotes."
+        },
+        {
+          "option": "d",
+          "reason": "Doesn't cover the PR as it will merge."
+        }
+      ],
+      "rule": "Re-review heavily changed code in a fresh run on the current diff, and pass earlier findings with their status so none is repeated.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: sessions",
+          "url": "https://code.claude.com/docs/en/agent-sdk/sessions"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Scheduled tasks and headless",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/routines-and-headless"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S5-009",
+      "explanation": "The command already produces the findings: the teammate saw the array in the full reply. With `--output-format json`, the reply is a JSON object whose `result` field holds the model's text; adding `--json-schema` puts the schema-validated object in a separate `structured_output` field. The `jq` step reads `result`, so the script gets prose. Reading `.structured_output` instead is the whole fix. The field name goes beyond the exam guide, which names only the two flags.",
+      "options": {
+        "a": {
+          "reasoning": "There is no `--strict-json` flag. The schema is already applied, and its output goes to `structured_output`.",
+          "tempting": "It sounds like the switch that makes output strict."
+        },
+        "b": {
+          "reasoning": "A format request in the prompt improves the odds but enforces nothing, and the validated array is already in the reply.",
+          "tempting": "Asking for JSON only is a common first fix."
+        },
+        "c": {
+          "reasoning": "The validated findings arrive in `structured_output`, so reading that field gives the script the array the schema defines."
+        },
+        "d": {
+          "reasoning": "`--bare` skips CLAUDE.md, hooks, skills, plugins and MCP discovery; it does not move the findings into `result`, and it would also drop whatever project context CLAUDE.md supplies, such as review criteria.",
+          "tempting": "Extra context can look like the source of the prose."
+        }
+      },
+      "concept": [
+        "`claude -p` runs Claude Code non-interactively. `--output-format` (`text`, `json`, `stream-json`) sets the output format for print mode.",
+        "`--output-format json` returns a JSON object with the text in `result`, plus `session_id` and cost metadata. Adding `--json-schema` makes the output match the schema, and the validated object arrives in `structured_output`, read with `jq '.structured_output'`.",
+        "`--bare` skips CLAUDE.md, hooks, skills, plugins and MCP discovery so CI runs start identically; it is not an output setting. The exam guide notes that CLAUDE.md supplies project context, such as testing standards and review criteria, to Claude Code run in CI."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`jq '.result'`",
+          "meaning": "The script reads the text field."
+        },
+        {
+          "phrase": "`--output-format json --json-schema`",
+          "meaning": "Both flags are already set correctly."
+        },
+        {
+          "phrase": "saw the findings array in the reply",
+          "meaning": "The output exists; the wrong field is being read."
+        }
+      ],
+      "lookFor": [
+        "Which field of the JSON reply holds the validated object.",
+        "Evidence that the command itself already works.",
+        "Real flags used for what they actually do."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Invented flag; no such option exists."
+        },
+        {
+          "option": "b",
+          "reason": "A prompt request is weaker than the schema already in use."
+        },
+        {
+          "option": "d",
+          "reason": "`--bare` controls what loads, not where output goes."
+        }
+      ],
+      "rule": "With `--output-format json` and `--json-schema`, read the validated object from `structured_output`; `result` holds the text reply.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 3 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: run Claude Code programmatically (non-interactive mode)",
+          "url": "https://code.claude.com/docs/en/headless"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: CLI reference",
+          "url": "https://code.claude.com/docs/en/cli-reference"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Scheduled tasks and headless",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/routines-and-headless"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
     }
   ]
 }

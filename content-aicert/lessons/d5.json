@@ -1964,6 +1964,1503 @@
         }
       ],
       "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S1-011",
+      "explanation": "The booking note is in the dump on every turn, but it sits in the middle of a 9,000-token input, the part models read least reliably. A prompt line asking the agent to read every note barely moved the rate. Putting a short key-facts block at the start, with open bookings, open disputes and promised actions, and organising the rest under section headers puts what the agent must act on where it is read, while the full history stays for disputes.",
+      "options": {
+        "a": {
+          "reasoning": "Headers make the dump easier to navigate, but the booking note stays in the notes section in the middle, where it is missed. Headers are half of the guide's fix; the other half is a summary of the key facts at the start of the input.",
+          "tempting": "It structures the input and keeps the full history, both of which the stem wants."
+        },
+        "b": {
+          "reasoning": "Models process the start and end of long inputs reliably and may miss the middle. A key-facts block at the start puts the open booking where it is read, and section headers organise the full history beneath it, so nothing is lost for billing disputes."
+        },
+        "c": {
+          "reasoning": "The dump already fits; the problem is where the note sits, not how much room there is. As the token count grows, accuracy and recall degrade, so more room doesn't rescue the middle. A larger window suits inputs that are being cut off.",
+          "tempting": "A bigger model and window sound like they read more carefully."
+        },
+        "d": {
+          "reasoning": "Trimming shrinks the dump, but it drops every bill and note outside those windows, and the full history must stay available for billing disputes. Trimming suits fields nobody uses, not history the team has to keep.",
+          "tempting": "Trimming tool output to what matters is a real context technique."
+        }
+      },
+      "concept": [
+        "The exam guide names the 'lost in the middle' effect: models reliably process information at the start and end of long inputs but may omit what sits in the middle. Its fix is to put a key-findings summary at the beginning of aggregated inputs and organise the detail under explicit section headers.",
+        "Anthropic's long-context advice points the same way: place long material at the top, above the query and instructions, and structure documents with tags and metadata so their parts are clear.",
+        "As the token count grows, accuracy and recall degrade, so the aim is the smallest set of high-signal tokens. A short key-facts block is high-signal; a bigger window is only more room."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "a 9,000-token account dump",
+          "meaning": "A long aggregated input, where position matters."
+        },
+        {
+          "phrase": "sits near the middle",
+          "meaning": "The fact that gets missed is in the least reliable position."
+        },
+        {
+          "phrase": "\"read every account note carefully\"",
+          "meaning": "The prompt fix was tried and barely helped."
+        },
+        {
+          "phrase": "The full history must stay available",
+          "meaning": "Rules out trimming the dump."
+        }
+      ],
+      "lookFor": [
+        "Key facts moved to the start of the input.",
+        "Section headers for the detail below.",
+        "The full history kept, not trimmed."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "The note stays in the middle, where it is missed."
+        },
+        {
+          "option": "c",
+          "reason": "Room is not the problem; position is."
+        },
+        {
+          "option": "d",
+          "reason": "It drops history that must stay available for billing disputes."
+        }
+      ],
+      "rule": "In a long aggregated input, put a short key-facts summary at the start and organise the rest under clear section headers; don't rely on facts buried in the middle.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (long context prompting)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Context windows",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Effective context engineering for AI agents",
+          "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S1-012",
+      "explanation": "Two things go wrong in these chats. Summarisation blurs exact figures and statuses ($38.60 becomes \"about $40\", and an applied credit is offered again), and bulky meter-read results bring the summary point within about 12 messages. A case-facts block kept outside the summarised history protects the figures, and trimming each `get_meter_reads` result to the three fields the agent uses cuts the token load.",
+      "options": {
+        "a": {
+          "reasoning": "Facts in a block outside the summarised history are never condensed, so bill IDs, amounts, dates and statuses reach every request exactly as recorded."
+        },
+        "b": {
+          "reasoning": "Each result carries about 4,000 tokens when three fields matter. A `PostToolUse` hook can replace the output the model sees, so far fewer tokens pile up per lookup."
+        },
+        "c": {
+          "reasoning": "An instruction makes exact copies likelier, but the summariser still rewrites the text, so money figures can still drift, as $38.60 did after one summary.",
+          "tempting": "It targets the step that blurred the figures."
+        },
+        "d": {
+          "reasoning": "Dropping the history loses what the customer said earlier, which customers often refer back to. The block sits beside the summarised history, not instead of it.",
+          "tempting": "It keeps the figures and cuts the token load at once."
+        },
+        "e": {
+          "reasoning": "`max_tokens` caps only the length of the output, and these summaries end well inside it, so raising it changes nothing about what they keep.",
+          "tempting": "A longer summary sounds like room for more figures."
+        }
+      },
+      "concept": [
+        "The exam guide warns that progressive summarisation turns numbers, percentages, dates and customer expectations into vague text. Its fix is to keep transactional facts (amounts, dates, order or bill numbers, statuses) in a persistent case-facts block that is included in every prompt, outside the summarised history.",
+        "Anthropic's context-engineering guidance describes the same idea as structured note-taking: information kept outside the summarised history is not condensed by it, and compaction can lose details whose importance shows up later.",
+        "Tool results also pile up and use tokens out of proportion to their relevance, so the guide says to trim verbose tool output to the relevant fields. A `PostToolUse` hook can replace what the model sees with `updatedToolOutput`. `max_tokens`, by contrast, caps only the length of the output."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Problem",
+          "Fix"
+        ],
+        "rows": [
+          [
+            "Figures and statuses blurred by summaries",
+            "Case-facts block outside the summarised history"
+          ],
+          [
+            "Tool results far larger than the fields used",
+            "Trim them to the relevant fields before the model sees them"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "about 4,000 tokens of half-hourly data",
+          "meaning": "Tool output far larger than what the agent uses."
+        },
+        {
+          "phrase": "uses only the read date, read type and value",
+          "meaning": "Three fields are enough to keep."
+        },
+        {
+          "phrase": "\"about $40\"",
+          "meaning": "Summarisation blurred an exact amount."
+        },
+        {
+          "phrase": "offered a $62 credit on bill B-21407 that it had already applied",
+          "meaning": "A status was lost from the history."
+        },
+        {
+          "phrase": "Summaries end well inside their output limit",
+          "meaning": "`max_tokens` is not the cause."
+        },
+        {
+          "phrase": "customers often refer back to what they said earlier",
+          "meaning": "The history itself must stay."
+        }
+      ],
+      "lookFor": [
+        "Exact amounts, IDs, dates and statuses held outside the summary.",
+        "Tool output cut to the fields the agent uses.",
+        "The conversation history kept, not replaced."
+      ],
+      "eliminate": [
+        {
+          "option": "c",
+          "reason": "A summariser instruction can still let money figures drift."
+        },
+        {
+          "option": "d",
+          "reason": "Customers refer back to earlier turns, so the history must stay."
+        },
+        {
+          "option": "e",
+          "reason": "Summaries are not hitting their output limit."
+        }
+      ],
+      "rule": "Keep amounts, dates, IDs and statuses in a case-facts block outside the summarised history, and trim tool results to the fields that matter.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Effective context engineering for AI agents",
+          "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Context management",
+          "url": "https://academy.claude.com/courses/claude-code-101/context-management"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: hooks reference",
+          "url": "https://code.claude.com/docs/en/hooks"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Context windows",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S1-013",
+      "explanation": "The team already tried the obvious fix for crowded context, a shorter narrative, and it traded one problem for another: the 200-word prose drops the bill and tariff-record references approvers need. When downstream context is tight, the exam guide's answer is to have the upstream agent return structured data with its sources. A few fixed fields per affected bill are small and always carry the bill ID and the record behind each figure.",
+      "options": {
+        "a": {
+          "reasoning": "Fixed fields give each affected bill its ID, period, both tariffs, the overcharge and the tariff record ID, in a few tokens per bill, so the approver always sees the evidence."
+        },
+        "b": {
+          "reasoning": "Placing key findings first under a header helps a reader find them, but the full narrative is what crowded the context; moving it does not shrink it.",
+          "tempting": "Key findings at the top with clear headers is a real Task 5.1 technique."
+        },
+        "c": {
+          "reasoning": "Only the subagent's final message comes back to the agent. The records it looked up stay in its own context, so the agent cannot take IDs from them.",
+          "tempting": "It keeps the short narrative that fixed the context problem."
+        },
+        "d": {
+          "reasoning": "A second agent adds a handoff and its cost to recover data the tariff-review subagent already holds; changing that subagent's output format gives the same fields directly.",
+          "tempting": "It keeps the narrative and still gets the IDs out."
+        }
+      },
+      "concept": [
+        "The exam guide's Task 5.1 skill: when downstream agents have limited context budgets, modify upstream agents to return structured data (key facts, citations, relevance scores) instead of verbose content, and require metadata such as dates and source locations in their outputs.",
+        "A subagent runs in its own context window, and only its final message comes back to the parent. Whatever the parent needs, figures and evidence references included, must be in that message.",
+        "A defined output format is the most important improvement to a subagent: it gives a natural stopping point and keeps it from running too long. Every handoff between subagents is also a place where information can be lost, which is a reason not to add one."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "1,500-word narratives crowded the agent's context",
+          "meaning": "The downstream context is tight."
+        },
+        {
+          "phrase": "capped them at 200 words",
+          "meaning": "The textbook shortening fix was already tried."
+        },
+        {
+          "phrase": "which bills were on the wrong tariff or which tariff record shows it",
+          "meaning": "The output needs per-bill facts with a source reference."
+        },
+        {
+          "phrase": "looking up the tariff record behind each",
+          "meaning": "The subagent already holds the references."
+        }
+      ],
+      "lookFor": [
+        "Fixed fields for each affected bill.",
+        "A source reference for each figure.",
+        "Output small enough for chats with several disputes."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The full narrative still crowds the context wherever it is placed."
+        },
+        {
+          "option": "c",
+          "reason": "The agent can't see the subagent's tool results."
+        },
+        {
+          "option": "d",
+          "reason": "An extra agent recovers data the subagent could return itself."
+        }
+      ],
+      "rule": "When downstream context is tight, have upstream agents return fixed fields with source references instead of prose, however short.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: subagents",
+          "url": "https://code.claude.com/docs/en/sub-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: What are subagents?",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/what-are-subagents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: Designing effective subagents",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/designing-effective-subagents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: Using subagents effectively",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/using-subagents-effectively"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S1-014",
+      "explanation": "The trial shows both scores measure the wrong thing: anger doesn't mean a case needs a person, and a calm customer with a request outside written policy may still need one. Tuning the cut-offs only trades one error for the other. The guide's fix is explicit escalation triggers in the system prompt, a request for a person, a policy gap and no progress, each with a worked example, so the agent escalates on what the case is, not how it sounds.",
+      "options": {
+        "a": {
+          "reasoning": "New cut-offs trade one error for the other: a lower tone bar still escalates angry, solved cases, and a calm policy-gap request scores fine on both. Sentiment and self-reported confidence are unreliable proxies for case complexity, so neither tuning nor examples of the scores can fix the trigger.",
+          "tempting": "Tuning on real transcripts and adding examples sounds data-driven."
+        },
+        "b": {
+          "reasoning": "The triggers name what makes a case need a person: an explicit request, a request outside written policy such as the standing-charge waiver, and no meaningful progress. Worked examples show the agent where each line falls, so solved angry cases stay with the agent and policy gaps reach people."
+        },
+        "c": {
+          "reasoning": "A classifier trained on past escalations adds a model call to each turn and a component to maintain, for a judgment that explicit criteria with examples in the prompt can guide. Past escalations may also carry the same tone-driven habit.",
+          "tempting": "Learning from real escalations sounds more accurate than hand-written rules."
+        },
+        "d": {
+          "reasoning": "An explicit request is one real trigger, but not the only one: calm customers asking for something outside written policy would still be handled alone, which was the trial's second failure. Policy gaps and lack of progress need to escalate too.",
+          "tempting": "It drops both unreliable scores and writes the clearest trigger into the prompt."
+        }
+      },
+      "concept": [
+        "Escalation triggers are a customer's request for a human, a policy exception or gap (not just a complex case), and the inability to make meaningful progress. Sentiment and self-reported confidence are unreliable proxies for actual case complexity.",
+        "The exam guide's skill is to add explicit escalation criteria with few-shot examples to the system prompt, showing when to escalate and when to resolve. Claude follows explicit instructions, and examples are one of the most reliable ways to steer behaviour when they are relevant and diverse enough to cover edge cases.",
+        "Escalate when policy is ambiguous or silent on the request. A standing-charge waiver for an empty second home is outside written policy, so it goes to a person however calm the customer is."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "sentiment score drops below -0.6",
+          "meaning": "Tone is a proxy, not a trigger."
+        },
+        {
+          "phrase": "rates its own confidence under 0.7",
+          "meaning": "Self-rated confidence does not track case complexity."
+        },
+        {
+          "phrase": "escalated many angry customers whose estimated-read questions the agent had already solved",
+          "meaning": "The scores escalate cases that need no person."
+        },
+        {
+          "phrase": "missed calm customers whose requests fall outside written policy",
+          "meaning": "The scores miss a real trigger, the policy gap."
+        },
+        {
+          "phrase": "The human queue must not grow",
+          "meaning": "Escalations must be targeted, not widened."
+        }
+      ],
+      "lookFor": [
+        "Triggers that name the real conditions: request, policy gap, no progress.",
+        "Worked examples alongside the criteria.",
+        "No score threshold standing in for the conditions."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Retuned proxies still measure tone and self-rating, not need."
+        },
+        {
+          "option": "c",
+          "reason": "It adds a component for what criteria with examples can guide."
+        },
+        {
+          "option": "d",
+          "reason": "It misses policy gaps and lack of progress."
+        }
+      ],
+      "rule": "Escalate on explicit triggers, a request for a person, a policy gap or no progress, with examples in the prompt; don't escalate on sentiment or self-rated confidence.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (long context prompting)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S1-015",
+      "explanation": "The customer is angry but hasn't asked for a person, and the fix is within the agent's authority: a $96 credit through `apply_bill_credit`. The guide's pattern is to acknowledge the frustration, offer to resolve the issue, and escalate if the customer asks for a person. Escalating on anger alone sends a one-call fix to a 40-minute queue.",
+      "options": {
+        "a": {
+          "reasoning": "Anger is not a reason to hand over a fix the agent can make in one call; the customer would wait about 40 minutes for it. Escalating straight away is right when the customer asks for a person.",
+          "tempting": "An upset customer seems to deserve a human."
+        },
+        "b": {
+          "reasoning": "It resolves first, which is right, but it escalates on tone: a customer still annoyed about being overdrawn may be content with the fix, while a calm one who asks for a person would be missed. The trigger should be the request, not the sentiment.",
+          "tempting": "It acknowledges the customer, offers the fix and keeps a safety net for unhappy customers."
+        },
+        "c": {
+          "reasoning": "Fixing the payment is right, but an explicit request for a person must be honoured, even when the agent thinks the issue is solved. Closing the chat ignores the clearest trigger there is.",
+          "tempting": "The problem is fixed, so a handover may seem pointless."
+        },
+        "d": {
+          "reasoning": "The issue is simple and within authority, so the agent acknowledges the frustration and offers the $96 credit now. If the customer then asks for a person, it escalates at once. The customer gets a fix in the chat instead of a 40-minute wait."
+        }
+      },
+      "concept": [
+        "The exam guide separates two cases. When a customer explicitly asks for a human, escalate at once, without investigating first. When the issue is straightforward and within the agent's capability, acknowledge the frustration and offer to resolve it, escalating only if the customer repeats the wish for a person.",
+        "Sentiment is an unreliable proxy for whether a case needs a person. The trigger is the customer's request, not the tone of the message.",
+        "Write the behaviour as an explicit instruction and say why: Claude follows explicit instructions, and explaining the reason for a rule helps it generalise to messages that don't match an example."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "This is ridiculous.",
+          "meaning": "Strong emotion, but no request for a person."
+        },
+        {
+          "phrase": "the agent can return it at once as a credit with `apply_bill_credit`",
+          "meaning": "The fix is within the agent's authority."
+        },
+        {
+          "phrase": "The customer hasn't asked for a person",
+          "meaning": "No explicit trigger yet."
+        },
+        {
+          "phrase": "escalates every message that reads as angry",
+          "meaning": "The current trigger is tone, which is a proxy."
+        }
+      ],
+      "lookFor": [
+        "Acknowledgement of the frustration.",
+        "An offer of the fix the agent can make now.",
+        "Escalation on the customer's request, at once if it comes."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It escalates a one-call fix because of tone."
+        },
+        {
+          "option": "b",
+          "reason": "It escalates on sentiment, not on a request."
+        },
+        {
+          "option": "c",
+          "reason": "It refuses an explicit request for a person."
+        }
+      ],
+      "rule": "With a frustrated customer and a simple issue, acknowledge, offer the fix, and escalate at once if the customer asks for a person; tone alone is not a trigger.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (long context prompting)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S2-015",
+      "explanation": "Her session holds two hours of plan and decisions that the rest of the work depends on, and the last time similar discovery ran in a session, the answers drifted to \"typical save systems\". Spawning a subagent for each specific question keeps the file reading in the subagent's own context, and only the answer comes back. The prompt must state the question itself, because the subagent cannot see her session.",
+      "options": {
+        "a": {
+          "reasoning": "Each subagent reads files in its own context and returns a short answer, so her session keeps its plan and decisions without the discovery output."
+        },
+        "b": {
+          "reasoning": "A standard subagent sees only the prompt it is given, so \"the refactor in progress\" means nothing to it, and it has to explore broadly.",
+          "tempting": "It uses a subagent, which is the right tool."
+        },
+        "c": {
+          "reasoning": "The raw file text would enter her session first, and compaction then summarises her plan and decisions along with it, which can lose details.",
+          "tempting": "`/compact` is a real way to recover space during long exploration."
+        },
+        "d": {
+          "reasoning": "`/clear` removes everything, including the plan and decisions she must keep working from.",
+          "tempting": "It gives the questions an empty context."
+        }
+      },
+      "concept": [
+        "The exam guide: in long sessions, answers degrade and refer to \"typical patterns\" instead of the specific classes found earlier. Subagents isolate verbose exploration while the main agent keeps the overview, so spawn subagents for specific questions such as \"find all test files\".",
+        "A subagent runs in its own context window; its verbose work stays there and only a summary returns. A standard subagent starts fresh and gets only the prompt the parent writes, so the question has to be in that prompt.",
+        "`/compact` summarises the conversation to free space and can lose details; `/clear` removes everything and suits starting unrelated work."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Situation",
+          "Tool"
+        ],
+        "rows": [
+          [
+            "Specific question needing a lot of reading",
+            "A subagent with that question in its prompt"
+          ],
+          [
+            "Session already full of discovery output",
+            "`/compact` with instructions on what to keep"
+          ],
+          [
+            "Starting unrelated work",
+            "`/clear`"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "she must keep working in it",
+          "meaning": "The main session's state has to be protected."
+        },
+        {
+          "phrase": "every caller of it in the repository, with file and line",
+          "meaning": "A specific question that needs a lot of reading."
+        },
+        {
+          "phrase": "Claude open 35 files",
+          "meaning": "This kind of discovery is verbose."
+        },
+        {
+          "phrase": "\"typical save systems\"",
+          "meaning": "Answers degrade when discovery fills the session."
+        }
+      ],
+      "lookFor": [
+        "Discovery done outside the main session.",
+        "A prompt that states the question itself.",
+        "Only answers returned to the main session."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The subagent can't see the plan the prompt points to."
+        },
+        {
+          "option": "c",
+          "reason": "The raw text enters the session first, and compaction can blur the decisions."
+        },
+        {
+          "option": "d",
+          "reason": "`/clear` throws away the plan and decisions she needs."
+        }
+      ],
+      "rule": "Send each specific discovery question to a subagent whose prompt states it, so only the answer reaches the main session.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: manage costs and context (`/compact`, `/clear`, subagents)",
+          "url": "https://code.claude.com/docs/en/costs"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: subagents",
+          "url": "https://code.claude.com/docs/en/sub-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Context management",
+          "url": "https://academy.claude.com/courses/claude-code-101/context-management"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S6-014",
+      "explanation": "Two of five documents could not be read, yet the record passed validation because its required fields came from the other three, and the adjudication system scored it on partial evidence. The guide's skill is to annotate output with coverage, so the record should list the 3 documents extracted and the 2 that failed, with reasons. Because the adjudication system scores whatever it receives, the claim should go to the human review queue, which handles the pipeline's uncertain cases.",
+      "options": {
+        "a": {
+          "reasoning": "The coverage section says what the evidence covers and what is missing, and routing to review puts the claim in front of a person instead of a system that scores anything it gets. The reviewers can see which 2 documents to look at."
+        },
+        "b": {
+          "reasoning": "The gap is recorded, but the adjudication system scores whatever it receives, so the claim is still decided on partial evidence with no person involved. An annotation helps only a reader who acts on it.",
+          "tempting": "It is honest about coverage and changes nothing else."
+        },
+        "c": {
+          "reasoning": "Typical values for unread documents are invented data, which the pipeline must not produce, and they hide the gap behind plausible numbers. The record would pass validation, which is how the problem started.",
+          "tempting": "The record would look complete to adjudication."
+        },
+        "d": {
+          "reasoning": "Documents OCR could not read tonight, such as the handwritten police report, will likely fail again tomorrow, so the claim could wait without end while the results from the 3 good documents sit unused. Holding all output over two failures stops the claim instead of handing it on.",
+          "tempting": "No partial record would reach adjudication."
+        }
+      },
+      "concept": [
+        "The exam guide treats silently suppressing errors, and ending a whole workflow over one failure, as anti-patterns. Its skill is to annotate output with coverage: which findings are well supported and which have gaps because a source was unavailable.",
+        "Schema compliance is about shape, not truth. Structured outputs guarantee valid JSON, types and required fields, not that the values are correct or complete, so a record can pass validation while two of its documents were never read."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "OCR cannot read 2 of them",
+          "meaning": "A gap in the evidence."
+        },
+        {
+          "phrase": "required fields are all filled from the other 3, so it passes validation",
+          "meaning": "Validation cannot see the gap."
+        },
+        {
+          "phrase": "sends the record to the adjudication system with no note",
+          "meaning": "The gap is silent."
+        },
+        {
+          "phrase": "scores whatever record it receives",
+          "meaning": "A note alone will not stop the score."
+        }
+      ],
+      "lookFor": [
+        "A list of the documents extracted and those that failed, with reasons.",
+        "A route to human review.",
+        "No invented values and no indefinite hold."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The adjudication system still scores the partial record."
+        },
+        {
+          "option": "c",
+          "reason": "It invents values and hides the gap."
+        },
+        {
+          "option": "d",
+          "reason": "It holds the claim indefinitely over a gap that needs a person."
+        }
+      ],
+      "rule": "Say what each output covers and what failed, and route incomplete results to people instead of passing them on as complete.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Structured outputs",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Strict tool use",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/strict-tool-use"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S6-015",
+      "explanation": "The original invoice for $3,900 and the supplementary invoice issued 3 weeks later for $4,700 are not two sources disagreeing; they are a sequence. The exam guide's point is that dates stop time differences being read as contradictions. Extracting each invoice's issue date and type lets the consistency check read the supplementary invoice as a revision, and keeping both totals gives adjudication both figures without sending the pair to the reviewers.",
+      "options": {
+        "a": {
+          "reasoning": "Issue date and invoice type show which figure came first and that the later one revises it. The check stops flagging the pair, which takes 30% of the flags off the reviewers, and adjudication still sees both totals."
+        },
+        "b": {
+          "reasoning": "Annotating a conflict with its sources and sending it on to be reconciled is the right handling for two figures that disagree about the same point in time. Here the dates show a revision, so this keeps sending reviewers cases the pipeline can read correctly.",
+          "tempting": "It is the standard way to handle conflicting values."
+        },
+        "c": {
+          "reasoning": "It reads the dates correctly but drops the $3,900 figure, which adjudication must see. Keeping only the newest value throws away the history.",
+          "tempting": "Reviewers already settle these pairs by taking the later invoice."
+        },
+        "d": {
+          "reasoning": "A 25% threshold lets these pairs through at about 21%, but it also hides real conflicts under 25% and still flags larger revisions. It ignores the dates that say what the pair is.",
+          "tempting": "It cuts the flags without any change to the schema."
+        }
+      },
+      "concept": [
+        "The exam guide's rule for multi-source synthesis is that conflicting values from credible sources are kept and annotated with their sources, not resolved by picking one. It also requires publication or collection dates, so that values from different times are not read as contradictions.",
+        "Ground each claim in the source that supports it: find the supporting quote, and withdraw a claim that has none. Telling a subagent to return sources that can be cited makes it pass that instruction on."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "issued 3 weeks later",
+          "meaning": "The two documents are from different times."
+        },
+        {
+          "phrase": "a supplementary invoice from the same garage that revises the total",
+          "meaning": "The later figure is a revision, not a rival."
+        },
+        {
+          "phrase": "Adjudication must see both figures",
+          "meaning": "Keeping only one value is ruled out."
+        },
+        {
+          "phrase": "Pairs like this now make up 30% of its flags",
+          "meaning": "Reviewer time goes on false conflicts."
+        }
+      ],
+      "lookFor": [
+        "Issue date and document type captured for each invoice.",
+        "Values from different times read as a sequence.",
+        "Both values kept."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It treats a dated revision as a conflict and keeps sending it to reviewers."
+        },
+        {
+          "option": "c",
+          "reason": "It drops the earlier total that adjudication must see."
+        },
+        {
+          "option": "d",
+          "reason": "A size threshold ignores the dates and hides small real conflicts."
+        }
+      ],
+      "rule": "Capture each document's date and type so values from different times are read as a sequence, and keep both values rather than picking one.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Reduce hallucinations",
+          "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: Designing effective subagents",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/designing-effective-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S3-011",
+      "explanation": "The request names a scheme that matches two catalogue entries, a 2019 rail upgrade and a 2023 freight corridor, with different sources and figures. Choosing the newer one is a heuristic pick. The exam guide's rule for multiple matches is to ask for a clarifying identifier. Here asking costs about 2 of the 48 hours, while a wrong pick would spend the whole run on the wrong scheme.",
+      "options": {
+        "a": {
+          "reasoning": "One question settles which scheme the office means, for about 2 hours of the window, and every later delegation then targets the right evidence."
+        },
+        "b": {
+          "reasoning": "Recency is still a guess between two matches. If the office meant the rail upgrade, the whole briefing answers the wrong question.",
+          "tempting": "It saves 2 hours, and the newer scheme is a plausible reading."
+        },
+        "c": {
+          "reasoning": "Covering both avoids guessing, but it doubles the work and splits the window when a short question settles which one is needed. Multi-agent runs are costly, so they should go only where they add value.",
+          "tempting": "It guarantees the right scheme is in the briefing."
+        },
+        "d": {
+          "reasoning": "Stating the assumption is honest, but the office sees it only when the briefing arrives, too late to redo the work inside the window.",
+          "tempting": "It is transparent and keeps the run moving."
+        }
+      },
+      "concept": [
+        "The exam guide treats multiple matches as a case for clarification: ask for an additional identifier rather than choosing by a heuristic. Its example is a customer lookup that returns several accounts; a research request that names two schemes is the same situation.",
+        "Multi-agent systems use far more tokens than a single agent, about 15 times a chat, so they pay off only where the value justifies the cost. Running both schemes in full to avoid one question spends that cost on work nobody asked for."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "lists two schemes by that name",
+          "meaning": "Two matches: the request is ambiguous."
+        },
+        {
+          "phrase": "with different sources and figures",
+          "meaning": "The choice changes the whole briefing."
+        },
+        {
+          "phrase": "about 2 hours of the 48-hour window",
+          "meaning": "The cost of asking is small next to the cost of a wrong pick."
+        },
+        {
+          "phrase": "because it is the newer one",
+          "meaning": "A heuristic pick, the move the guide warns against."
+        }
+      ],
+      "lookFor": [
+        "A clarifying question that names both candidates.",
+        "Asking before work is delegated.",
+        "No guess, however reasonable it sounds."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Picking the newer scheme is a heuristic guess between two matches."
+        },
+        {
+          "option": "c",
+          "reason": "Doubling the work to avoid a 2-hour question."
+        },
+        {
+          "option": "d",
+          "reason": "The office learns of the guess too late to redo the briefing."
+        }
+      ],
+      "rule": "When a request matches more than one record, ask for an identifier before delegating, rather than choosing one by a heuristic.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: How we built our multi-agent research system",
+          "url": "https://www.anthropic.com/engineering/multi-agent-research-system"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S3-012",
+      "explanation": "The dataset subagent recovered well: the primary API timed out, so it used a mirror. But its final message said only `status: ok`, so nobody downstream knew the rows were the mirror's 2023 vintage rather than the 2024 revision. The exam guide's error context includes what was attempted and the alternatives used. Reporting the failed call, the fallback and the vintage, with the 312 rows, lets synthesis label the figures and lets the coordinator use its 20 hours to request the revision.",
+      "options": {
+        "a": {
+          "reasoning": "It keeps the recovered rows and states the three facts the coordinator needs: the primary call failed, the mirror was used, and the mirror holds the 2023 vintage. Synthesis can then label the figures correctly."
+        },
+        "b": {
+          "reasoning": "It throws away 312 usable rows the subagent already recovered. Partial results belong in the report next to the error; an error alone fits only when nothing usable was obtained.",
+          "tempting": "It has the fields a good error carries and keeps older data out of the briefing."
+        },
+        "c": {
+          "reasoning": "A URL says where the rows came from, but not that the primary call failed or that the mirror holds the older vintage, so synthesis would still present them as the 2024 revision.",
+          "tempting": "Attribution to the actual source looks like the honest fix."
+        },
+        "d": {
+          "reasoning": "Leaving the series out without saying so hides the gap from the coordinator and discards usable data.",
+          "tempting": "It keeps unverified figures out of the briefing."
+        }
+      },
+      "concept": [
+        "The exam guide's structured error context includes the failure type, what was attempted, partial results and alternative approaches, so the coordinator can make a recovery decision. Subagents should recover locally from transient failures and pass up what they can't resolve, with what was attempted and any partial results.",
+        "Only a subagent's final message comes back to the parent, so whatever the coordinator needs to know about a failure or a fallback must be in that message.",
+        "For provenance, the guide also requires publication or collection dates in structured outputs, so that a difference in time is not misread. A vintage is that kind of date: it tells synthesis which release a figure belongs to."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Result",
+          "What the coordinator can do"
+        ],
+        "rows": [
+          [
+            "`status: ok`, rows only",
+            "Nothing: it assumes the primary source"
+          ],
+          [
+            "Error, rows dropped",
+            "Retry, but the recovered data is lost"
+          ],
+          [
+            "Failed attempt, fallback used, its vintage, rows attached",
+            "Label the figures, or request the revision"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "fetched the energy-use series from a mirror instead",
+          "meaning": "A local recovery that the result must report."
+        },
+        {
+          "phrase": "The mirror holds the 2023 vintage",
+          "meaning": "The fallback differs from what was asked for."
+        },
+        {
+          "phrase": "`status: ok, series: energy_use_by_sector, rows: 312`",
+          "meaning": "Plain success hides the failed call and the fallback."
+        },
+        {
+          "phrase": "20 hours in which it could have requested the series anew",
+          "meaning": "The coordinator could have acted had it known."
+        }
+      ],
+      "lookFor": [
+        "What was attempted and what was used instead.",
+        "The recovered data kept, with its limits stated.",
+        "Enough detail for the coordinator to decide."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It discards 312 usable rows."
+        },
+        {
+          "option": "c",
+          "reason": "A URL doesn't reveal the failed call or the older vintage."
+        },
+        {
+          "option": "d",
+          "reason": "The series vanishes without the coordinator knowing."
+        }
+      ],
+      "rule": "When a subagent recovers through a fallback, its result must say what failed, what was used instead and how that differs, with the data attached.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: subagents",
+          "url": "https://code.claude.com/docs/en/sub-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: What are subagents?",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/what-are-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S3-013",
+      "explanation": "The briefing listed a single unreviewed pilot beside a finding backed by six evaluations, with nothing to tell them apart, so ministers treated the pilot's figure as settled. The exam guide's skill is to structure reports with sections that separate well-established findings from contested ones. Showing the count of independent sources and each study's type keeps single-study findings in the briefing, as the office wants, while making their standing plain.",
+      "options": {
+        "a": {
+          "reasoning": "Two sections, with source counts and study types, show at a glance that installation rates rest on six evaluations and the bill figure on one unreviewed pilot. Nothing the office wants is removed."
+        },
+        "b": {
+          "reasoning": "It labels the support well and would have prevented the press-release error, but it removes the weak findings instead of fixing the flat list that hid their standing, and the office wants promising single-study findings.",
+          "tempting": "It guarantees ministers only see well-established findings, with their source counts."
+        },
+        "c": {
+          "reasoning": "A model's self-rated confidence is an unreliable proxy unless it is calibrated against labelled data, and a number hides why a finding is weak. Source counts and study types are facts ministers can check.",
+          "tempting": "A rating looks like a simple signal of strength."
+        },
+        "d": {
+          "reasoning": "Marking disagreement helps, but an average hides how many sources stand behind a figure, and a single pilot has nothing to average with, so the bill figure would still look settled.",
+          "tempting": "Weighting the evidence sounds rigorous."
+        }
+      },
+      "concept": [
+        "The exam guide asks synthesis to structure reports so well-established findings are kept apart from contested ones, and to annotate coverage, showing which findings are well supported and where gaps remain.",
+        "Ground claims in their sources: for each claim, find a supporting quote, and withdraw the claim if none exists. Counting the independent sources behind a finding depends on keeping that claim-source mapping through synthesis.",
+        "Self-reported confidence is an unreliable proxy unless it is calibrated against labelled data, so it can't replace a statement of what supports each finding."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "eleven findings in one bulleted list",
+          "meaning": "No structure separates strong findings from weak ones."
+        },
+        {
+          "phrase": "a single unreviewed pilot study",
+          "meaning": "A contested or single-source finding."
+        },
+        {
+          "phrase": "backed by six independent evaluations",
+          "meaning": "A well-established finding."
+        },
+        {
+          "phrase": "The office still wants promising single-study findings",
+          "meaning": "Rules out dropping them."
+        }
+      ],
+      "lookFor": [
+        "Sections that separate established from contested findings.",
+        "Facts about the support, such as source counts and study types.",
+        "Nothing the office asked for removed."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It removes the single-study findings the office wants."
+        },
+        {
+          "option": "c",
+          "reason": "Self-rated confidence is uncalibrated and hides the reason."
+        },
+        {
+          "option": "d",
+          "reason": "Averaging hides the support behind each figure."
+        }
+      ],
+      "rule": "Structure synthesis output to separate well-established findings from contested or single-source ones, stating what supports each.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Reduce hallucinations",
+          "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S3-014",
+      "explanation": "Compaction summarised the request's exact constraints into \"recent transport emissions trends\", and from then on the coordinator's delegations and the briefing used the wrong baseline and region. Summaries lose details such as a year or an exclusion. The exam guide's fix is a facts block kept outside the summarised history, which compaction never condenses. Because subagents see only their own prompts, the block must also be copied into each `Task` prompt.",
+      "options": {
+        "a": {
+          "reasoning": "The 2019 baseline and Scotland's exclusion sit outside the history that compaction condenses, so they survive both compactions, and copying the block into each `Task` prompt gives every subagent the same constraints."
+        },
+        "b": {
+          "reasoning": "The model-written summary is the same kind of condensing that lost the constraints, and it replaces compaction, which the stem says must stay.",
+          "tempting": "A fresh start with a summary is a real technique for long runs."
+        },
+        "c": {
+          "reasoning": "Steering compaction can keep more detail, but the result is still a summary that each later compaction rewrites, so an exact year can blur again, while a facts block outside the history is never condensed. And subagents can't read the coordinator's summary at all; they see only the prompt written for them.",
+          "tempting": "Instructed compaction is a documented technique."
+        },
+        "d": {
+          "reasoning": "A final check finds the wrong baseline only after the work delegated since the second compaction has used the wrong scope, which then has to be redone.",
+          "tempting": "It catches the error before ministers see it."
+        }
+      },
+      "concept": [
+        "Progressive summarisation turns exact values, dates and stated expectations into vague text. The exam guide's skill is to keep such facts in a persistent block included in each prompt, outside the summarised history.",
+        "Compaction summarises old turns and can lose details; overly aggressive compaction can drop context whose importance only shows later. Information kept outside the summarised history is not condensed by it. Adding instructions to `/compact` can steer what the summary keeps, but it is still a summary.",
+        "A standard subagent starts fresh and does not see the parent's conversation; it gets only the prompt the parent writes. So constraints that the coordinator holds must be written into each delegation."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "\"against a 2019 baseline, excluding Scotland\"",
+          "meaning": "Exact constraints of the kind summaries blur."
+        },
+        {
+          "phrase": "the summary says only \"recent transport emissions trends\"",
+          "meaning": "Compaction condensed the constraints away."
+        },
+        {
+          "phrase": "later `Task` prompts and the briefing use a 2020 baseline",
+          "meaning": "The loss reached the subagents too, so the fix must reach them."
+        },
+        {
+          "phrase": "Compaction must stay",
+          "meaning": "Rules out replacing compaction."
+        }
+      ],
+      "lookFor": [
+        "Exact constraints kept outside the summarised history.",
+        "The same constraints passed into every delegation.",
+        "Compaction kept as it is."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Another summary, and it drops compaction."
+        },
+        {
+          "option": "c",
+          "reason": "Still a summary later compaction can blur, and subagents can't read it."
+        },
+        {
+          "option": "d",
+          "reason": "A check at the end comes after the work since the second compaction used the wrong scope."
+        }
+      ],
+      "rule": "Keep a request's exact constraints in a facts block outside summarised history, and copy that block into every delegation.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Compaction",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/compaction"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Effective context engineering for AI agents",
+          "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: subagents",
+          "url": "https://code.claude.com/docs/en/sub-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Steering long sessions",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/steering-long-sessions"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S3-015",
+      "explanation": "Two credible sources give different 2022 totals, 412 Mt and 398 Mt, and the document analysis already found why: the international database's total counts international aviation and the national inventory does not. Synthesis averaged them into \"about 405 Mt\", a figure neither source reports. The exam guide's rule is to annotate conflicting statistics with their sources rather than resolve them arbitrarily. Here the useful annotation is scope, because both figures cover the same year and were published the same year.",
+      "options": {
+        "a": {
+          "reasoning": "Both figures stay traceable to their sources, and the scope note explains the 14 Mt gap, so ministers can choose the measure that fits their question."
+        },
+        "b": {
+          "reasoning": "Dates are the annotation that explains a difference over time, but both totals cover 2022 and were published in 2024, so dates explain nothing here. The scope note the analysis already found is what explains the gap.",
+          "tempting": "Keeping both figures with sources and dates follows the guide's provenance advice."
+        },
+        "c": {
+          "reasoning": "The headline is still an average neither source reports, the very figure the reviewer couldn't trace.",
+          "tempting": "The sources are kept, just moved to a footnote."
+        },
+        "d": {
+          "reasoning": "It names the scope difference, but even with a stated reason, it settles a conflict between two credible sources by dropping one; the guide keeps both, annotated, so ministers can use the aviation-inclusive measure if their question needs it.",
+          "tempting": "One official figure is simpler for ministers, and the scope difference is mentioned."
+        }
+      },
+      "concept": [
+        "The exam guide says conflicting statistics from credible sources should be annotated with their attribution, not resolved by picking one value. Analysis should be completed with the conflicting values included and annotated, so the coordinator can decide how to reconcile them.",
+        "The guide also requires publication or collection dates in structured outputs, so that a difference over time is not read as a contradiction. That annotation answers a time gap; a gap caused by what each source counts needs its scope stated instead.",
+        "Ground each claim in a source: find a supporting quote for it, and withdraw the claim if none exists. An averaged figure has no quote in either source that states it."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Cause of the gap",
+          "Annotation that explains it"
+        ],
+        "rows": [
+          [
+            "Different years or releases",
+            "Publication or collection date"
+          ],
+          [
+            "Different scope or definition",
+            "What each figure includes"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "412 Mt from an international emissions database and 398 Mt from the national inventory",
+          "meaning": "Two credible sources disagree."
+        },
+        {
+          "phrase": "both published in 2024",
+          "meaning": "Rules out a time difference as the explanation."
+        },
+        {
+          "phrase": "includes international aviation, while the national total leaves it out",
+          "meaning": "The gap comes from scope, so scope is the annotation."
+        },
+        {
+          "phrase": "a reviewer could not trace that figure to either",
+          "meaning": "The averaged figure has no source."
+        }
+      ],
+      "lookFor": [
+        "Both figures kept, each with its source.",
+        "The annotation that explains this particular gap.",
+        "No averaged or arbitrarily chosen figure."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Same year and release, so dates don't explain the gap."
+        },
+        {
+          "option": "c",
+          "reason": "The headline is still an untraceable average."
+        },
+        {
+          "option": "d",
+          "reason": "It drops one credible figure instead of keeping both, annotated."
+        }
+      ],
+      "rule": "When credible sources disagree, report each figure with its source and the annotation that explains the gap, such as scope or date; never average them or arbitrarily pick one.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Reduce hallucinations",
+          "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S6-012",
+      "explanation": "Three policyholders match the name and postcode, and picking the newest policy is a heuristic that attached 0.4% of claims to the wrong person. The exam guide's answer to several matches is a clarifying identifier, not a pick. Overnight nobody can ask the claimant, so the agent hands the decision to a person, with the candidates and the missing detail that would decide it.",
+      "options": {
+        "a": {
+          "reasoning": "It keeps the claim from being paid on a guess and gives a reviewer what they need: all three candidates and the identifier, such as a date of birth, that would settle which one it is."
+        },
+        "b": {
+          "reasoning": "It reaches a person, but it hands over only the newest-policy pick, the heuristic behind the errors, without the other two candidates, so the reviewer is steered to confirm a guess. A suggested answer suits a pick that rests on a reliable identifier.",
+          "tempting": "It keeps the claim out of adjudication and saves the reviewer time."
+        },
+        "c": {
+          "reasoning": "A more careful heuristic is still a guess about identity, and logging it doesn't stop a wrong payment. When several people match, get an identifier, or hand the case to a person when nobody can be asked.",
+          "tempting": "Address history sounds like better evidence than policy age."
+        },
+        "d": {
+          "reasoning": "Dropping the claim throws away tonight's work and pushes the problem back to the claimant, when a reviewer could settle it from the candidates. An error return suits a claim that can't be processed at all.",
+          "tempting": "It avoids any risk of paying the wrong person."
+        }
+      },
+      "concept": [
+        "The exam guide says that when a lookup returns several matching customers, the agent should ask for additional identifiers rather than choose by a heuristic. Its escalation triggers also include cases the agent cannot resolve on its own.",
+        "In an unattended overnight pipeline, there is nobody to ask. The scenario sends uncertain cases to human reviewers, so the clarifying step moves to them, with the candidates and the detail that would decide between them.",
+        "Anthropic's prompting guidance says to state exactly what you want rather than leave it to inference, so the agent's instructions should spell out the multiple-match handling; holding the claim back from adjudication is what guarantees no wrong payment."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "gets three matching policyholders at that postcode",
+          "meaning": "The identity is ambiguous."
+        },
+        {
+          "phrase": "picks the one with the newest policy",
+          "meaning": "A heuristic pick, the known anti-pattern."
+        },
+        {
+          "phrase": "The run is unattended overnight, so nobody can ask the claimant",
+          "meaning": "The clarifying question has to go to a person in the pipeline."
+        },
+        {
+          "phrase": "adjudication must not pay the wrong person",
+          "meaning": "Guessing is not acceptable."
+        }
+      ],
+      "lookFor": [
+        "No heuristic pick of one candidate.",
+        "The candidates passed on with the identifier that would decide.",
+        "The claim kept out of adjudication until it is settled."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It hides the other candidates and anchors on the faulty pick."
+        },
+        {
+          "option": "c",
+          "reason": "A better heuristic is still a guess about identity."
+        },
+        {
+          "option": "d",
+          "reason": "Dropping the claim discards work a reviewer could finish."
+        }
+      ],
+      "rule": "When a lookup returns several matches, don't pick by heuristic; ask for a clarifying identifier, or pass the candidates to a person when nobody can be asked.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S6-013",
+      "explanation": "One threshold for every field treats a doubtful `garage_phone` like a doubtful `claimed_amount`, so 30% of the review places go to a field adjudication never uses for payment while amount errors slip through. Reviewer capacity is fixed, so the places should follow the cost of an error. Per-field thresholds calibrated on the labelled set, stricter for `claimed_amount` and looser for `garage_phone`, move review effort to where it prevents overpayments.",
+      "options": {
+        "a": {
+          "reasoning": "Field-level thresholds calibrated on labelled data are the guide's tool for routing review attention, and setting each field's target by what its errors cost spends the fixed 1,800 places where they matter."
+        },
+        "b": {
+          "reasoning": "Per-field calibration is the right mechanism, but one accuracy target for every field still spends places on `garage_phone` as if its errors cost as much as an amount. Equal targets suit fields whose errors cost about the same.",
+          "tempting": "It already calibrates each field separately, which sounds like the textbook fix."
+        },
+        "c": {
+          "reasoning": "Per-type thresholds can't separate `claimed_amount` from `garage_phone` within one document, which is where the cost difference lies, so phone-only flags still fill the queue. Calibrating by type suits a document type that is weak across its fields.",
+          "tempting": "Analysing by document type is a recommended practice."
+        },
+        "d": {
+          "reasoning": "One self-reported score per document is neither calibrated nor tied to a field, so it can't tell a doubtful amount from a doubtful phone number. Model confidence routes review well only when calibrated on labelled data.",
+          "tempting": "It ranks documents and fits the queue exactly to 1,800."
+        }
+      },
+      "concept": [
+        "The exam guide says field-level confidence scores, calibrated on labelled validation sets, route review attention, and that limited reviewer capacity should go to low-confidence or contradictory cases first. It also warns that aggregate figures can hide poor results on particular fields.",
+        "Anthropic's guidance on success criteria says criteria should be specific and measurable, and that most use cases need several criteria with their own thresholds rather than one number. Gold answers labelled by people are the basis for setting those targets.",
+        "Anthropic Academy's evals course says to read failures grouped by kind of document and by field, because failures that cluster on one field usually share a cause.",
+        "Self-reported confidence is an unreliable proxy unless it is calibrated against labelled data."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "one threshold calibrated on the labelled set",
+          "meaning": "Calibration exists, but treats every field alike."
+        },
+        {
+          "phrase": "`claimed_amount` errors cause most overpayments",
+          "meaning": "One field's errors cost far more."
+        },
+        {
+          "phrase": "30% of the queue is documents flagged only for `garage_phone`, which adjudication never uses for payment",
+          "meaning": "Review places are spent on a low-impact field."
+        },
+        {
+          "phrase": "Reviewer capacity can't grow",
+          "meaning": "Places must be reallocated, not added."
+        }
+      ],
+      "lookFor": [
+        "A threshold per field, calibrated on labelled data.",
+        "Stricter targets where an error costs more.",
+        "The queue kept within capacity."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Equal targets ignore that errors in different fields cost different amounts."
+        },
+        {
+          "option": "c",
+          "reason": "Per-type thresholds can't separate fields within a document."
+        },
+        {
+          "option": "d",
+          "reason": "One uncalibrated score per document loses the field."
+        }
+      ],
+      "rule": "With fixed reviewer capacity, calibrate a threshold for each field on labelled data and make it stricter where an error in that field costs more.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define success criteria and build evaluations",
+          "url": "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to evals: Iterate the prompt before you upgrade the model",
+          "url": "https://academy.claude.com/courses/introduction-to-evals/iterate-the-prompt-before-you-upgrade-the-model"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S6-014",
+      "explanation": "Each summary is folded into the next, and exact figures blur into phrases like \"a large March invoice\", so duplicate invoices can no longer be matched. The exam guide's fix is a facts block kept outside the summarised history and sent with each request. A table with one row per invoice, holding its number, amount, date and payee, stays exact and small enough for the context budget.",
+      "options": {
+        "a": {
+          "reasoning": "A table outside the running summary is never condensed, so invoice numbers and amounts stay exact and duplicates can be matched, while a short row per invoice keeps within the budget."
+        },
+        "b": {
+          "reasoning": "It uses the right structure in the wrong place: the table sits inside a summary, and each summary is folded into the next, so the table is condensed with the prose on each pass. Exact facts belong in a block kept outside the summarised history.",
+          "tempting": "It keeps the exact figures in a table at the top of each summary."
+        },
+        "c": {
+          "reasoning": "A checker that reads the summaries sees only the vague phrases, so it has nothing exact to compare, and the extra subagent adds cost without restoring the data.",
+          "tempting": "A dedicated check sounds thorough."
+        },
+        "d": {
+          "reasoning": "Clearing the history throws away the earlier invoices, so a duplicate split across two blocks can't be spotted. Starting fresh suits unrelated work, not documents that must be compared.",
+          "tempting": "It keeps the context small without any summarising."
+        }
+      },
+      "concept": [
+        "The exam guide warns that progressive summarisation turns numbers, percentages and dates into vague text. Its skill is to keep transactional facts, such as amounts, dates and reference numbers, in a persistent case-facts block that is included in each prompt, outside the summarised history.",
+        "Compaction summarises older context and can lose details, and overly aggressive compaction can drop context whose importance only shows up later.",
+        "Anthropic's context engineering post describes structured note-taking: the agent keeps notes outside the context window and pulls them back in when needed, so they are not condensed with the conversation. It also advises keeping context to the smallest set of high-signal tokens, which a compact facts table does."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "\"a large March invoice from Dale Motors\"",
+          "meaning": "Exact amounts and numbers have blurred into prose."
+        },
+        {
+          "phrase": "each summary is folded into the next",
+          "meaning": "Anything inside a summary is condensed again."
+        },
+        {
+          "phrase": "the summaries no longer hold the amounts or invoice numbers to compare",
+          "meaning": "The facts needed for duplicate checks are lost."
+        },
+        {
+          "phrase": "must stay within its context budget",
+          "meaning": "The fix must be compact, not a full history."
+        }
+      ],
+      "lookFor": [
+        "A structured facts block outside the summarised history.",
+        "Exact invoice numbers, amounts, dates and payees.",
+        "The block sent with each request."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A table inside each summary is condensed with it."
+        },
+        {
+          "option": "c",
+          "reason": "A checker reading vague summaries has nothing exact to compare."
+        },
+        {
+          "option": "d",
+          "reason": "Clearing history discards the invoices that must be compared."
+        }
+      ],
+      "rule": "Keep exact transactional facts in a structured block outside the summarised history and send it with each request, so repeated summarising can't blur them.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Effective context engineering for AI agents",
+          "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Compaction",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/compaction"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Context management",
+          "url": "https://academy.claude.com/courses/claude-code-101/context-management"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S6-015",
+      "explanation": "One document failing after the subagent's own retries is a partial failure, not a failed claim. The coordinator should keep the 6 good extractions and retry only the medical bill. If the bill still can't be read, the claim lacks evidence, and because adjudication scores whatever it receives, a person must see it with a note saying what is missing and why. Re-queuing all 7 documents wastes a day and pays for 6 extractions twice.",
+      "options": {
+        "a": {
+          "reasoning": "Keeping completed work and retrying only what failed is the guide's recovery pattern. It saves the day's delay and the cost of re-extracting six documents."
+        },
+        "b": {
+          "reasoning": "If the bill stays unreadable, the gap has to be stated and handled by a person, since adjudication would otherwise score an incomplete claim as if it were whole. The note tells the reviewer exactly what is missing."
+        },
+        "c": {
+          "reasoning": "Filled required fields don't make the evidence complete; adjudication would score a claim missing a medical bill as if it were whole. Partial results go forward only with the gap stated and handled.",
+          "tempting": "The record passes validation, so it looks ready."
+        },
+        "d": {
+          "reasoning": "Re-running sooner shortens the delay but still pays to re-extract the 6 good documents and discards their results. Re-queuing a whole claim suits a failure that affects each of its documents.",
+          "tempting": "It fixes the lost day without changing the failure handling."
+        },
+        "e": {
+          "reasoning": "Subagents passing work to each other route around the coordinator, which then can't track the claim or handle the error in one place. The coordinator decides and routes retries.",
+          "tempting": "It retries the bill quickly without a round trip."
+        }
+      },
+      "concept": [
+        "The exam guide's error propagation rules: structured error context (failure type, what was attempted, partial results) lets the coordinator recover well. Silently suppressing errors and ending the whole workflow on one failure are both anti-patterns. Subagents recover locally from transient failures and pass up only what they can't resolve, with what was attempted and any partial results, and synthesis output should note gaps from sources that were unavailable.",
+        "Only a subagent's final message comes back to the parent, so whatever the coordinator needs about a failure, here the failed bill and its error, must be in that message, as it is in this stem.",
+        "In the guide's hub-and-spoke design, the coordinator manages communication, error handling and routing between subagents, so retries of a failed item go through it."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "fails OCR after the subagent's own two retries",
+          "meaning": "Local recovery has been tried; the coordinator now decides."
+        },
+        {
+          "phrase": "returns the 6 records with an error naming that bill",
+          "meaning": "The partial results and the failure are already reported."
+        },
+        {
+          "phrase": "marks the whole claim failed and re-queues all 7 documents",
+          "meaning": "One failure is ending the whole claim."
+        },
+        {
+          "phrase": "scores whatever record it receives",
+          "meaning": "An incomplete claim must not reach adjudication as complete."
+        }
+      ],
+      "lookFor": [
+        "Completed work kept, only the failed item retried.",
+        "Any remaining gap stated and sent to a person.",
+        "Retries routed through the coordinator."
+      ],
+      "eliminate": [
+        {
+          "option": "c",
+          "reason": "It sends an incomplete claim to adjudication as if complete."
+        },
+        {
+          "option": "d",
+          "reason": "It still re-extracts the 6 good documents."
+        },
+        {
+          "option": "e",
+          "reason": "It routes the retry around the coordinator."
+        }
+      ],
+      "rule": "On a partial failure, keep the completed results, retry only what failed, and send any remaining gap on with a note of what is missing, rather than restarting the whole job.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 5 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: subagents",
+          "url": "https://code.claude.com/docs/en/sub-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: What are subagents?",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/what-are-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
     }
   ]
 }

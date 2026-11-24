@@ -26,6 +26,7 @@ export interface ImportResult extends Counts {
   cards: Counts;
   mocks: Counts;
   lessons: Counts;
+  skippedDrafts: string[];
 }
 
 function emptyCounts(): Counts {
@@ -136,7 +137,12 @@ function importPool(
     const hash = hashQuestion(q);
     const prev = existing.get(q.id);
     if (prev && prev.hash === hash) {
-      counts.unchanged++;
+      if (prev.retired) {
+        tx.update(t.question).set({ retired: 0 }).where(eq(t.question.id, q.id)).run();
+        counts.updated++;
+      } else {
+        counts.unchanged++;
+      }
       continue;
     }
     const row = {
@@ -186,14 +192,20 @@ function importQuestions(
   return importPool(tx, 'practice', items, taskDomain);
 }
 
-// Every mock pool in the files, plus mock pools already in the database whose file is gone.
+// Every ready mock pool in the files, plus mock pools already in the database whose file is gone
+// or is a draft (those are retired).
 function importMocks(
   tx: Db,
   files: ReturnType<typeof MockFileSchema.parse>[],
   taskDomain: Map<string, string>,
-): Counts {
+): { counts: Counts; skippedDrafts: string[] } {
   const byPool = new Map<string, PoolItem[]>();
+  const skippedDrafts: string[] = [];
   for (const f of files) {
+    if (f.status === 'draft') {
+      skippedDrafts.push(f.pool);
+      continue;
+    }
     const items = byPool.get(f.pool) ?? [];
     for (const { scenario, ...q } of f.questions) items.push({ scenarioId: scenario, q: { ...q } });
     byPool.set(f.pool, items);
@@ -208,7 +220,7 @@ function importMocks(
   for (const [pool, items] of [...byPool].sort(([a], [b]) => a.localeCompare(b))) {
     total = addCounts(total, importPool(tx, pool, items, taskDomain));
   }
-  return total;
+  return { counts: total, skippedDrafts };
 }
 
 // Lessons are keyed by question id; rows whose lesson is gone from the files are deleted.
@@ -328,8 +340,14 @@ export function importContent(db: Db, raw: RawContent): ImportResult {
     const d = tx as unknown as Db;
     upsertCatalog(d, syllabus, traps);
     const q = importQuestions(d, files, taskDomain);
-    const mocks = importMocks(d, mockFiles, taskDomain);
-    const lessons = importLessons(d, lessonFiles);
+    const { counts: mocks, skippedDrafts } = importMocks(d, mockFiles, taskDomain);
+    const draftIds = new Set(
+      mockFiles.filter((f) => f.status === 'draft').flatMap((f) => f.questions.map((x) => x.id)),
+    );
+    const lessons = importLessons(
+      d,
+      lessonFiles.map((f) => ({ ...f, lessons: f.lessons.filter((l) => !draftIds.has(l.questionId)) })),
+    );
     const cards = importCards(d, flashcards.cards, taskDomain);
     const meta = [
       { key: 'versions', value: JSON.stringify(versionMap(raw)) },
@@ -338,6 +356,6 @@ export function importContent(db: Db, raw: RawContent): ImportResult {
     for (const m of meta) {
       d.insert(t.contentMeta).values(m).onConflictDoUpdate({ target: t.contentMeta.key, set: { value: m.value } }).run();
     }
-    return { ...q, cards, mocks, lessons };
+    return { ...q, cards, mocks, lessons, skippedDrafts };
   });
 }

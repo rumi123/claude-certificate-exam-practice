@@ -42,6 +42,7 @@ next-env.d.ts
 
 # project
 /data/
+/content-aicert/.parts/
 /test-results/
 /playwright-report/
 .env*.local

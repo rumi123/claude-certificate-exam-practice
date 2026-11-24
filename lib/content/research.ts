@@ -3,7 +3,7 @@ import fs from 'node:fs';
 export function loadResearch(): string {
   const file = process.env.RESEARCH_PATH ?? 'docs/ccaf-exam-research.md';
   try {
-    return fs.readFileSync(file, 'utf8');
+    return fs.readFileSync(/*turbopackIgnore: true*/ file, 'utf8');
   } catch (e) {
     throw new Error(`Cannot read ${file}: ${(e as Error).message}`);
   }

@@ -5,7 +5,7 @@ import { sql } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { importContent } from '@/lib/content/import';
 import { loadContent, type RawContent } from '@/lib/content/load';
-import type { MockFile } from '@/lib/content/schemas';
+import { MockFileSchema, type MockFile } from '@/lib/content/schemas';
 import { validateContent } from '@/lib/content/validate';
 import { closeDb, getDb } from '@/lib/db/client';
 import { getCandidates, getMockPools } from '@/lib/db/queries/sessions';
@@ -96,6 +96,62 @@ describe('importing a paper', () => {
     expect(mock.every((c) => c.id.startsWith('M1-'))).toBe(true);
     expect(getCandidates({ scenarios: ['S2'] }, 'mock-1').length).toBe(7);
     expect(getMockPools()).toEqual(['mock-1']);
+  });
+});
+
+describe('draft papers', () => {
+  const setStatus = (r: RawContent, status: 'draft' | 'ready') => {
+    paper(r).status = status;
+  };
+  const retiredFlags = () =>
+    getDb()
+      .all<{ retired: number }>(sql`select retired from question where pool = 'mock-1'`)
+      .map((x) => x.retired);
+  const versions = () =>
+    getDb().all<{ id: string; version: number }>(
+      sql`select id, version from question where pool = 'mock-1' order by id`,
+    );
+
+  it('schema accepts draft, ready and a missing status, and rejects anything else', () => {
+    const base = structuredClone(paper(raw()));
+    delete base.status;
+    expect(MockFileSchema.safeParse(base).success).toBe(true);
+    expect(MockFileSchema.safeParse({ ...base, status: 'draft' }).success).toBe(true);
+    expect(MockFileSchema.safeParse({ ...base, status: 'ready' }).success).toBe(true);
+    expect(MockFileSchema.safeParse({ ...base, status: 'done' }).success).toBe(false);
+  });
+
+  it('skips a draft paper on import', () => {
+    const r = raw();
+    setStatus(r, 'draft');
+    const res = importContent(getDb(), r);
+    expect(res.skippedDrafts).toEqual(['mock-1']);
+    expect(poolCounts()).toEqual({ practice: 50 });
+    const n = getDb().all<{ n: number }>(sql`select count(*) as n from question where pool = 'mock-1'`);
+    expect(n[0].n).toBe(0);
+    expect(getMockPools()).toEqual([]);
+  });
+
+  it('retires a paper sent back to draft and revives it unchanged when ready again', () => {
+    importContent(getDb(), raw());
+    const before = versions();
+    const draft = raw();
+    setStatus(draft, 'draft');
+    importContent(getDb(), draft);
+    expect(retiredFlags()).toEqual(Array(15).fill(1));
+    expect(getMockPools()).toEqual([]);
+    const res = importContent(getDb(), raw());
+    expect(res.mocks).toEqual({ inserted: 0, updated: 15, unchanged: 0, retired: 0 });
+    expect(retiredFlags()).toEqual(Array(15).fill(0));
+    expect(versions()).toEqual(before);
+    expect(getMockPools()).toEqual(['mock-1']);
+  });
+
+  it('validates a draft paper like any other', () => {
+    const r = raw();
+    setStatus(r, 'draft');
+    paper(r).questions[0].options.pop();
+    expect(validateContent(r).errors.some((e) => e.message.includes('needs 4 options'))).toBe(true);
   });
 });
 

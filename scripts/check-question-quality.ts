@@ -63,8 +63,14 @@ function report(title: string, questions: QualityQuestion[], gated: boolean): bo
   return gates.every((g) => g.pass);
 }
 
+function lessonIds(raw: ReturnType<typeof loadContent>): Set<string> {
+  return new Set(
+    raw.lessonFiles.flatMap((f) => LessonFileSchema.parse(f.data).lessons.map((l) => l.questionId)),
+  );
+}
+
 // Report only: never changes the exit code.
-function reportLessons(raw: ReturnType<typeof loadContent>): void {
+function reportLessons(raw: ReturnType<typeof loadContent>, ids: Set<string>): void {
   const syllabus = SyllabusSchema.parse(raw.syllabus.data);
   const taskDomain = new Map(syllabus.tasks.map((t) => [t.id, t.domain]));
   const questions = raw.questionFiles.flatMap((f) =>
@@ -72,9 +78,6 @@ function reportLessons(raw: ReturnType<typeof loadContent>): void {
       id: q.id,
       domain: taskDomain.get(q.primaryTask) ?? 'unknown',
     })),
-  );
-  const ids = new Set(
-    raw.lessonFiles.flatMap((f) => LessonFileSchema.parse(f.data).lessons.map((l) => l.questionId)),
   );
   const gaps = lessonGaps(questions, ids);
   console.log('');
@@ -91,12 +94,18 @@ function main(): number {
     for (const q of data.questions) practice.push({ ...q, scenario: data.scenario });
   }
   report('Practice bank (report only)', practice, false);
-  reportLessons(raw);
+  const ids = lessonIds(raw);
+  reportLessons(raw, ids);
 
   let failed = 0;
   for (const f of raw.mockFiles) {
     const data = MockFileSchema.parse(f.data);
     const ok = report(`Mock paper ${data.pool}`, data.questions, true);
+    const missing = data.questions.filter((q) => !ids.has(q.id)).length;
+    const draft = data.status === 'draft' ? ' (draft)' : '';
+    console.log(
+      `Lessons ${data.pool}: ${missing} of ${data.questions.length} questions without a lesson${draft}`,
+    );
     if (!ok) failed++;
   }
   console.log(

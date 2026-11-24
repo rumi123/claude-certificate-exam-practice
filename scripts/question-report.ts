@@ -1,8 +1,8 @@
 // Per-question wording report: which §9a checks each question fails, and why the
 // option-text-only solver picks what it picks. Report only; it never writes files.
-// Usage: npm run content:report:aicert -- [D1..D5] [--summary] [--explain ID ...]
+// Usage: npm run content:report:aicert -- [D1..D5 | mock-N] [--summary] [--explain ID ...]
 import { loadContent } from '../lib/content/load';
-import { QuestionFileSchema } from '../lib/content/schemas';
+import { MockFileSchema, QuestionFileSchema, SyllabusSchema } from '../lib/content/schemas';
 import {
   measureQuality,
   qualityGates,
@@ -68,10 +68,29 @@ const famHit = (name: string, rx: RegExp | null, o: Opt) =>
   rx ? rx.test(o.text) : o.trap === 'NONEXISTENT_FEATURE';
 
 const raw = loadContent(process.env.CONTENT_DIR ?? 'content-aicert');
+const args = process.argv.slice(2);
+const paper = args.find((a) => /^mock-\d+$/.test(a));
+const taskDomain = new Map(
+  SyllabusSchema.parse(raw.syllabus.data).tasks.map((k) => [k.id, k.domain]),
+);
 const qs: Q[] = [];
 for (const f of raw.questionFiles) {
   const d = QuestionFileSchema.parse(f.data);
   for (const q of d.questions) qs.push({ ...q, scenario: d.scenario, domain: q.id.split('-')[1] });
+}
+// Mock questions: the domain comes from the syllabus, the scenario from the question.
+const paperIds = new Set<string>();
+const mockFiles = raw.mockFiles.map((f) => MockFileSchema.parse(f.data));
+if (paper) {
+  const file = mockFiles.find((f) => f.pool === paper);
+  if (!file) {
+    console.log(`unknown paper ${paper}`);
+    process.exit(1);
+  }
+  for (const q of file.questions) {
+    paperIds.add(q.id);
+    qs.push({ ...q, scenario: q.scenario, domain: taskDomain.get(q.primaryTask) ?? 'unknown' });
+  }
 }
 
 // Bank-wide: which tell words and families are currently "always wrong".
@@ -125,7 +144,6 @@ function score(text: string, m: ReturnType<typeof fit>) {
   return s;
 }
 
-const args = process.argv.slice(2);
 const domain = args.find((a) => /^D\d$/.test(a));
 const summaryOnly = args.includes('--summary');
 
@@ -209,6 +227,7 @@ if (summaryOnly) process.exit(0);
 console.log('\nPER QUESTION (only failing checks are listed)');
 for (const q of qs) {
   if (domain && q.domain !== domain) continue;
+  if (paper && !paperIds.has(q.id)) continue;
   const flags: string[] = [];
   const single = q.options.length === 4 && q.options.filter((o) => o.correct).length === 1;
   const lens = q.options.map((o) => W(o.text));

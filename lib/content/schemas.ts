@@ -105,6 +105,7 @@ export const MockFileSchema = z
   .object({
     pool: z.string().regex(/^mock-\d+$/),
     version: z.number().int(),
+    status: z.enum(['draft', 'ready']).optional(),
     scenarios: z.array(SCENARIO_ID).length(4),
     questions: z.array(MockQuestionSchema),
   })

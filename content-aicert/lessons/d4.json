@@ -1998,6 +1998,2017 @@
         }
       ],
       "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S5-009",
+      "explanation": "`critical` is defined only as \"a serious problem\", so the model guesses the bar and 30% of findings cross it. Developers then override nearly all blocks, including a real one. The exam guide's fix is to define each severity level with concrete code examples: a full card number in a log shows where `critical` starts, and an unused import shows `minor`.",
+      "options": {
+        "a": {
+          "reasoning": "General instructions such as \"be conservative\" or \"only report high-confidence findings\" fail compared with specific categorical criteria. The line makes the model's own confidence the bar, not which defects are `critical`, and self-reported confidence is an unreliable proxy unless calibrated, so the logged card number can drop out with the noise.",
+          "tempting": "Asking for caution sounds like a direct way to cut the false blocks."
+        },
+        "b": {
+          "reasoning": "A cap hides the excess: a PR with three real critical issues would demote one, while noise could still fill the two slots.",
+          "tempting": "It limits the blocks developers have to override."
+        },
+        "c": {
+          "reasoning": "Concrete code examples of each level from the team's own repository show the model where each level starts, so the labels mean the same thing on every PR."
+        },
+        "d": {
+          "reasoning": "Self-reported confidence is an unreliable proxy unless calibrated, and a threshold doesn't define what `critical` means.",
+          "tempting": "Blocking only confident findings sounds like fewer false blocks."
+        }
+      },
+      "concept": [
+        "Explicit criteria beat vague instructions. The exam guide's skills include defining severity criteria with concrete code examples for each level.",
+        "General instructions such as \"be conservative\" or \"only report high-confidence findings\" fail compared with specific categorical criteria. A high false-positive rate in one category also undermines trust in the accurate findings, which is how the real card-number finding came to be overridden.",
+        "Claude follows explicit instructions: state exactly what you want instead of leaving it to inference, and explain why a rule exists so it can generalise. Examples show instead of tell."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "defines `critical` only as \"a serious problem\"",
+          "meaning": "The level has no concrete definition."
+        },
+        {
+          "phrase": "About 30% of findings now come back critical",
+          "meaning": "The bar the model guessed is far too low."
+        },
+        {
+          "phrase": "override the block on 4 of every 5",
+          "meaning": "Trust in the label is gone."
+        },
+        {
+          "phrase": "a full card number written to a log",
+          "meaning": "This is the kind of case that should anchor `critical`."
+        }
+      ],
+      "lookFor": [
+        "A concrete code example for each level.",
+        "Examples taken from the team's own code.",
+        "No threshold or cap standing in for a definition."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A general caution leaves `critical` undefined."
+        },
+        {
+          "option": "b",
+          "reason": "A cap can demote a real critical issue."
+        },
+        {
+          "option": "d",
+          "reason": "Uncalibrated confidence doesn't define severity."
+        }
+      ],
+      "rule": "Define each severity level with a concrete code example from the codebase, so the model and developers share one bar for what blocks.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Providing examples",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/providing-examples"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S5-010",
+      "explanation": "The fields exist and the prose already asks for exact lines and concrete fixes, so the problem is what the fields contain. Examples are the most effective way to get consistent, actionable output: three real findings that show the faulty line and a concrete fix set the standard. A second pair of examples separates the accepted `Money.add()` pattern from a real `float` issue, so the reviewer stops flagging one and keeps flagging the other.",
+      "options": {
+        "a": {
+          "reasoning": "Real findings that point at the faulty statement and give replacement code show the reviewer exactly what a good `line` and `fix` look like."
+        },
+        "b": {
+          "reasoning": "The fields are already present; a schema guarantees shape, not content, so a required `fix` can still say \"consider refactoring\".",
+          "tempting": "Schemas are the usual way to enforce output fields."
+        },
+        "c": {
+          "reasoning": "A keyword and length filter drops real `Money` misuse and short correct fixes, and does nothing for misplaced lines.",
+          "tempting": "It removes both kinds of noise without touching the prompt."
+        },
+        "d": {
+          "reasoning": "An example that marks the accepted pattern as not reported, beside a real issue with its reasoning, shows where acceptable code ends and a genuine problem begins."
+        },
+        "e": {
+          "reasoning": "These examples show the right format but label the accepted pattern a risk, so they teach the reviewer to keep flagging it.",
+          "tempting": "It covers the format and uses real ledger code."
+        }
+      },
+      "concept": [
+        "Few-shot examples are the most effective technique for consistently formatted, actionable output that shows the location, issue, severity and suggested fix. They also show how to handle ambiguous cases and separate acceptable code patterns from genuine issues.",
+        "The exam guide suggests 2 to 4 targeted examples; Anthropic's docs suggest 3 to 5, relevant to the real use case and varied enough to cover edge cases. Explaining why an example output is ideal helps more than showing it alone.",
+        "A schema controls the shape of output, not whether its content is right."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "The prose instructions already ask for exact lines and concrete fixes",
+          "meaning": "Prose has been tried; examples are the next step."
+        },
+        {
+          "phrase": "38 point `line` at the enclosing function",
+          "meaning": "The field is present but its content is off."
+        },
+        {
+          "phrase": "a pattern the team accepts",
+          "meaning": "An example should mark it as not to report."
+        },
+        {
+          "phrase": "money held in a `float` must still be flagged",
+          "meaning": "The boundary must keep the real issue."
+        }
+      ],
+      "lookFor": [
+        "Examples in the exact output format.",
+        "An accepted pattern shown as not reported.",
+        "Reasoning attached to the examples."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The fields already exist; making them required doesn't fix their content."
+        },
+        {
+          "option": "c",
+          "reason": "The filter drops real findings."
+        },
+        {
+          "option": "e",
+          "reason": "Labelling the accepted pattern a risk teaches the wrong boundary."
+        }
+      ],
+      "rule": "When prose rules don't fix inconsistent output, add a few examples in the exact format, including an accepted pattern marked not to report.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Providing examples",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/providing-examples"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Strict tool use",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/strict-tool-use"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S5-011",
+      "explanation": "The enum has no honest place for licence or accessibility findings, so the reviewer forces them into `bug` and each one opens a wrong ticket. An `\"other\"` value with a `category_detail` string gives them a place, keeps routing machine-readable, and also covers the new checks that arrive most quarters.",
+      "options": {
+        "a": {
+          "reasoning": "A `string` field is not routed the way an enum is: it holds whatever wording the reviewer picks, so the pipeline would have to interpret wording to route each finding, which the team has ruled out.",
+          "tempting": "It never forces a finding into the wrong box."
+        },
+        "b": {
+          "reasoning": "`\"other\"` plus a detail string is the guide's pattern for extensible categories: routing stays on the enum, and the detail shows when a kind deserves its own value."
+        },
+        "c": {
+          "reasoning": "Two new values fix this quarter, but the next new check is forced into `bug` again until someone edits the schema.",
+          "tempting": "Named categories are precise and easy to route."
+        },
+        "d": {
+          "reasoning": "The outputs already match the enum; the error is semantic. Validation guarantees valid values, not correct ones.",
+          "tempting": "Stricter enforcement sounds like a fix for wrong categories."
+        }
+      },
+      "concept": [
+        "Schema design includes required versus optional fields and enum fields with an `\"other\"` value plus a detail string for extensible categories. The guide also adds `\"unclear\"` values with detail fields for cases the model can't place.",
+        "Strict schemas remove syntax errors but not semantic ones, such as a value in the wrong field. Schema compliance is about shape, not truth.",
+        "In Claude Code CI, `--output-format json` with `--json-schema` returns output validated against the schema in the `structured_output` field."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "those findings come back as `bug`",
+          "meaning": "The enum has no fitting value, so the model picks the nearest one."
+        },
+        {
+          "phrase": "about 25 tickets a week that teams close as not defects",
+          "meaning": "The mislabel has a real routing cost."
+        },
+        {
+          "phrase": "New kinds of check are added most quarters",
+          "meaning": "Adding named values one by one won't keep up."
+        },
+        {
+          "phrase": "without reading free text",
+          "meaning": "Routing must stay on a fixed set of values."
+        }
+      ],
+      "lookFor": [
+        "An `\"other\"` value plus a detail field.",
+        "Routing kept on enum values.",
+        "A fix that also covers future kinds."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Free text breaks machine routing."
+        },
+        {
+          "option": "c",
+          "reason": "New values fix only today's kinds."
+        },
+        {
+          "option": "d",
+          "reason": "A valid value is not necessarily a correct one."
+        }
+      ],
+      "rule": "Give category enums an `\"other\"` value with a detail string, so new kinds have an honest place and routing stays machine-readable.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: run Claude Code programmatically",
+          "url": "https://code.claude.com/docs/en/headless"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Strict tool use",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/strict-tool-use"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S5-012",
+      "explanation": "The team wants to find which criteria produce the 35% dismissals, but `category` and `severity` show the same rate everywhere and the `issue` text can't be grouped. A `detected_pattern` field gives each finding a stable label for the check that fired, so the logged dismissals can be counted per pattern and the noisy criteria rewritten.",
+      "options": {
+        "a": {
+          "reasoning": "Counting dismissals by a self-reported score shows how sure the reviewer felt, not which check misfired, so it cannot point to the criteria to rewrite. Suppressing a band also cuts the real findings in it.",
+          "tempting": "It adds a field and lets the team count dismissals, just as the correct answer does."
+        },
+        "b": {
+          "reasoning": "Pausing a noisy category is right when one stands out, but every group here sits between 31% and 38%. Acting on whole severity levels and an overall rate removes real findings along with the noise and never shows which checks cause it.",
+          "tempting": "Temporarily disabling noisy categories is a guide technique."
+        },
+        "c": {
+          "reasoning": "Rerunning per dismissal adds reviews and fixes one comment at a time, without revealing which criteria cause the dismissals.",
+          "tempting": "Retrying with feedback is a real pattern for fixing output."
+        },
+        "d": {
+          "reasoning": "With `detected_pattern`, dismissals group by the kind of check that fired, so the worst patterns show up and their criteria can be fixed."
+        }
+      },
+      "concept": [
+        "The exam guide's tool for this is a `detected_pattern` field in findings, which enables systematic analysis of dismissal patterns and false positives.",
+        "Read the failed cases and group them before changing anything; failures that cluster on one kind of input usually share one cause in the prompt. A stable label is what makes that grouping possible.",
+        "Temporarily disabling a category with a high false-positive rate restores trust when one category stands out, because a high false-positive rate in one category undermines trust in the accurate ones.",
+        "In Claude Code CI the new field goes into the `--json-schema`, and the validated finding arrives in `structured_output`."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "shows 31% to 38% in every group",
+          "meaning": "The existing fields don't separate noisy findings from useful ones."
+        },
+        {
+          "phrase": "the `issue` text is worded differently each time",
+          "meaning": "Free text can't be grouped reliably."
+        },
+        {
+          "phrase": "each dismissal is logged against its finding",
+          "meaning": "The data to analyse exists once findings carry a pattern label."
+        },
+        {
+          "phrase": "rewrite the criteria behind the noise",
+          "meaning": "The goal is diagnosis, not just fewer comments."
+        }
+      ],
+      "lookFor": [
+        "A stable label on each finding for the check that fired.",
+        "Grouping dismissals before changing the criteria.",
+        "No uncalibrated threshold."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A score band shows confidence, not which check misfired, and suppressing it cuts real findings."
+        },
+        {
+          "option": "b",
+          "reason": "No group stands out, so switching off removes real findings too."
+        },
+        {
+          "option": "c",
+          "reason": "Reruns fix single comments, not the cause."
+        }
+      ],
+      "rule": "Tag each finding with a `detected_pattern` so dismissals can be grouped by pattern and the noisy criteria found and rewritten.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: run Claude Code programmatically",
+          "url": "https://code.claude.com/docs/en/headless"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to evals: Iterate the prompt before you upgrade the model",
+          "url": "https://academy.claude.com/courses/introduction-to-evals/iterate-the-prompt-before-you-upgrade-the-model"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S5-013",
+      "explanation": "Rerunning the identical command gives the model no new information, so it misses in the same way about 80% of the time. The guide's retry includes the original input, the failed output and the specific errors. Sending the failed findings with the diff lets the model correct them against the changed lines, and naming each error and the valid range says exactly what to fix.",
+      "options": {
+        "a": {
+          "reasoning": "Returning the findings that failed the check, next to the diff, shows the model which findings to move and the changed lines they must fall within, so it corrects them instead of repeating the first answer."
+        },
+        "b": {
+          "reasoning": "Dropping findings silently loses real issues and hides that the reviewer erred.",
+          "tempting": "It passes the check with no extra call."
+        },
+        "c": {
+          "reasoning": "Specific errors tell the model which finding failed and which range is valid, turning a blind rerun into a targeted fix."
+        },
+        "d": {
+          "reasoning": "The review is pre-merge, and a batch can take up to 24 hours with no promised completion time; the saving doesn't fix the retry either.",
+          "tempting": "Retries are extra calls, so halving their cost is attractive."
+        },
+        "e": {
+          "reasoning": "A general reminder doesn't say which finding failed or which lines are valid, so most retries would still miss.",
+          "tempting": "It adds feedback to the retry, which sounds like the guide's pattern."
+        }
+      },
+      "concept": [
+        "Retry with error feedback: send the original input, the failed output and the specific validation errors, so the model can correct the output rather than repeat it.",
+        "Retries help when the right answer is in the input, as with a line outside the diff when the diff is in the prompt. They don't help when the information is absent from the source.",
+        "A validator checks what a schema cannot, such as whether a line number falls inside a changed hunk.",
+        "Batch processing has no promised completion time and a batch can take up to 24 hours, so it suits work nothing waits on, not a pre-merge step."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "reruns the identical `claude -p` command",
+          "meaning": "The retry carries no new information."
+        },
+        {
+          "phrase": "fails the check again on about 80% of retries",
+          "meaning": "The model is not learning what went wrong."
+        },
+        {
+          "phrase": "The diff is small enough to send again",
+          "meaning": "The original input can go into the retry."
+        },
+        {
+          "phrase": "the review is a pre-merge step",
+          "meaning": "The retry must stay synchronous."
+        }
+      ],
+      "lookFor": [
+        "The specific errors in the retry.",
+        "The failed output and the original input sent together.",
+        "A retry that stays on the pre-merge path."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It silently drops real findings."
+        },
+        {
+          "option": "d",
+          "reason": "A batch can't serve a pre-merge step."
+        },
+        {
+          "option": "e",
+          "reason": "A general reminder doesn't name the errors."
+        }
+      ],
+      "rule": "On a retry, send the original input, the failed output and the specific errors; rerunning the same prompt tends to fail the same way.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Batch processing (Message Batches API)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/batch-processing"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Strict tool use",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/strict-tool-use"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S5-014",
+      "explanation": "The cause is the prompt: it never mentions `testkit`, so the failures are not isolated, and even the 840 compiled tests break the convention. Resubmitting the 560 with an untested line could fail again and cost another night. The guide's step is to refine the prompt on a sample before batch-processing a large volume, then run the full batch with the discount.",
+      "options": {
+        "a": {
+          "reasoning": "A small synchronous sample proves the prompt fix quickly; batching all 1,400 afterwards keeps the 50% discount and gives every service tests that follow the convention."
+        },
+        "b": {
+          "reasoning": "Nightly test generation suits batch, since nothing waits on it; synchronous calls give up the 50% saving without fixing the prompt.",
+          "tempting": "Faster feedback sounds like it would catch failures earlier."
+        },
+        "c": {
+          "reasoning": "The scope is right, but an untested prompt at full volume risks another failed night, and a larger model doesn't supply a convention the prompt leaves out.",
+          "tempting": "It covers all 1,400 and adds a stronger model for safety."
+        },
+        "d": {
+          "reasoning": "Resubmitting failed `custom_id`s is right for isolated failures, but here the prompt caused them, the 840 also break the convention, and the new line is untested.",
+          "tempting": "It follows the guide's own advice to resubmit only failures."
+        }
+      },
+      "concept": [
+        "Message Batches cost 50% of standard prices and can take up to 24 hours, with no promised completion time. They suit latency-tolerant work such as nightly test generation.",
+        "Resend only what failed, by `custom_id`, and fix invalid requests before resending. That fits isolated failures; when the prompt itself is the cause, every result is affected.",
+        "The exam guide's skill is to refine the prompt on a sample set before batch-processing large volumes. Fix the prompt before paying for a bigger model."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "which the prompt never mentions",
+          "meaning": "The failures come from the prompt, not from individual requests."
+        },
+        {
+          "phrase": "hand-built fixtures in many of the 840 that compiled too",
+          "meaning": "The results that passed are affected as well."
+        },
+        {
+          "phrase": "The tests can wait a day or two",
+          "meaning": "There is time to test a prompt fix first."
+        },
+        {
+          "phrase": "wants to keep the batch discount",
+          "meaning": "The full run should stay on batch."
+        }
+      ],
+      "lookFor": [
+        "A prompt fix tested on a small sample.",
+        "The full batch run after the fix.",
+        "Resubmitting only failures when they are isolated, not when the prompt caused them."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It gives up the batch saving and leaves the prompt unfixed."
+        },
+        {
+          "option": "c",
+          "reason": "An untested prompt at full volume, plus a larger model that isn't needed."
+        },
+        {
+          "option": "d",
+          "reason": "The prompt caused the failures and also affected the 840."
+        }
+      ],
+      "rule": "When a batch fails because of the prompt, refine the prompt on a small sample first, then rerun the batch; resubmit only failed `custom_id`s when failures are isolated.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Batch processing (Message Batches API)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/batch-processing"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to evals: Iterate the prompt before you upgrade the model",
+          "url": "https://academy.claude.com/courses/introduction-to-evals/iterate-the-prompt-before-you-upgrade-the-model"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S5-015",
+      "explanation": "The leads have 15 checks for about 120 findings a day. A confidence score reported with each finding can route those checks, but only once it is shown to track outcomes: self-reported confidence is unreliable unless calibrated on labelled data. The team has 3 months of confirmed or dismissed findings, so it can check the scores against them first and then send the leads the lowest-scoring findings.",
+      "options": {
+        "a": {
+          "reasoning": "An instruction to report only what it is sure of relies on the same unchecked self-judgment and cuts findings before anyone sees them.",
+          "tempting": "It brings the volume down to what the leads can check."
+        },
+        "b": {
+          "reasoning": "An independent reviewer catches more, but running one on each PR doubles review cost, and its disagreements may still exceed 15 checks.",
+          "tempting": "Independent review instances are a guide technique."
+        },
+        "c": {
+          "reasoning": "Checking scores against labelled outcomes calibrates them; then the lowest-scoring findings, where the reviewer is least reliable, go to the leads while every finding is still posted."
+        },
+        "d": {
+          "reasoning": "Calibrating first is right, but a cut-off still drops real findings that score low before anyone sees them, and the highest-scoring findings are the ones that least need a human. Calibrated scores should route review, not delete findings.",
+          "tempting": "It uses the labelled history to set the threshold, which sounds like calibration."
+        }
+      },
+      "concept": [
+        "The exam guide includes verification passes in which the model reports confidence alongside each finding. That confidence is a routing aid, not a filter on its own.",
+        "Self-reported confidence is an unreliable proxy unless it is calibrated against labelled data. Calibrated confidence scores route review attention: low-confidence items go to human review first, which makes the most of limited reviewer capacity.",
+        "Hallucination-reduction techniques lower errors but don't remove them; a verification pass that checks the first answer is one option."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "can hand-check about 15",
+          "meaning": "Reviewer capacity is the binding limit."
+        },
+        {
+          "phrase": "which they now pick in PR order",
+          "meaning": "The checks are not aimed at the riskiest findings."
+        },
+        {
+          "phrase": "Three months of past findings are labelled confirmed or dismissed",
+          "meaning": "Labelled data exists to calibrate the score."
+        },
+        {
+          "phrase": "a self-reported score",
+          "meaning": "Uncalibrated, it cannot be trusted as it is."
+        }
+      ],
+      "lookFor": [
+        "Calibration against labelled outcomes before the score is used.",
+        "Low-confidence findings routed to people first.",
+        "No finding dropped on an uncalibrated score."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It relies on unchecked self-judgment and drops findings."
+        },
+        {
+          "option": "b",
+          "reason": "It doubles review cost without fitting the 15 checks."
+        },
+        {
+          "option": "d",
+          "reason": "A cut-off deletes low-scoring real findings and sends the leads the findings that least need them."
+        }
+      ],
+      "rule": "Route human review by per-finding confidence only after checking the scores against labelled outcomes; send the lowest-confidence findings to people first.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Reduce hallucinations",
+          "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S6-009",
+      "explanation": "Two vague rules failed in opposite directions: \"flag unusual billing codes\" flagged 25% of bills, and \"flag only codes you are highly confident are wrong\" cut that to 2% but missed real upcoding. The exam guide says instructions such as \"only report high-confidence findings\" fail compared with specific categorical criteria. The fix is to name the patterns to flag, such as a top-level code for a short visit or two codes for one procedure on one date, and the rare valid codes to skip.",
+      "options": {
+        "a": {
+          "reasoning": "Categories tell the model what counts as an anomaly and what does not, so it neither flags each unusual code nor waits until it is sure. Naming the upcoding patterns brings back the cases the fraud team wants, and naming rare valid codes keeps the rate near its 5% capacity."
+        },
+        "b": {
+          "reasoning": "The definition adds meaning, but the high-confidence gate stays, and that gate is what dropped the real upcoding. A definition is still more general than the patterns the model needs to match.",
+          "tempting": "It adds the very criterion the fraud team cares about."
+        },
+        "c": {
+          "reasoning": "A 1-to-10 self-rating is the high-confidence filter again, in numbers. Self-reported confidence is an unreliable proxy unless it is calibrated against labelled data, so the cut at 7 would fall in an arbitrary place.",
+          "tempting": "A numeric threshold looks easier to control than a word."
+        },
+        "d": {
+          "reasoning": "Turning a category off for a while is a real tactic when its false positives erode trust in the others. Here the problem is missed upcoding, and switching the flags off would miss all of it.",
+          "tempting": "The guide does suggest disabling a noisy category."
+        }
+      },
+      "concept": [
+        "Explicit criteria beat vague instructions. The exam guide notes that general instructions such as \"be conservative\" or \"only report high-confidence findings\" fail compared with specific categorical criteria. Its skills are to define which issues to report and which to skip, and to disable a high false-positive category for a time to restore trust.",
+        "Claude follows explicit instructions, so state exactly what you want rather than leaving it to inference, and say what to do rather than only what not to do. Explaining why a rule exists helps Claude apply it beyond the cases it lists.",
+        "Lead with the task, use simple, direct language and state the constraints."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "\"flag unusual billing codes\", which flagged 25% of bills",
+          "meaning": "A vague rule over-flags."
+        },
+        {
+          "phrase": "\"flag only codes you are highly confident are wrong\"",
+          "meaning": "The textbook tightening, already tried."
+        },
+        {
+          "phrase": "flags fell to 2%, but the fraud team found that most real upcoding ... was no longer flagged",
+          "meaning": "Confidence wording cuts the real cases along with the noise."
+        },
+        {
+          "phrase": "can handle about 5% of bills",
+          "meaning": "The target is precise flags, not the fewest flags."
+        }
+      ],
+      "lookFor": [
+        "Named patterns to flag.",
+        "Named cases to skip.",
+        "No confidence gate or self-rating."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It keeps the confidence gate that dropped real upcoding."
+        },
+        {
+          "option": "c",
+          "reason": "A self-rating is an uncalibrated confidence filter."
+        },
+        {
+          "option": "d",
+          "reason": "Switching the flags off misses all upcoding."
+        }
+      ],
+      "rule": "Replace vague or confidence-based flagging rules with concrete categories of what to report and what to skip.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Being clear and direct",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/being-clear-and-direct"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S6-010",
+      "explanation": "The 3 examples are clean typed documents with only the tool shown, while 70% of the wrong picks are hybrids. Examples are most useful for ambiguous cases, and the guide's skill is 2–4 targeted examples that show the reasoning for the choice. So two of the clean examples should become hybrids, with one clean example kept, and each should show the reasoning that settles the type, within the room for about four.",
+      "options": {
+        "a": {
+          "reasoning": "Examples teach the cases they show. With only clean documents, the model has no pattern to follow for an invoice that restates a narrative or a claim form that lists costs. Swapping two clean examples for hybrids puts the guidance where 70% of the errors are, and the clean one left keeps the set varied, so it doesn't teach that every document is a hybrid."
+        },
+        "b": {
+          "reasoning": "An example that shows only the label tells the model what was chosen, not why. Reasoning that names the deciding features, such as who issued the document and whether it asks for payment, lets the model apply the same test to hybrids it has not seen."
+        },
+        "c": {
+          "reasoning": "More clean examples treat the errors as a shortage of examples, while the cause is that none shows a hybrid; ten also overrun the room for about four. Extra examples of the same kind teach the same thing.",
+          "tempting": "A wider range of layouts sounds like the cure for misclassification."
+        },
+        "d": {
+          "reasoning": "A call for care does not say which feature decides the type, so the model meets each hybrid with the same uncertainty. Concrete examples with reasoning show it how to decide.",
+          "tempting": "It is short and fits easily in the prompt."
+        },
+        "e": {
+          "reasoning": "Self-reported confidence is an unreliable proxy unless it is calibrated, so wrong picks on hybrids can score high. It also sends work to the 12 reviewers while the cause in the examples stays.",
+          "tempting": "Routing uncertain cases to people is part of the pipeline's design."
+        }
+      },
+      "concept": [
+        "Few-shot examples are the most effective way to get consistent output, and they show the model how to handle ambiguous cases and generalise to new patterns. The guide's skill is 2–4 targeted examples for the ambiguous cases, each showing the reasoning for the choice; Anthropic's docs suggest 3–5 examples.",
+        "Examples are most useful for corner cases, exact formats and ambiguous inputs. Explain why an example output is right, not just what it is, and wrap examples in XML tags so their parts are clear. Examples should be relevant to the real cases and varied enough to cover edge cases without teaching unintended patterns."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "3 examples, all clean typed documents",
+          "meaning": "The examples miss the hard cases."
+        },
+        {
+          "phrase": "each showing only the document and the tool chosen",
+          "meaning": "No reasoning to generalise from."
+        },
+        {
+          "phrase": "70% of those errors are hybrid documents",
+          "meaning": "Errors cluster on one kind of input."
+        },
+        {
+          "phrase": "room for about four examples",
+          "meaning": "Replace examples rather than add many."
+        }
+      ],
+      "lookFor": [
+        "Examples drawn from the failing hybrid documents.",
+        "Reasoning shown before the label.",
+        "A number of examples that fits the room in the prompt."
+      ],
+      "eliminate": [
+        {
+          "option": "c",
+          "reason": "Ten clean examples overrun the budget and miss the hybrids."
+        },
+        {
+          "option": "d",
+          "reason": "A call for care does not say how to decide."
+        },
+        {
+          "option": "e",
+          "reason": "Self-rated confidence is unreliable and leaves the examples unchanged."
+        }
+      ],
+      "rule": "When errors cluster on ambiguous inputs, use a few examples of exactly those inputs, each showing the reasoning that decides the answer.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Providing examples",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/providing-examples"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S6-011",
+      "explanation": "With `tool_choice` at `\"auto\"`, the model may reply in text, and for 3% of documents it does: the log shows `\"stop_reason\": \"end_turn\"` and a text block, so no record is made. The model must still pick among 4 schemas. `\"any\"` requires a call to one of the provided tools without naming which, so each document gets a record from the tool that fits.",
+      "options": {
+        "a": {
+          "reasoning": "`any` makes the model use one of the provided tools, and the response then starts with the `tool_use` block, so no text-only reply comes back. The model still chooses which of the 4 tools fits each document. This is the guide's setting when several schemas exist."
+        },
+        "b": {
+          "reasoning": "Forcing `extract_repair_invoice` ends the text replies but sends police reports, medical bills and claim forms through the invoice schema. A forced tool suits a step where one specific tool must run, such as a first extraction step.",
+          "tempting": "The text replies in the log are mostly about invoices."
+        },
+        "c": {
+          "reasoning": "A rule makes a text reply less likely, but `auto` still allows one, so some documents keep producing no record. The API setting guarantees a tool call where the prompt can only ask.",
+          "tempting": "It keeps the setting and only adds a sentence."
+        },
+        "d": {
+          "reasoning": "One wide schema gives up the per-type schemas, so fields from one document type can leak into another, and it is a much bigger change than the setting that closes the gap.",
+          "tempting": "Forcing one tool would guarantee a record each time."
+        }
+      },
+      "concept": [
+        "`tool_choice` has four values: `auto` lets the model decide whether to call a tool and is the default when tools are provided; `any` makes it use one of the provided tools without naming which; `{\"type\": \"tool\", \"name\": …}` forces a named tool; `none` prevents tool use. With `any` or a forced tool, the response starts with the `tool_use` block.",
+        "The exam guide's rule is that `auto` may return text, `any` must call a tool and forced selection must call the named tool. Use `any` when several extraction schemas exist and the model should pick one; force a tool when a specific one must run, for example first in a pipeline.",
+        "Model caveat: on some current models (Opus 5.5, Sonnet 5.5 and the Fable and Mythos 5.x models), `any` and forced `tool` return a 400 error, and there you leave `tool_choice` on `auto`. The exam guide still teaches `any` and forced selection, so the exam's answer stands."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`tool_choice` left at `\"auto\"`",
+          "meaning": "Text replies are allowed."
+        },
+        {
+          "phrase": "`\"stop_reason\": \"end_turn\"` and a single text block",
+          "meaning": "The model answered in prose, not with a tool call."
+        },
+        {
+          "phrase": "4 per-type extraction tools",
+          "meaning": "Several schemas, so don't force one."
+        },
+        {
+          "phrase": "must still pick the tool that fits each document",
+          "meaning": "The choice among the tools stays with the model."
+        }
+      ],
+      "lookFor": [
+        "`tool_choice` set to `any`.",
+        "The model still choosing among the 4 tools.",
+        "No prompt rule in place of the setting."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Forcing the invoice tool misroutes the other document types."
+        },
+        {
+          "option": "c",
+          "reason": "A prompt rule cannot stop `auto` from returning text."
+        },
+        {
+          "option": "d",
+          "reason": "A merged schema gives up the per-type schemas."
+        }
+      ],
+      "rule": "When a call to one of several tools must happen, set `tool_choice` to `any`; force a named tool only when that specific tool must run.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools (`tool_choice`)",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Strict tool use",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/strict-tool-use"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S6-012",
+      "explanation": "The job maps result lines to documents by position, but the results file begins with `r-0417` and then `r-0009`, so results are not coming back in submission order. Batch results can arrive in any order and are matched to requests by `custom_id`. Setting `custom_id` to the document ID and attaching each result to the document it names fixes the mapping and keeps the batch discount.",
+      "options": {
+        "a": {
+          "reasoning": "`custom_id` is how a result is paired with its request, and it must be unique in the batch, which a document ID is. With the document ID in it, each result carries its own document, so line order no longer matters."
+        },
+        "b": {
+          "reasoning": "There is no such batch setting, and results can arrive in any order. The documented way to pair results with requests is `custom_id`.",
+          "tempting": "It sounds like a small switch that keeps the current code working."
+        },
+        "c": {
+          "reasoning": "A smaller batch may finish sooner, but nothing makes its results follow the order the requests were sent, so the mismatch can happen in each batch.",
+          "tempting": "Small batches seem less likely to be reordered."
+        },
+        "d": {
+          "reasoning": "Synchronous calls pair each response with its request, but they give up the 50% batch saving on a job no one waits on. The Batches API suits latency-tolerant work like this nightly job.",
+          "tempting": "It removes the matching problem entirely."
+        }
+      },
+      "concept": [
+        "The Message Batches API charges 50% of standard prices and processes a batch within up to 24 hours, with no promised completion time. It suits work no one waits on, such as overnight jobs; keep blocking work on synchronous calls.",
+        "Results can arrive in any order. Match them to requests by `custom_id`, which must be unique within the batch, and read each result's type: `succeeded`, `errored`, `canceled` or `expired`. To retry, resend only the failed `custom_id`s in a new batch."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "maps each result line to the document at the same position",
+          "meaning": "Matching by order, which the API does not promise."
+        },
+        {
+          "phrase": "begins `{\"custom_id\": \"r-0417\", ...}` and then `{\"custom_id\": \"r-0009\", ...}`",
+          "meaning": "The results are already out of order."
+        },
+        {
+          "phrase": "some extractions have landed on the wrong claims",
+          "meaning": "The mapping is wrong, not the extraction."
+        },
+        {
+          "phrase": "Cost matters at this volume",
+          "meaning": "Keep the batch discount."
+        }
+      ],
+      "lookFor": [
+        "A `custom_id` that identifies the document.",
+        "Results matched on `custom_id`, not on position.",
+        "The job kept on the Batches API."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "There is no setting that orders batch results."
+        },
+        {
+          "option": "c",
+          "reason": "Batch size does not fix the order of results."
+        },
+        {
+          "option": "d",
+          "reason": "It gives up the batch saving on a job nobody waits for."
+        }
+      ],
+      "rule": "Batch results can come back in any order: give each request a `custom_id` that identifies its item, and match results on it.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Batch processing (Message Batches API)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/batch-processing"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to evals: Evals in production (CI, batch, drift)",
+          "url": "https://academy.claude.com/courses/introduction-to-evals/evals-in-production"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S6-013",
+      "explanation": "One reviewer reads all 9 documents in one pass, checks the first closely and the last little, and let a wrong `service_date` on the ninth slip through. The file uses only 40% of the window, so space is not the limit; attention is. The exam guide's answer is multi-pass review: a focused pass per document against its scan, plus one pass across the records for the dates and amounts that must agree.",
+      "options": {
+        "a": {
+          "reasoning": "Per-document passes stop attention being spread thin across 9 documents, and a separate pass over the records keeps the cross-document checks the single pass used to make. Both of the reviewer's jobs are covered."
+        },
+        "b": {
+          "reasoning": "The per-document passes would catch the wrong `service_date`, but nothing now compares dates and amounts across documents. The guide pairs the local passes with a pass across them for exactly that.",
+          "tempting": "It fixes the error the audit found."
+        },
+        "c": {
+          "reasoning": "The file already fits in 40% of the window, so a larger one adds room the review does not need. A bigger window holds more text but does not split the review, so attention still thins out.",
+          "tempting": "A larger window sounds like more capacity for the model."
+        },
+        "d": {
+          "reasoning": "An instruction to give each document equal care does not change how one long pass spreads attention, and reversing the order only moves the weak spot to the first documents.",
+          "tempting": "It costs nothing and keeps the single pass."
+        }
+      },
+      "concept": [
+        "The exam guide describes multi-pass review: local passes over each file plus integration passes across files, to avoid attention diluted over a large input. In a claim review the files are the claim's documents: one pass per document against its scan, and one pass across the extracted records.",
+        "Claude does better on one focused task than on many requirements at once, which is why chaining splits a large task into focused steps. Each step is a separate call that can be logged and evaluated, so the team can see which pass missed a value."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "reads the whole 9-document claim file",
+          "meaning": "One pass over a large input."
+        },
+        {
+          "phrase": "close checking on the first documents but little on the last",
+          "meaning": "Diluted attention, not missing knowledge."
+        },
+        {
+          "phrase": "checks that dates and amounts agree across documents",
+          "meaning": "A cross-document job that must be kept."
+        },
+        {
+          "phrase": "fills about 40% of the model's context window",
+          "meaning": "Window size is not the cause."
+        }
+      ],
+      "lookFor": [
+        "A separate pass for each document.",
+        "One pass across the documents for the checks that span them.",
+        "No bigger window or instruction in place of structure."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It drops the checks that compare documents."
+        },
+        {
+          "option": "c",
+          "reason": "Space is not the limit, and a bigger window does not split the review."
+        },
+        {
+          "option": "d",
+          "reason": "An instruction does not change how attention spreads over one long pass."
+        }
+      ],
+      "rule": "Split a long review into a focused pass per item plus one pass for the checks that span items; a bigger window does not stop attention thinning out.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Chaining workflows",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/chaining-workflows"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S5-010",
+      "explanation": "\"Write thorough unit tests\" leaves the model to decide what thorough means, and it chose the easy targets: 60% of tests cover getters, constructors and generated code. Naming what to test (refund arithmetic, declined charges, currency edge cases) and what to skip (getters, generated code) gives explicit criteria, which steer the output to the risky payment code. A prompt change is the right size for a judgment problem.",
+      "options": {
+        "a": {
+          "reasoning": "Explicit categories of what to test and what to skip replace the vague word \"thorough\" and point the tests at refund arithmetic, declined charges and currency edge cases."
+        },
+        "b": {
+          "reasoning": "It names refund, settlement and currency cases, but only as examples of what the model judges important, and leaves what to skip to its idea of \"low value\", which is as vague as \"thorough\"; the getter tests would keep coming.",
+          "tempting": "It names the risky payment cases and mentions skipping, close to the right idea."
+        },
+        "c": {
+          "reasoning": "A cap trims CI time but not the mix, so the five tests can still be getter tests. A cap can back up good criteria, not replace them.",
+          "tempting": "It directly limits the 18 minutes."
+        },
+        "d": {
+          "reasoning": "A second model call filters after the fact, and without a definition of value it judges as vaguely as the generator.",
+          "tempting": "Reviewing output with another instance is a real technique."
+        }
+      },
+      "concept": [
+        "Explicit criteria beat vague instructions. General phrases such as \"be thorough\", \"be conservative\" or \"high value\" fail compared with specific categories of what to produce and what to skip.",
+        "Claude follows explicit instructions: state exactly what you want instead of leaving it to inference, and say what to do rather than only what not to do.",
+        "Be clear and direct: lead with the task and state its constraints in plain words."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "\"write thorough unit tests for the changed files\"",
+          "meaning": "The instruction is vague about what matters."
+        },
+        {
+          "phrase": "60% cover getters, constructors and generated protobuf code",
+          "meaning": "The model is filling the gap with easy targets."
+        },
+        {
+          "phrase": "refund rounding, declined-charge branches and currency boundaries get few tests",
+          "meaning": "These are the categories to name."
+        }
+      ],
+      "lookFor": [
+        "Named categories to cover and to skip.",
+        "A prompt change for a judgment problem.",
+        "No new pipeline step where a clearer prompt works."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The skip side is still left to judgment; no categories."
+        },
+        {
+          "option": "c",
+          "reason": "Limits volume, not what is tested."
+        },
+        {
+          "option": "d",
+          "reason": "Adds a step that judges with no criteria."
+        }
+      ],
+      "rule": "Replace vague quality words with explicit categories of what to produce and what to skip.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Being clear and direct",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/being-clear-and-direct"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S5-011",
+      "explanation": "The rule names a function, `print(`, instead of the harm, card data reaching output. So it flags harmless prints and misses `logger.debug(card)`, and the exception list only trimmed the noise from 70% to 62%. Stating the purpose lets the model generalise to any function that writes card data, and two examples with reasoning, one harmless print and one logger leaking a card, show where the line falls.",
+      "options": {
+        "a": {
+          "reasoning": "Stating why the rule exists, that card data must not reach output, covers every writer, including the logger it missed, and puts a request-count print clearly outside it."
+        },
+        "b": {
+          "reasoning": "The list was tried and barely moved the rate. Adding `logger.debug` would flag harmless debug lines too and still miss the next function that writes card data.",
+          "tempting": "It extends the approach the team already has."
+        },
+        "c": {
+          "reasoning": "Disabling a noisy category suits low-stakes checks such as style. This one guards card data under PCI and has already missed a leak.",
+          "tempting": "Temporarily disabling a high false-positive category is a recommended way to restore trust."
+        },
+        "d": {
+          "reasoning": "Examples on both sides of the line, each with reasoning, show the model how to treat the ambiguous cases it got wrong in both directions."
+        },
+        "e": {
+          "reasoning": "\"Only high-confidence findings\" is a general instruction that does worse than specific criteria, and self-reported confidence is poorly calibrated.",
+          "tempting": "It promises fewer false positives at once."
+        }
+      },
+      "concept": [
+        "Explaining why a rule exists helps Claude generalise it; a rule stated only as a pattern to match (\"any `print(`\") is applied literally, both where it doesn't matter and nowhere else.",
+        "Explicit criteria beat general instructions such as \"only report high-confidence findings\", and self-reported confidence is an unreliable proxy unless calibrated. Temporarily disabling a category with many false positives restores trust only where missing a real case is acceptable.",
+        "Examples show instead of tell and are most useful for ambiguous cases; explaining why each example is right helps more than the example alone."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "\"flag any `print(` in card-handling services\"",
+          "meaning": "The rule names a function, not the harm."
+        },
+        {
+          "phrase": "an exception list of 14 harmless `print` patterns",
+          "meaning": "Listing cases has been tried."
+        },
+        {
+          "phrase": "missed `logger.debug(card)`",
+          "meaning": "The harm can come from any function."
+        },
+        {
+          "phrase": "a PCI breach",
+          "meaning": "The category cannot simply be switched off."
+        }
+      ],
+      "lookFor": [
+        "The purpose of the rule stated in the prompt.",
+        "Examples on both sides of the line, with reasoning.",
+        "Rejecting lists and confidence filters that were tried or are unreliable."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The list approach was tried and cannot anticipate new functions."
+        },
+        {
+          "option": "c",
+          "reason": "Leaves card-data leaks uncaught."
+        },
+        {
+          "option": "e",
+          "reason": "Vague and relies on uncalibrated confidence."
+        }
+      ],
+      "rule": "State why a review rule exists and show examples on both sides of it, so the model applies the purpose rather than a list of names.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Providing examples",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/providing-examples"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S5-012",
+      "explanation": "The format is described in prose and followed about half the time. Few-shot examples are the most effective way to get consistently formatted output: three summaries in the exact layout, covering a one-line fix, a change across services and a migration, show the model what to reproduce for PRs of every size. The content is already accurate, so no extra step or new output mode is needed.",
+      "options": {
+        "a": {
+          "reasoning": "A second model call doubles the work for 350 PRs a day and faces the same format problem with the same prose to go on.",
+          "tempting": "It guarantees a pass over every summary."
+        },
+        "b": {
+          "reasoning": "Examples in the exact format, varied across kinds of PR, show the layout instead of describing it, which is what the half that drift need."
+        },
+        "c": {
+          "reasoning": "`--output-format json` wraps the same free-text summary in a JSON object with a `result` field; it does not order the sections inside the text.",
+          "tempting": "JSON sounds like structure."
+        },
+        "d": {
+          "reasoning": "A checklist is still a prose description of the format, which half the summaries already ignore.",
+          "tempting": "Clearer rules are a reasonable first instinct."
+        }
+      },
+      "concept": [
+        "Few-shot examples are the most effective technique for consistently formatted output. They show instead of tell, which matters most for exact output formats.",
+        "The exam guide suggests 2 to 4 targeted examples; Anthropic's docs suggest 3 to 5, relevant to the real use case and varied enough to cover different cases. Wrapping each example in XML tags keeps its parts clear.",
+        "`--output-format json` returns the reply as a JSON object with the text in `result` and metadata; the text inside is unchanged."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "The prompt describes the format in prose",
+          "meaning": "Telling has been tried; showing is next."
+        },
+        {
+          "phrase": "About half of the summaries follow it",
+          "meaning": "The rules are understood but applied inconsistently."
+        },
+        {
+          "phrase": "the content is usually accurate",
+          "meaning": "Only the format needs fixing."
+        }
+      ],
+      "lookFor": [
+        "Examples in the exact output format.",
+        "Examples varied across the kinds of input.",
+        "No second pass when the first prompt can be fixed."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Adds a model call to fix what examples fix in the first."
+        },
+        {
+          "option": "c",
+          "reason": "Wraps the text; doesn't format it."
+        },
+        {
+          "option": "d",
+          "reason": "Still prose, which is already being ignored."
+        }
+      ],
+      "rule": "When prose format rules are followed inconsistently, add a few varied examples of the output in the exact format.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices (clear instructions, examples, chaining, prefill)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: run Claude Code programmatically (non-interactive mode)",
+          "url": "https://code.claude.com/docs/en/headless"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Providing examples",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/providing-examples"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S5-013",
+      "explanation": "`fix` is a required string, so the model must write something even for design issues that have no single code change, and \"consider refactoring\" is what it writes. The findings themselves are accurate. Making `fix` nullable, and saying in the prompt when it should be null, lets those findings stand without an invented suggestion, and the pipeline posts a suggested change only when one exists.",
+      "options": {
+        "a": {
+          "reasoning": "Examples help when a concrete fix exists but is not being stated. For a cross-service double-charge risk there is none, so the examples push the model to invent one.",
+          "tempting": "Examples are the usual way to get concrete fixes."
+        },
+        "b": {
+          "reasoning": "Even where a length bound is enforced, it shapes the string, not whether a real fix exists; the model can pad the same advice. Schema compliance is about shape, not truth.",
+          "tempting": "It blocks the short placeholder directly in the schema."
+        },
+        "c": {
+          "reasoning": "The issues are accurate, and a double-charge risk is exactly what a payments review must surface. Dropping them hides real findings.",
+          "tempting": "It is the quickest way to clean up the comments."
+        },
+        "d": {
+          "reasoning": "A nullable `fix` with a stated rule for null lets the model report a real issue honestly when no concrete change exists."
+        }
+      },
+      "concept": [
+        "Schema design decides what the model can say. A required field forces a value even when the input has none, which invites invented content; make such fields nullable so the model is not pushed to fabricate.",
+        "Schema compliance is about shape, not truth: output can match the schema and still be wrong or empty of meaning. JSON Schema bounds such as `minLength` are not supported in strict schemas, so bounds belong in a validator. With a nullable field, cases that lack the value come back as null.",
+        "Tell the model what to return when there is no answer, for example null, and let it say it does not know; both reduce unsupported content."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`\"required\": [\"file\", \"line\", \"issue\", \"severity\", \"fix\"]`",
+          "meaning": "Every finding must carry a fix, whether one exists or not."
+        },
+        {
+          "phrase": "where no single code change exists",
+          "meaning": "The value is genuinely absent for these findings."
+        },
+        {
+          "phrase": "developers rate the issues themselves as accurate",
+          "meaning": "The findings must be kept; only the field is wrong."
+        }
+      ],
+      "lookFor": [
+        "A field that can legitimately be absent.",
+        "A nullable schema field plus a rule for when it is null.",
+        "Keeping accurate findings rather than filtering them."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Pushes the model to invent fixes that don't exist."
+        },
+        {
+          "option": "b",
+          "reason": "Length isn't substance; the model pads."
+        },
+        {
+          "option": "c",
+          "reason": "Drops accurate, important findings."
+        }
+      ],
+      "rule": "When a value can be absent, make its schema field nullable and say when to return null, so the model doesn't invent one.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Reduce hallucinations",
+          "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Strict tool use",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/strict-tool-use"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to evals: Iterate the prompt before you upgrade the model",
+          "url": "https://academy.claude.com/courses/introduction-to-evals/iterate-the-prompt-before-you-upgrade-the-model"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S5-014",
+      "explanation": "`request_counts` shows 1,310 successes and 90 errors, so resubmitting all 1,400 pays again for work already done. The failures have two causes. The 30 temporary server errors can go back unchanged, but the 60 requests were rejected for prompts that were too long and would fail the same way again, so they must be split into smaller requests first. Then only the failed services are resent, picked out by `custom_id`.",
+      "options": {
+        "a": {
+          "reasoning": "It throws away 1,310 good results and pays to produce them again, and the 60 oversized prompts would fail again unchanged.",
+          "tempting": "One full run looks simpler and more uniform."
+        },
+        "b": {
+          "reasoning": "`custom_id` ties each result to its request, so the 90 failures can be resent while the 1,310 good results stay."
+        },
+        "c": {
+          "reasoning": "It blames the batch queue, which isn't what failed: each batch request is an ordinary Messages call, so a prompt too long for a batch request is too long for a synchronous call too.",
+          "tempting": "Synchronous calls look like a faster path than another batch."
+        },
+        "d": {
+          "reasoning": "Invalid requests must be fixed before resending; splitting the oversized services into per-module requests makes each prompt fit."
+        },
+        "e": {
+          "reasoning": "`max_tokens` caps the length of the response, not the size of the prompt, so the 60 requests would be rejected again.",
+          "tempting": "It sounds like raising a size limit."
+        }
+      },
+      "concept": [
+        "The Message Batches API returns results in any order; match them to requests by `custom_id`, which must be unique in the batch. `request_counts` and each result's type (`succeeded`, `errored`, `canceled`, `expired`) show what needs attention.",
+        "Resend only what failed: split the errored results by cause, fix invalid requests before resending, and submit the failed `custom_id`s in a new batch. Transient failures can be resent as they were. A new batch has no promised completion time and expires if not done within 24 hours, so a resend suits a deadline a day away, such as tomorrow night's run.",
+        "Each batch request is an independent Messages call. `max_tokens` caps the length of the response; it does not change how much input a request can carry."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`\"succeeded\": 1310, \"errored\": 90`",
+          "meaning": "Most of the work is done; only 90 need another try."
+        },
+        {
+          "phrase": "60 requests rejected because their prompts … were too long",
+          "meaning": "These are invalid and must change before resending."
+        },
+        {
+          "phrase": "30 that hit a temporary server error",
+          "meaning": "These can be resent unchanged."
+        },
+        {
+          "phrase": "with the service name as `custom_id`",
+          "meaning": "Failed services can be identified exactly."
+        },
+        {
+          "phrase": "without paying twice for finished work",
+          "meaning": "Rules out resubmitting the 1,310 requests that succeeded."
+        }
+      ],
+      "lookFor": [
+        "Resending only the failed `custom_id`s.",
+        "Treating failures differently by cause.",
+        "A real fix for invalid requests before they go back."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Pays for 1,310 successes again and resends the invalid requests unchanged."
+        },
+        {
+          "option": "c",
+          "reason": "The request is the problem, not the queue: too long is too long on either API."
+        },
+        {
+          "option": "e",
+          "reason": "`max_tokens` limits output, not input."
+        }
+      ],
+      "rule": "After a batch, resend only the failed `custom_id`s, fixing invalid requests first; transient failures can go back unchanged.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Batch processing (Message Batches API)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/batch-processing"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Structured outputs",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to evals: Evals in production (CI, batch, drift)",
+          "url": "https://academy.claude.com/courses/introduction-to-evals/evals-in-production"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S5-015",
+      "explanation": "The reviewer is a separate subagent, but its only input is the prompt the generator writes, and that prompt carries the generator's reasoning. So the review is not independent: it approves 97% while humans reject 1 in 5. The instruction to pass only the diff was already tried and still fails 40% of the time. Having the pipeline start the reviewer with the diff, ticket and criteria takes the author out of the reviewer's input.",
+      "options": {
+        "a": {
+          "reasoning": "Reviewing its own diff in the session that wrote it is self-review: the model keeps its generation reasoning and rarely questions it.",
+          "tempting": "A checklist and extended thinking sound thorough."
+        },
+        "b": {
+          "reasoning": "When the pipeline starts the reviewer and chooses its input, the generator cannot frame the review, so the reviewer judges the change with none of the author's reasoning."
+        },
+        "c": {
+          "reasoning": "A reviewer primed with the author's reasoning is confident in its approvals too, so the threshold rarely fires; self-reported confidence is not calibrated.",
+          "tempting": "Routing doubtful cases to humans sounds safe."
+        },
+        "d": {
+          "reasoning": "The instruction was already tried; emphasis may lower the 40%, but the generator still decides what the reviewer sees.",
+          "tempting": "Emphasis and an example are common ways to make a rule stick."
+        }
+      },
+      "concept": [
+        "A model reviewing its own output keeps the reasoning from generation and is less likely to question its decisions. An independent instance without that context catches subtler issues.",
+        "The session that wrote a change is not the best judge of it; review from a clean context with none of that session's history.",
+        "A subagent receives only the prompt string its parent writes. When the author is the parent, the author decides the reviewer's whole view, so independence has to come from outside the author, for example a pipeline step."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "writes the reviewer's prompt itself",
+          "meaning": "The author controls the reviewer's input."
+        },
+        {
+          "phrase": "\"I handled the null case by…\"",
+          "meaning": "The author's reasoning reaches the reviewer."
+        },
+        {
+          "phrase": "The team already told the generator to pass only the diff",
+          "meaning": "The prompt fix was tried and failed."
+        },
+        {
+          "phrase": "approves 97% of fixes, but human reviewers reject 1 in 5",
+          "meaning": "The review is biased toward the author's view."
+        }
+      ],
+      "lookFor": [
+        "A reviewer whose input is chosen by the pipeline, not the author.",
+        "The diff and criteria without the author's notes.",
+        "A step that stays before the merge."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Same-session self-review."
+        },
+        {
+          "option": "c",
+          "reason": "Uncalibrated confidence from a biased reviewer."
+        },
+        {
+          "option": "d",
+          "reason": "Already tried; the author still writes the input."
+        }
+      ],
+      "rule": "An independent reviewer must get its input from the pipeline, not from the author, or the author's reasoning comes with it.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: best practices",
+          "url": "https://code.claude.com/docs/en/best-practices"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: subagents",
+          "url": "https://code.claude.com/docs/en/agent-sdk/subagents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code 101: Code review",
+          "url": "https://academy.claude.com/courses/claude-code-101/code-review"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S6-006",
+      "explanation": "\"Extract only values you are highly confident of\" is the kind of vague instruction the exam guide says fails against categorical criteria. On handwritten forms the model reads its own unease as low confidence, so 40% of fields that reviewers can read come back null. A criterion the model can check, legible in its labelled box, extracts those fields while still returning null for boxes that are blank or illegible.",
+      "options": {
+        "a": {
+          "reasoning": "The new wording says exactly when to extract and exactly when to return null, using properties of the page rather than the model's feelings. Readable handwriting gets extracted, and nothing is invented for an empty or unreadable box."
+        },
+        "b": {
+          "reasoning": "A percentage looks precise, but it still asks the model to rate its own confidence, which is not calibrated, so handwritten fields can keep falling under the line. Confidence thresholds work when they are calibrated on labelled data, not as a number in a prompt.",
+          "tempting": "It replaces \"highly confident\" with a specific number."
+        },
+        "c": {
+          "reasoning": "Taking nearby text for a blank box invents a value, which the pipeline must not do; the null rate would fall by filling fields with the wrong data. A blank or illegible box is the case the pipeline sends to the 12 reviewers, not one to guess at.",
+          "tempting": "It would cut the null rate sharply."
+        },
+        "d": {
+          "reasoning": "Sending handwritten forms straight to review loads the 12 reviewers with forms the model could mostly read. Skipping extraction suits a document type the model really can't handle, which the reviewers' easy reading rules out here.",
+          "tempting": "Reviewers already handle the nulls, so sending the whole form seems simpler."
+        }
+      },
+      "concept": [
+        "The exam guide's rule for prompts: explicit criteria beat vague instructions, and general instructions such as \"be conservative\" or \"only report high-confidence findings\" fail compared with specific categorical criteria.",
+        "Anthropic's prompting guidance says Claude follows explicit instructions, so state exactly what you want rather than leaving it to inference, and say what to do rather than only what not to do. Anthropic Academy's lesson on being clear and direct adds: lead with the task, use direct verbs and state the constraints.",
+        "For extraction, tell the model what to return when the document holds no answer, such as null. That keeps the no-invention rule while the criteria decide when a value is there to extract.",
+        "Self-reported confidence is an unreliable proxy unless it is calibrated against labelled data, so a confidence number in a prompt is not a substitute for criteria."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "\"Extract only values you are highly confident of; otherwise return null.\"",
+          "meaning": "A vague confidence instruction, not a criterion."
+        },
+        {
+          "phrase": "40% of fields come back null, although reviewers read most of them without difficulty",
+          "meaning": "The values are on the page; the instruction is too cautious."
+        },
+        {
+          "phrase": "must still not invent a value for a field that is blank or illegible",
+          "meaning": "Null must stay the answer for genuinely missing values."
+        }
+      ],
+      "lookFor": [
+        "A checkable condition for extracting a value.",
+        "Null kept for blank or illegible boxes.",
+        "No self-rated confidence number and no guessing from nearby text."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A confidence number still relies on uncalibrated self-rating."
+        },
+        {
+          "option": "c",
+          "reason": "Taking nearby text for a blank box invents values."
+        },
+        {
+          "option": "d",
+          "reason": "Skipping extraction overloads reviewers with readable forms."
+        }
+      ],
+      "rule": "Replace instructions like \"only when highly confident\" with categorical criteria that say when to extract a value and when to return null.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Reduce hallucinations",
+          "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Being clear and direct",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/being-clear-and-direct"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S6-007",
+      "explanation": "Fourteen per-garage rules have taught the model 14 layouts and nothing else, so each new layout fails until someone writes its rule. The exam guide says examples let the model generalise to new patterns, not just the listed cases. A few examples from varied layouts that show how labour is told from parts, such as hours times a rate, give the model a method it can apply to a layout it has never seen, and keep the prompt compact.",
+      "options": {
+        "a": {
+          "reasoning": "Varied examples with the reasoning shown teach the distinction itself, so new layouts are handled from their first week, and three or four examples are shorter than a growing rule list."
+        },
+        "b": {
+          "reasoning": "Examples are the right tool, but four from the busiest garages without the reasoning teach those layouts, not how to tell labour from parts. New layouts would keep failing. Examples of one kind suit inputs that really are uniform.",
+          "tempting": "It uses examples and covers the garages that send the most invoices."
+        },
+        "c": {
+          "reasoning": "A classifier loads each rule only where it applies, but a new garage still has no rule, so the first-week failures stay. It adds a component without fixing why new layouts fail.",
+          "tempting": "It keeps the prompt short by loading one rule at a time."
+        },
+        "d": {
+          "reasoning": "Sending unknown layouts to review hides the failures at the reviewers' cost, and the rule list keeps growing. Review suits documents the model can't handle, not ones it could read with better examples.",
+          "tempting": "Reviewers would catch the mislabelled invoices during the first week."
+        }
+      },
+      "concept": [
+        "The exam guide calls few-shot examples the most effective way to get consistent output, and says they help the model generalise to new patterns rather than only the cases listed. Its skills include writing a few targeted examples for ambiguous cases that show the reasoning behind each choice, and examples that show correct extraction across varied document structures.",
+        "Anthropic Academy's lesson on providing examples says examples show instead of tell and are most useful for corner cases, exact formats and ambiguous inputs; it advises explaining why an example output is right, not only what it is.",
+        "Anthropic's prompting guidance says examples should be relevant to the real task and diverse enough to cover edge cases without teaching unintended patterns. On count, the guide says 2 to 4 and the docs suggest 3 to 5; three or four fits both."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "one rule per garage layout, 14 so far",
+          "meaning": "The rules list cases instead of teaching the distinction."
+        },
+        {
+          "phrase": "each one mislabels labour and parts for its first week until someone writes its rule",
+          "meaning": "The model does not generalise to new layouts."
+        },
+        {
+          "phrase": "The prompt must stay compact",
+          "meaning": "A growing list is the wrong direction; a few examples fit."
+        },
+        {
+          "phrase": "labour and parts must be told apart on any layout",
+          "meaning": "The fix must work on layouts not yet seen."
+        }
+      ],
+      "lookFor": [
+        "A few examples from varied layouts.",
+        "The reasoning shown in each example.",
+        "No per-garage rule loading and no review queue as a stopgap."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Examples of a few layouts without reasoning won't generalise."
+        },
+        {
+          "option": "c",
+          "reason": "A classifier still has no rule for a new garage."
+        },
+        {
+          "option": "d",
+          "reason": "Review hides the failures and the rule list keeps growing."
+        }
+      ],
+      "rule": "When each new input pattern needs a new rule, replace the rules with a few varied examples that show the reasoning, so the model generalises to patterns it hasn't seen.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Prompting best practices",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Providing examples",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/providing-examples"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S6-008",
+      "explanation": "A VIN in `policy_number` is a valid string in a valid record, so the schema is already satisfied and strict mode would change nothing. This is a semantic error. Two independent fixes address it: validator checks on each field's format, with a retry that carries the document, the failed record and the specific error; and field descriptions that state each format with an example, so the model is less likely to swap them at all.",
+      "options": {
+        "a": {
+          "reasoning": "The validator catches what the schema cannot, here a value in the wrong field, and the retry gives the model what it needs to correct it: the document, its failed output and the exact check that failed."
+        },
+        "b": {
+          "reasoning": "\"The policy number.\" gives the model no way to tell `HM-` plus 6 digits from a 17-character VIN. Formats and an example in each field's description address the cause, while the validator catches what still slips through."
+        },
+        "c": {
+          "reasoning": "Strict mode makes the tool input match the schema's shape, and the swapped records already match it, since both fields are strings. It is the right setting when output fails to parse, which these records don't.",
+          "tempting": "Strict mode sounds like it enforces correctness."
+        },
+        "d": {
+          "reasoning": "A larger model may swap the fields less often, but the cause is a description with no format and a validator that checks none. Fix the prompt and the checks first, and move to a bigger model only when those stop helping.",
+          "tempting": "Stronger models read crowded forms better."
+        },
+        "e": {
+          "reasoning": "Required means a field must be present, not which value belongs in it, and both fields are already filled in the swapped records. Required fields also push the model to invent a value when a document lacks one.",
+          "tempting": "It sounds like it ties each field to its own box."
+        }
+      },
+      "concept": [
+        "The exam guide separates semantic validation errors, such as values in the wrong field, from schema syntax errors, which tool use with a schema removes. Strict schemas remove syntax errors but not semantic ones. For semantic errors it teaches retry with error feedback: the follow-up request includes the original document, the failed extraction and the specific validation errors.",
+        "`strict: true` on a tool compiles the schema into a grammar, so the input can only match it. Anthropic Academy's strict tool use lesson stresses that schema compliance is about shape, not truth: a call can match the schema and still fail your validator, which checks what the schema cannot.",
+        "When the model passes a wrong value or format, Anthropic Academy's lesson on tools Claude picks points to the parameter's description: each parameter has its own description in the schema, and that is where its format belongs.",
+        "Anthropic Academy's evals course says to fix the prompt before paying for a bigger model, and to move up only when prompt changes stop moving the score."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "Both are string fields in the extraction schema, so the output parses",
+          "meaning": "The records already satisfy the schema; strict mode adds nothing."
+        },
+        {
+          "phrase": "Policy numbers are `HM-` followed by 6 digits, VINs are 17 characters",
+          "meaning": "Each field has a checkable format."
+        },
+        {
+          "phrase": "the `policy_number` field description reads only \"The policy number.\"",
+          "meaning": "The description gives the model no format to go on."
+        }
+      ],
+      "lookFor": [
+        "A validator check on each field's format, with a specific-error retry.",
+        "Field descriptions that state the format with an example.",
+        "No reliance on strict mode, required fields or a bigger model."
+      ],
+      "eliminate": [
+        {
+          "option": "c",
+          "reason": "Strict mode enforces shape, which the swapped records already have."
+        },
+        {
+          "option": "d",
+          "reason": "A bigger model doesn't supply the missing format or the missing check."
+        },
+        {
+          "option": "e",
+          "reason": "Required fields don't decide which value goes where."
+        }
+      ],
+      "rule": "Schema validity is not correctness: catch values in the wrong field with validator checks and specific-error retries, and state each field's format in its description.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Strict tool use",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Strict tool use",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/strict-tool-use"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Creating tools that Claude picks",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/creating-tools-that-claude-picks"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to evals: Iterate the prompt before you upgrade the model",
+          "url": "https://academy.claude.com/courses/introduction-to-evals/iterate-the-prompt-before-you-upgrade-the-model"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S6-009",
+      "explanation": "Whether \"1.234,50\" means 1234.50 depends on where the invoice comes from, and only the page shows that. So the conversion rule belongs in the prompt, where the model can read the country and currency, which is the exam guide's place for format normalisation rules. Because a number alone can't be checked, the record should also carry the currency and the total as printed, so a validator can catch a 1,000-fold slip without a reviewer reading each euro invoice.",
+      "options": {
+        "a": {
+          "reasoning": "The guide puts normalisation rules in the prompt alongside the schema. Only the model sees the address, VAT number and currency, so only it can decide which separator is the decimal; a rule tied to country and currency fixes the misreads at their source."
+        },
+        "b": {
+          "reasoning": "Keeping the printed string and currency beside the number gives the validator something to compare, like a stated total beside a calculated one. A value of 1.2345 against \"1.234,50\" then fails the check instead of reaching adjudication."
+        },
+        "c": {
+          "reasoning": "A code step would be deterministic, but it needs the country, and the stem says the country is only on the page, not in metadata. Code normalisation suits a value whose format is known from its source, such as a tool's fixed output.",
+          "tempting": "Code is deterministic, which sounds safer than a prompt rule."
+        },
+        "d": {
+          "reasoning": "Moving the parsing into the adjudication import pushes the locale problem to a system that expects consistent fields and never sees the page. A string field suits a value with no single format, not a total that must be a number.",
+          "tempting": "It keeps the printed value intact."
+        },
+        "e": {
+          "reasoning": "Self-reported confidence is not calibrated, and a model that read a dot as the decimal point is likely to be sure of its answer. It would also send many correct euro invoices to 12 reviewers who can't take them.",
+          "tempting": "It routes doubtful totals to people."
+        }
+      },
+      "concept": [
+        "The exam guide names `tool_use` with a JSON schema as the most reliable route to schema-compliant output, and lists format normalisation rules in the prompt alongside the schema as a skill. A schema can say a field is a number; it cannot say how to read a number printed in another locale.",
+        "Strict schemas and structured outputs constrain the response to the schema's shape. Anthropic Academy's strict tool use lesson adds that schema compliance is about shape, not truth, and that a validator checks what the schema cannot, such as arithmetic across fields.",
+        "The guide's self-check fields, such as a `calculated_total` beside a `stated_total`, give a validator two values to compare. Keeping `total_as_printed` and `currency` beside `total_amount` applies the same idea to a converted number.",
+        "Self-reported confidence is an unreliable proxy unless it is calibrated against labelled data."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "Garages in Germany and France print totals such as \"1.234,50\"",
+          "meaning": "The decimal separator depends on the locale."
+        },
+        {
+          "phrase": "The garage's country shows only on the page ... not in any metadata",
+          "meaning": "Only the model can see what decides the conversion."
+        },
+        {
+          "phrase": "`total_amount` as a number",
+          "meaning": "The printed form is lost unless the record keeps it."
+        },
+        {
+          "phrase": "reviewers can't check thousands of euro invoices",
+          "meaning": "The check has to be automatic."
+        }
+      ],
+      "lookFor": [
+        "Normalisation rules in the prompt, tied to what the page shows.",
+        "The printed value and currency kept so a validator can compare.",
+        "No reliance on metadata the documents don't have."
+      ],
+      "eliminate": [
+        {
+          "option": "c",
+          "reason": "The metadata has no country, so code can't know the locale."
+        },
+        {
+          "option": "d",
+          "reason": "It pushes the locale problem to a system that never sees the page."
+        },
+        {
+          "option": "e",
+          "reason": "Uncalibrated confidence misses confident misreads and floods review."
+        }
+      ],
+      "rule": "Put locale and format normalisation rules in the prompt beside the schema, and keep the value as printed so a validator can check the conversion.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Structured outputs",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Strict tool use",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/strict-tool-use"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S6-010",
+      "explanation": "A repair dated before the loss is a semantic error that a schema check can't see, so the validator needs a cross-field rule. The audit also says the right date is on the scan in most cases, which makes this a misread that a retry can fix. Retrying with the scan, the failed record and the specific error costs one call, while reviewer time is scarce.",
+      "options": {
+        "a": {
+          "reasoning": "The cross-field rule catches the 4%, and the guide's retry pattern gives the model the document, its failed output and the exact error, so it can re-read the smudged digit."
+        },
+        "b": {
+          "reasoning": "The rule is right, but sending each failure straight to review spends scarce reviewer time on errors the model can fix by re-reading the scan. Direct review suits failures where the value is missing from the document or a retry has already failed.",
+          "tempting": "A person is sure to get the date right."
+        },
+        "c": {
+          "reasoning": "A prompt line may cut the errors, but nothing detects the ones that remain, and a model told to make the dates agree without a check may adjust a date to fit. The rule belongs in the validator.",
+          "tempting": "It asks for the same check without adding a step."
+        },
+        "d": {
+          "reasoning": "Nulling the date throws away a value the scan holds and sends adjudication a record with a gap. Null is right when the document lacks the value, not when the model misread it.",
+          "tempting": "It stops a wrong date from reaching adjudication."
+        }
+      },
+      "concept": [
+        "The exam guide separates semantic validation errors, such as values that don't add up or don't fit together, from schema syntax errors, which tool use with a schema removes. Its retry pattern sends a follow-up with the original document, the failed extraction and the specific validation errors.",
+        "It also says when retries help: they fix format and structure errors where the information is in the document, and they don't help when the information is absent from the source.",
+        "JSON Schema bounds are not supported in strict schemas, so bounds and cross-field rules are checked in a validator. Anthropic Academy's strict tool use lesson puts it as shape, not truth: a record can match the schema and still fail your validator."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "checks extracted repair invoices against the JSON schema only",
+          "meaning": "Nothing checks how fields relate to each other."
+        },
+        {
+          "phrase": "`repair_date` earlier than the claim's `loss_date`",
+          "meaning": "A cross-field, semantic error."
+        },
+        {
+          "phrase": "the scan shows the right date: the model misread a smudged digit",
+          "meaning": "The information is present, so a retry can work."
+        },
+        {
+          "phrase": "Reviewer time is scarce, while an automatic retry costs one call",
+          "meaning": "Retry before review."
+        }
+      ],
+      "lookFor": [
+        "A cross-field rule in the validator.",
+        "A retry with the document, the failed record and the error.",
+        "No nulling of a value the document holds."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Review spends scarce time on errors a retry can fix."
+        },
+        {
+          "option": "c",
+          "reason": "A prompt line leaves the remaining errors undetected."
+        },
+        {
+          "option": "d",
+          "reason": "Nulling discards a value the scan holds."
+        }
+      ],
+      "rule": "Check cross-field rules in the validator, and when the source holds the answer, retry with the document, the failed output and the specific error before involving a reviewer.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Structured outputs",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Tool use with the Messages API: Strict tool use",
+          "url": "https://academy.claude.com/courses/tool-use-with-the-messages-api/strict-tool-use"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S6-011",
+      "explanation": "A batch request can't make a tool round trip partway through, so today's mid-extraction `lookup_policy` call can't move to batch as it is. But the policy number is in the intake record before anything is submitted, so code can call `lookup_policy` first and put the cover limit and excess into each request. Each request then finishes in one turn, inside one batch round that fits the 30-hour deadline, and keeps the 50% saving.",
+      "options": {
+        "a": {
+          "reasoning": "Fetching the lookup result before submission removes the need for a tool call inside the request. One round of up to 24 hours fits the 30-hour deadline, and the saving is kept."
+        },
+        "b": {
+          "reasoning": "Two rounds do make the tool step possible, but each can take up to 24 hours, so the worst case is 48 hours against a 30-hour deadline. Two rounds suit a deadline with room for both, or a tool input that can't be known before submission.",
+          "tempting": "It keeps the model's own tool call and still uses the Batches API."
+        },
+        "c": {
+          "reasoning": "The limit is real, but this lookup needn't happen mid-request, since its input is known up front. Synchronous calls suit work someone waits on; this nightly job would give up the 50% saving for nothing.",
+          "tempting": "It correctly notes that batch requests can't run a tool partway through."
+        },
+        "d": {
+          "reasoning": "Forcing a tool makes the model's response a request for that tool; it doesn't run it. Your code runs client tools and returns the result in a new request, which a single batch request can't do. A forced tool suits the first step of a synchronous loop.",
+          "tempting": "It sounds like it makes the lookup happen inside the request."
+        }
+      },
+      "concept": [
+        "The exam guide lists the Message Batches API's terms: 50% cost savings, a processing window of up to 24 hours with no guaranteed latency, and no multi-turn tool calling within a single request. It suits latency-tolerant work such as overnight jobs.",
+        "The batch processing docs say batch usage is charged at 50% of standard prices, and a batch not finished within 24 hours expires, with no promised completion time. Each batch request is an independent Messages call that returns one response; a client tool result needs a new request.",
+        "With `tool_choice` set to a named tool, the response starts with a `tool_use` block for that tool. The tool itself runs in your code, and its result goes back in the next request. On some current models (Opus 5.5, Sonnet 5.5, Fable/Mythos 5.x) forced `tool` returns a 400 error; the exam guide's answers assume a model that supports it.",
+        "Timing check from the guide's deadline arithmetic: each batch round can take up to 24 hours, so one round fits a 30-hour deadline and two rounds don't."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "calls `lookup_policy` partway through, after reading the document",
+          "meaning": "A mid-request tool round trip, which a batch request can't do."
+        },
+        {
+          "phrase": "its policy number already in the intake record",
+          "meaning": "The lookup can run before submission."
+        },
+        {
+          "phrase": "within 30 hours of the nightly cut-off, and a batch can take up to 24 hours",
+          "meaning": "There is room for one batch round, not two."
+        },
+        {
+          "phrase": "for the 50% saving",
+          "meaning": "Giving up the batch discount is a real cost."
+        }
+      ],
+      "lookFor": [
+        "The tool's result fetched in code before submission.",
+        "Each batch request completing in one turn.",
+        "Deadline arithmetic that rules out a second round."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Two rounds can take 48 hours against a 30-hour deadline."
+        },
+        {
+          "option": "c",
+          "reason": "It gives up the saving when the lookup can move before submission."
+        },
+        {
+          "option": "d",
+          "reason": "Forcing a tool doesn't run it inside the request."
+        }
+      ],
+      "rule": "A batch request can't do a mid-request tool round trip; when the tool's input is known in advance, call it before submission and put its result in the request.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 4 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Batch processing (Message Batches API)",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/batch-processing"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Define tools",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
     }
   ]
 }

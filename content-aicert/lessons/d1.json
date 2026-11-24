@@ -6813,6 +6813,2800 @@
         }
       ],
       "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S1-001",
+      "explanation": "The chat holds three items, and only one of them needs a person: the $310 outage credit is above the $250 approval limit, while the read correction and the water plan are within the agent's authority. Handing over the whole chat makes the approver do agent work and loses two resolutions. The pair that fixes it splits the request: settle the two allowed items now, and escalate the credit alone with a structured handoff the approver can act on without rebuilding the case.",
+      "options": {
+        "a": {
+          "reasoning": "The handoff part is good, but the whole chat still goes to a person, including two items the agent can settle itself. The approver keeps doing agent work, and the contact doesn't count toward the 75% target. Handing over the whole chat would fit a customer who asks for a person.",
+          "tempting": "It improves the handoff, which is half of the right answer."
+        },
+        "b": {
+          "reasoning": "Splitting the request into items shows that the read correction and the water plan need no approval. The agent settles both in this chat, so the customer leaves with two items done while the credit waits for the approver."
+        },
+        "c": {
+          "reasoning": "A $310 credit is one decision above the $250 limit. Granting $250 of it and escalating $60 routes around the approval rule instead of following it, and the approver sees a $60 request, not the real one. Granting up to the limit would fit a request of $250 or less.",
+          "tempting": "It settles most of the credit now, which looks customer-friendly."
+        },
+        "d": {
+          "reasoning": "Only the credit needs a human approver, so only the credit is escalated. The handoff carries the account, the outage dates and hours as evidence, the amount the agent recommends and what it has already done, so the approver can decide at a glance instead of spending 10 minutes on the chat."
+        },
+        "e": {
+          "reasoning": "Evidence doesn't change who approves: credits above $250 need a human approver, and the hook on `apply_bill_credit` denies the call anyway. The agent should settle what it can and pass the credit decision on.",
+          "tempting": "The outage record makes the credit look certain."
+        }
+      },
+      "concept": [
+        "The exam guide's Task 1.4 skills include splitting a multi-concern customer request into distinct items, investigating each, and giving one unified resolution, and compiling a structured handoff summary when escalating to a human. A handoff protocol carries the customer ID, the root-cause analysis and the recommended actions.",
+        "When Claude wants client tools, the response carries one or more `tool_use` blocks, so the lookups for separate items can be requested together before the agent writes one reply covering all of them.",
+        "A money rule such as the $250 limit is enforced before the call: a `PreToolUse` hook can deny the call with a `permissionDecisionReason` that Claude sees, sending the agent to the approved path, here `escalate_to_agent`. Splitting the amount to slip under the hook works against that design."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "a $310 credit for four days without power",
+          "meaning": "Above the $250 limit, so this item needs a human approver."
+        },
+        {
+          "phrase": "The agent may correct reads and set up plans itself",
+          "meaning": "Two of the three items are within the agent's authority."
+        },
+        {
+          "phrase": "hands the whole chat to the human queue",
+          "meaning": "The current behaviour escalates items that don't need a person."
+        },
+        {
+          "phrase": "spend about 10 minutes rebuilding each case",
+          "meaning": "The handoff is too thin; the approver needs the facts in it."
+        }
+      ],
+      "lookFor": [
+        "An option that settles the items within the agent's authority in the chat.",
+        "An option that escalates only the item above the limit, with account, evidence, recommendation and what is done.",
+        "No splitting of an over-limit credit to stay under the rule."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It still sends two items the agent can settle to a person."
+        },
+        {
+          "option": "c",
+          "reason": "It splits one over-limit credit to get around the approval rule."
+        },
+        {
+          "option": "e",
+          "reason": "Credits above $250 need a human approver whatever the evidence shows."
+        }
+      ],
+      "rule": "Split a multi-item request: settle what is within the agent's authority, and escalate only the item that needs a person, with a handoff holding the account, evidence, recommendation and what is already done.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Tool use overview",
+          "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: hooks reference",
+          "url": "https://code.claude.com/docs/en/hooks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S1-002",
+      "explanation": "The gate's job is to stop credits and payment plans for callers who haven't been verified. Its matcher also lists `escalate_to_agent`, so a caller who fails `verify_caller` and asks for a person is denied the one route that could help, and 61% of those chats end with the customer leaving. Human agents run their own identity checks, so a transfer exposes nothing. Narrowing the matcher to the two money-moving tools keeps the enforcement and reopens the route to a person.",
+      "options": {
+        "a": {
+          "reasoning": "It keeps the matcher and changes only the message. The caller who already failed `verify_caller` is sent back to the same check, and the request for a person is still refused. Another round would suit a caller who mistyped an answer and hasn't asked for anyone.",
+          "tempting": "A clearer deny reason is often the right fix for a hook."
+        },
+        "b": {
+          "reasoning": "Removing the gate reopens escalation, but it also turns the identity rule for credits and plans into a prompt instruction, which Claude usually follows but which cannot guarantee anything. A rule that protects money needs the deterministic check kept in code.",
+          "tempting": "It fixes the transfers in one move and states the rule clearly."
+        },
+        "c": {
+          "reasoning": "The hook still runs on `apply_bill_credit` and `create_payment_plan` and still denies them until `{\"verified\": true}`, so nothing about money changes. `escalate_to_agent` is no longer matched, so the 212 callers reach a person, whose own identity check covers the transfer."
+        },
+        "d": {
+          "reasoning": "A callback keeps the gate but puts the person hours away, and the billing team would run the same identity check it runs on a live transfer, so the delay buys nothing. Callbacks suit hours when no agent is free.",
+          "tempting": "It keeps the gate intact and still promises human contact."
+        }
+      },
+      "concept": [
+        "The exam guide's Task 1.5 skill is a hook that blocks a policy-violating action and redirects the agent to another workflow, such as human escalation. Hooks give deterministic guarantees; prompt instructions are probabilistic.",
+        "SDK hooks are callbacks registered in the `hooks` option and attached with matchers, so the matcher decides which tool calls the hook runs on. Attach an enforcement hook with the tool matcher and do the check in the hook's code. A `PreToolUse` hook can return `permissionDecision: \"deny\"` with a `permissionDecisionReason` that Claude sees.",
+        "Put the gate on the actions the rule protects. Escalation is the redirect target, so gating it with the same rule leaves a blocked caller nowhere to go."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "human agents run their own identity checks",
+          "meaning": "A transfer to a person doesn't need the caller to be verified first."
+        },
+        {
+          "phrase": "matcher: \"apply_bill_credit|create_payment_plan|escalate_to_agent\"",
+          "meaning": "The gate also runs on the escalation tool, which is the bug."
+        },
+        {
+          "phrase": "212 callers failed `verify_caller` and then asked for a person",
+          "meaning": "These callers are exactly the ones the redirect is for."
+        },
+        {
+          "phrase": "61% of those chats ended with the customer leaving",
+          "meaning": "Blocking escalation has a real cost."
+        }
+      ],
+      "lookFor": [
+        "The gate kept on the tools that move money or set up plans.",
+        "The escalation route left open for callers who failed verification.",
+        "Enforcement kept in code, not moved to the prompt."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It keeps escalation blocked and sends the caller back to the check that failed."
+        },
+        {
+          "option": "b",
+          "reason": "It drops the code check on credits and plans."
+        },
+        {
+          "option": "d",
+          "reason": "It keeps escalation blocked and delays the person for no gain."
+        }
+      ],
+      "rule": "Gate the actions a rule protects, not the route to a person. When humans run their own checks, leave escalation outside the hook's matcher.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: hooks",
+          "url": "https://code.claude.com/docs/en/agent-sdk/hooks"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: hooks reference",
+          "url": "https://code.claude.com/docs/en/hooks"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Hooks",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/hooks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S1-003",
+      "explanation": "`create_payment_plan` sends the plan letter as part of the call, so any check that runs after the call is too late. The existing `PostToolUse` hook catches each wrong plan and the agent fixes it, yet the 17 register customers still got a standard-plan letter first. The same check belongs in a `PreToolUse` hook: deny a non-hardship plan for a register account before it is written, with a reason that sends the agent to hardship terms.",
+      "options": {
+        "a": {
+          "reasoning": "Cancelling in code is deterministic, but it still happens after the tool ran, and the tool has already sent the letter. Blocking or undoing in `PostToolUse` cannot stop the call or its side effects. `PostToolUse` suits after-the-fact work such as formatting.",
+          "tempting": "It removes the model from the fix, which sounds like a stronger guarantee."
+        },
+        "b": {
+          "reasoning": "`PreToolUse` fires before the call and can stop it, so the standard plan is never written and no letter goes out. Its `permissionDecisionReason` tells the agent why, so it offers hardship terms next. Other plan requests pass through without delay."
+        },
+        "c": {
+          "reasoning": "Worked examples make a standard plan for a register customer less likely, but a prompt instruction is a request, not a guarantee, and the backstop still fires after the letter has gone. The miss rate drops; the harm on each miss stays.",
+          "tempting": "Examples plus a backstop sounds like defence in depth."
+        },
+        "d": {
+          "reasoning": "Holding the letters would let the cancellation land first, but it delays the letter for every customer, which the stem rules out, and it still depends on the agent acting on the hook's message. It works around the timing instead of moving the check before the call.",
+          "tempting": "It keeps the hook the team already built and closes the gap."
+        }
+      },
+      "concept": [
+        "`PreToolUse` fires before a tool call and is the enforcement primitive: it can stop the call before it happens, returning `permissionDecision` `deny` with a `permissionDecisionReason` that Claude sees. `PostToolUse` fires after the tool has already run, so blocking there is too late to stop the call or its side effects.",
+        "`PostToolUse` is the place for after-the-fact work. It can add `additionalContext` or change what the model sees, but it cannot undo what the tool already did, here a letter sent to the customer.",
+        "An instruction in a prompt is a request that Claude usually follows; a hook is deterministic code at a fixed point in the loop. The exam guide's Task 1.5 calls for hooks that intercept outgoing tool calls to enforce compliance."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "writes the plan and sends the customer's plan letter in the same call",
+          "meaning": "The side effect happens when the tool runs, so a check after it is too late."
+        },
+        {
+          "phrase": "A `PostToolUse` hook on that tool enforces the policy",
+          "meaning": "The right kind of mechanism at the wrong point in the lifecycle."
+        },
+        {
+          "phrase": "The agent recreated all 17 plans",
+          "meaning": "The model follows the hook's message; timing is the only problem."
+        },
+        {
+          "phrase": "Other plan requests must not slow down",
+          "meaning": "Rules out holding letters for everyone."
+        }
+      ],
+      "lookFor": [
+        "A check that runs before `create_payment_plan`, not after it.",
+        "A deny with a reason that sends the agent to hardship terms.",
+        "No delay for plans that already comply."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "It still runs after the letter has been sent."
+        },
+        {
+          "option": "c",
+          "reason": "A prompt rule is a request, and the backstop still fires too late."
+        },
+        {
+          "option": "d",
+          "reason": "It delays the letter for every customer and still depends on the model."
+        }
+      ],
+      "rule": "When a tool's side effect happens as it runs, enforce the rule in a `PreToolUse` hook that denies the call; a `PostToolUse` check can only clean up afterwards.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: hooks reference",
+          "url": "https://code.claude.com/docs/en/hooks"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: hooks",
+          "url": "https://code.claude.com/docs/en/agent-sdk/hooks"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Hooks",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/hooks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S1-009",
+      "explanation": "The agent's fixed plan starts at the oldest bill and repeats the same three checks on each one, so it spends about 40 tool calls before it finds the cause, and 3 in 10 customers leave first. For open-ended tasks the exam guide's pattern is to map the structure first, find the high-impact areas, then follow a prioritised plan that adapts as findings come in. Here the map is the 24-bill list `get_account` already returns, and adapting matters because the largest bill is often a catch-up whose cause sits in the estimated months before it.",
+      "options": {
+        "a": {
+          "reasoning": "One `get_account` result holds every bill's total, usage and read type, so comparing the 24 bills shows where the rise sits before any per-bill tool call."
+        },
+        "b": {
+          "reasoning": "A largest-first order still runs a fixed set of checks in a fixed order. When the largest bill is a catch-up, its cause sits in the smaller estimated bills, which this order reaches only after every larger bill.",
+          "tempting": "Ranking by total looks like the prioritised plan the pattern asks for."
+        },
+        "c": {
+          "reasoning": "Each finding decides the next check: estimated reads point to the months before a catch-up bill, and a tariff change points to the bills after it. A plan fixed in advance cannot follow those leads."
+        },
+        "d": {
+          "reasoning": "The answer needs only data the agent's own tools return and no credit or approval, so a person would run the same checks, and each handoff counts against the 75% target.",
+          "tempting": "It ends the long chats that customers abandon."
+        },
+        "e": {
+          "reasoning": "Riverbend wants the answer within the chat; an overnight job answers the next day, after the customer has left.",
+          "tempting": "It removes the time pressure that makes customers leave."
+        }
+      },
+      "concept": [
+        "The exam guide separates two ways to split work. A fixed sequence (prompt chaining) suits tasks whose steps are known in advance, such as the same checks on every pull request. Open-ended investigation needs dynamic decomposition: map the structure, find the high-impact areas, then make a prioritised plan that adapts, generating subtasks from what each step discovers.",
+        "Anthropic's guidance puts it the same way: use a workflow when you can picture the steps ahead of time, and an agent for open-ended problems where the number of steps can't be predicted. An agent must observe its environment and adjust its approach from what it sees.",
+        "Anthropic's research agents also do better starting with short, broad queries to see what is available, then narrowing. For a billing question, the broad first look is the bill list the agent already has."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Task shape",
+          "Decomposition"
+        ],
+        "rows": [
+          [
+            "Same checks every time, steps known in advance",
+            "Fixed sequence (prompt chaining)"
+          ],
+          [
+            "Cause unknown, each finding changes what to check next",
+            "Map first, then a prioritised plan that adapts"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "a fixed plan: starting from the oldest",
+          "meaning": "A predefined sequence applied to an open-ended question."
+        },
+        {
+          "phrase": "about 40 tool calls, but 3 in 10 customers leave",
+          "meaning": "The plan spends its calls on ordinary bills."
+        },
+        {
+          "phrase": "`get_account` already lists each bill's total, usage and read type",
+          "meaning": "A cheap map of the whole picture is already available."
+        },
+        {
+          "phrase": "explained by the smaller bills before it",
+          "meaning": "A finding on one bill decides where to look next."
+        },
+        {
+          "phrase": "to answer \"why did my bills go up?\" within the chat",
+          "meaning": "Overnight jobs and handoffs miss the requirement."
+        }
+      ],
+      "lookFor": [
+        "A cheap overview of all the bills before any deep check.",
+        "Next steps chosen from what the last finding showed.",
+        "An answer that stays inside the live chat."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A fixed largest-first order reaches the estimated months behind a catch-up bill only after every larger bill."
+        },
+        {
+          "option": "d",
+          "reason": "The agent can answer from its own tools; nothing needs a person."
+        },
+        {
+          "option": "e",
+          "reason": "The answer is wanted within the chat, not the next morning."
+        }
+      ],
+      "rule": "For an open-ended question, map the whole picture cheaply, start where the impact is, and let each finding pick the next check.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Building effective agents",
+          "url": "https://www.anthropic.com/engineering/building-effective-agents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: How we built our multi-agent research system",
+          "url": "https://www.anthropic.com/engineering/multi-agent-research-system"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Workflows vs agents",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/workflows-vs-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Environment inspection",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/environment-inspection"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S2-001",
+      "explanation": "The question tests what decides delegation. A subagent's description sits in the main agent's system prompt and decides when the subagent is launched. `Lua helper` says nothing about frame-time spikes, so Claude rarely picks `lua-perf` and profiles inline instead. Rewriting the description to name the trigger and the result fixes the choice where it is made, while small Lua edits still run without the subagent.",
+      "options": {
+        "a": {
+          "reasoning": "A standing rule to hand all `gameplay/` Lua work to `lua-perf` would launch a profiling run for the many small edits too, adding time and cost to each. A CLAUDE.md line suits a project-wide convention; when to use one subagent belongs in that subagent's description.",
+          "tempting": "It names the subagent outright, and CLAUDE.md loads in every session."
+        },
+        "b": {
+          "reasoning": "The main agent picks a subagent by reading its description, and `Lua helper` gives it no reason to choose `lua-perf` for a frame-time spike. A description that names the trigger and the result lets Claude delegate on the 60 spike requests and leave small edits alone."
+        },
+        "c": {
+          "reasoning": "The prompt is what the subagent works from, which matters only after it has been launched. Claude chose not to launch it in 58 of 60 cases, so a better procedure changes nothing there. A defined output format would be the right next step once delegation works.",
+          "tempting": "A defined output format is a real and important subagent improvement."
+        },
+        "d": {
+          "reasoning": "A hook suits a rule that must hold without exception, and this is a routing judgment. Blocking each `Read` on gameplay Lua until a profile has run would also stall the small edits that need no profiling, while the vague description stays the cause.",
+          "tempting": "Hooks are the reliable way to force behaviour, and this one forces delegation."
+        }
+      },
+      "concept": [
+        "In the Agent SDK, an `AgentDefinition` requires a description and a prompt. The description is read by the main agent and decides when the subagent is launched; it also guides the prompt the main agent writes for it. The prompt is what the subagent itself works from once it runs.",
+        "A defined output format is the most important improvement to a subagent that is already being used, because it gives a natural stopping point. It cannot help a subagent the main agent never launches."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`description: Lua helper`",
+          "meaning": "The description names no situation, so the main agent has no reason to pick the subagent."
+        },
+        {
+          "phrase": "delegated to `lua-perf` only twice",
+          "meaning": "The failure is in choosing the subagent, not in what it does once running."
+        },
+        {
+          "phrase": "Most Lua requests at the studio are small edits that need no profiling",
+          "meaning": "A rule that sends all Lua work to the subagent would be too broad."
+        },
+        {
+          "phrase": "its 40-line prompt sets out the profiling steps",
+          "meaning": "The procedure already exists; it is just never reached."
+        }
+      ],
+      "lookFor": [
+        "A change to the field the main agent reads when it chooses a subagent.",
+        "A trigger narrow enough to leave small edits alone."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Sending all gameplay Lua work to a profiler launches it for small edits too."
+        },
+        {
+          "option": "c",
+          "reason": "The prompt only matters after launch, and the subagent is rarely launched."
+        },
+        {
+          "option": "d",
+          "reason": "A hook forces delegation even for edits that need no profiling."
+        }
+      ],
+      "rule": "A subagent is launched on the strength of its description, so write the description to say when to use the subagent and what it returns.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: subagents",
+          "url": "https://code.claude.com/docs/en/agent-sdk/subagents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: Designing effective subagents",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/designing-effective-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S2-002",
+      "explanation": "The per-file passes did their job: they found 31 local defects and each file they approved was fine on its own. What got through was a break between files, a changed binding signature with stale Lua callers that were not even in the PR. The design keeps the per-file passes and adds a cross-file integration pass that checks changed signatures against their call sites. Replacing the passes with one big review would weaken the local checks and still miss callers outside the diff.",
+      "options": {
+        "a": {
+          "reasoning": "One prompt over 40 files spreads attention thin, so the local defects the per-file passes catch start to slip. It would not have caught this bug either: the 14 Lua callers were not in the diff. A single pass suits a small diff, not this one.",
+          "tempting": "Seeing all files at once sounds like the cure for a cross-file miss."
+        },
+        "b": {
+          "reasoning": "Per-file passes give each file focused attention, which is why they found 31 local defects. The miss was a cross-file problem, so replacing them would trade a working check for nothing. They stay as the first stage of the review chain."
+        },
+        "c": {
+          "reasoning": "Each per-file pass is given only its own file's diff and has no search tools, so it cannot find the callers elsewhere to confirm they still match. At most it could notice that a signature changed. Checking the call sites needs a step that can search the repository and see the signature and the callers together.",
+          "tempting": "It targets exactly the kind of break that got through."
+        },
+        "d": {
+          "reasoning": "A second independent instance gives each file a fresh look, which helps when a reviewer is biased by its own work. Here both instances still get only one file's diff and no search tools, so neither could see the stale Lua callers, and the cost doubles.",
+          "tempting": "Independent reviewers are a recognised way to catch more defects."
+        },
+        "e": {
+          "reasoning": "The stale callers were outside the changed file, and outside the diff. An integration pass that can search the repository, takes each changed binding signature and checks its Lua call sites in `gameplay/` is the step built for that, and it would have flagged the 14 two-argument calls."
+        }
+      },
+      "concept": [
+        "Prompt chaining splits a task into focused steps, each LLM call working on the output of the step before, with programmatic checks possible between steps. Claude does better on one focused task than on many requirements at once, which is why per-file passes find local defects reliably.",
+        "The exam guide's pattern for large reviews is per-file passes plus a cross-file integration pass. The integration pass is given what the per-file passes never see together: here, each changed signature and the call sites that depend on it."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "each pass is given only that file's diff and has no search tools",
+          "meaning": "A per-file pass cannot look at callers in other files, however it is instructed."
+        },
+        {
+          "phrase": "those passes caught 31 local defects",
+          "meaning": "The per-file stage works; keep it."
+        },
+        {
+          "phrase": "changed the binding `Spawn(entity, pos)` in `engine/script/bindings.cpp` to `Spawn(entity, pos, layer)`",
+          "meaning": "A signature change, whose effects live in other files."
+        },
+        {
+          "phrase": "none of them in the PR",
+          "meaning": "A review of the diff alone, however large, would not see the callers."
+        },
+        {
+          "phrase": "replacing the per-file passes with one review of the whole 40-file diff",
+          "meaning": "The proposal trades focused attention for a view that still misses the callers."
+        }
+      ],
+      "lookFor": [
+        "Keeping the stage that already catches local defects.",
+        "A separate pass that brings changed interfaces and their callers together."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "One big pass dilutes attention and the callers were outside the diff anyway."
+        },
+        {
+          "option": "c",
+          "reason": "A per-file pass gets only its own file's diff and no search, so it cannot reach the callers."
+        },
+        {
+          "option": "d",
+          "reason": "Two reviewers of one file's diff still see only that file."
+        }
+      ],
+      "rule": "Split large reviews into per-file passes for local defects plus a cross-file integration pass for interfaces and their callers.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Building effective agents",
+          "url": "https://www.anthropic.com/engineering/building-effective-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Chaining workflows",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/chaining-workflows"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S5-001",
+      "explanation": "The loop ends on a phrase in Claude's text, and Claude quoted that phrase while laying out its plan, in the same response that requested `write_test_file`. A response can hold text and tool requests together, so text says nothing about whether the work is finished. Reading `stop_reason` after every response, continuing on `\"tool_use\"` and finishing on `\"end_turn\"`, is the stopping rule the exam guide expects.",
+      "options": {
+        "a": {
+          "reasoning": "Continuing while a `tool_use` block is present is right, but finishing still depends on a marker in Claude's text: a run that ends its turn without it has no clean stop, and Claude can quote the marker early. The exam guide lists checking assistant text for completion as an anti-pattern.",
+          "tempting": "It already continues on tool requests and only uses the marker to finish."
+        },
+        "b": {
+          "reasoning": "A cap of 25 cuts off a service that needs more rounds and keeps calling the API after Claude has finished a small one. A cap is a reasonable safety net behind `stop_reason`, not the main stopping rule.",
+          "tempting": "It removes the text check and is based on real run data."
+        },
+        "c": {
+          "reasoning": "`stop_reason` says why the response ended: `\"tool_use\"` means run the tools and send back the results, `\"end_turn\"` means Claude has finished. The plan sentence no longer matters, so the job runs until the tests are written."
+        },
+        "d": {
+          "reasoning": "An instruction about the shape of each response is followed most of the time, not always, and any later response that restates the plan still ends the job. The loop keeps parsing text.",
+          "tempting": "It keeps the plan away from the tool call that triggered the false stop."
+        }
+      },
+      "concept": [
+        "The documented loop sends a request, checks `stop_reason`, runs the requested tools when it is `\"tool_use\"`, appends the results and calls again; it returns when `stop_reason` is anything else. `\"end_turn\"` is the normal finish. Other values such as `\"max_tokens\"` exist and need their own handling, so \"not `tool_use`\" is not always a clean finish.",
+        "A response can contain text and tool requests together, so a phrase in the text, or any text at all, says nothing about whether Claude is done. The exam guide names parsing natural language and checking assistant text for completion as anti-patterns.",
+        "Agents often keep a maximum number of iterations to stay in control. That cap is a safety net; it should not be the primary stopping rule."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "the loop checks `if \"ALL TESTS WRITTEN\" in text: break`",
+          "meaning": "The loop decides from Claude's text, not from the API's stop signal."
+        },
+        {
+          "phrase": "restates its plan, phrase included",
+          "meaning": "Claude can write the phrase long before it is finished."
+        },
+        {
+          "phrase": "while also requesting `write_test_file`",
+          "meaning": "Text and a tool request arrived in one response, so the turn was not over."
+        }
+      ],
+      "lookFor": [
+        "A stop rule based on `stop_reason`, not on text.",
+        "`\"tool_use\"` continues the loop; `\"end_turn\"` ends it.",
+        "Caps and markers only as backstops, if at all."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Finishing on a text marker is still natural-language termination."
+        },
+        {
+          "option": "b",
+          "reason": "A cap as the main rule stops too early or too late."
+        },
+        {
+          "option": "d",
+          "reason": "An instruction about response shape is not a guarantee, and the loop still parses text."
+        }
+      ],
+      "rule": "Drive the loop with `stop_reason`: keep going while it is `\"tool_use\"`, finish on `\"end_turn\"`, and don't stop on words in Claude's text.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Handling stop reasons",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Building effective agents",
+          "url": "https://www.anthropic.com/engineering/building-effective-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Implementing multiple turns",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/implementing-multiple-turns"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S5-002",
+      "explanation": "The security reviewer spawned its own per-service subagents, so the card-vault timeout went to the security reviewer, not to the coordinator, and only the security reviewer's final message came back. The prompt rule relied on that middle agent passing the failure on, and it didn't. When the coordinator spawns the 14 reviewers itself, every result and failure reaches the component that owns error handling, which can then block the merge as PCI requires.",
+      "options": {
+        "a": {
+          "reasoning": "Spawning from the coordinator is the right structure, but treating a timeout as \"no findings\" lets an unreviewed card-handling service pass, which is the failure the stem describes. Continuing with partial results fits where a gap can be reported; here the gap must block.",
+          "tempting": "It fixes the structure and keeps one slow service from delaying every merge."
+        },
+        "b": {
+          "reasoning": "In hub-and-spoke the coordinator manages all communication, error handling and routing. With the 14 reviewers as its own subagents, each timeout returns to it directly, so it can retry the service or block the merge."
+        },
+        "c": {
+          "reasoning": "Only a subagent's final message returns to the agent that spawned it; nested subagents' intermediate work stays in their own context. The coordinator has nothing to scan.",
+          "tempting": "It looks like adding a check at the coordinator without restructuring anything."
+        },
+        "d": {
+          "reasoning": "Posting directly bypasses the coordinator, which still writes \"no security findings\", and a timed-out subagent posts nothing at all. The merge gate never learns of the gap.",
+          "tempting": "Developers would see each service's result as soon as it is ready."
+        }
+      },
+      "concept": [
+        "In hub-and-spoke orchestration the coordinator manages all communication between subagents, their error handling and the routing of information. Routing everything through it gives one place to see failures and handle them consistently.",
+        "A subagent can spawn subagents of its own, and a nested subagent reports to the subagent that spawned it. The coordinator sees only that subagent's final message, so a failure deep in the tree reaches it only if the middle agent reports it.",
+        "Subagents run in their own context window, and their intermediate work stays out of the parent's context."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "the security reviewer now spawns its own per-service subagents",
+          "meaning": "A second layer of agents sits between the failure and the coordinator."
+        },
+        {
+          "phrase": "its prompt tells it to name any service it could not review",
+          "meaning": "The relay was already requested in the prompt and still failed."
+        },
+        {
+          "phrase": "a card-handling service left unreviewed must block the merge",
+          "meaning": "A timeout cannot be treated as a clean result."
+        },
+        {
+          "phrase": "the coordinator posted \"no security findings\"",
+          "meaning": "The coordinator never received the failure."
+        }
+      ],
+      "lookFor": [
+        "The coordinator spawning the subagents whose failures it must handle.",
+        "A timeout treated as a gap that blocks, not as no findings.",
+        "No reliance on a middle agent relaying errors."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Counting a timeout as no findings lets an unreviewed service pass."
+        },
+        {
+          "option": "c",
+          "reason": "Nested subagents' work never reaches the coordinator's context."
+        },
+        {
+          "option": "d",
+          "reason": "Direct posting bypasses the coordinator, and the timed-out subagent posts nothing."
+        }
+      ],
+      "rule": "Let the coordinator spawn the subagents whose failures it must act on, so every error comes back to the hub instead of stopping at a nested agent.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: subagents",
+          "url": "https://code.claude.com/docs/en/agent-sdk/subagents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: What are subagents?",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/what-are-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S5-003",
+      "explanation": "The coordinator requests one reviewer per response and waits for each, so the reviews run back to back: 5 + 4 + 3 = 12 minutes. The reviewers are independent, so the coordinator can request all three `Task` calls in one response and they run in parallel. The check then takes about as long as the slowest review, 5 minutes, inside the 6-minute budget.",
+      "options": {
+        "a": {
+          "reasoning": "The Message Batches API has no latency guarantee and can take up to 24 hours, so a check the merge waits on cannot use it. Batches suit work nothing is waiting on.",
+          "tempting": "It sends all three together and halves the cost."
+        },
+        "b": {
+          "reasoning": "Reordering changes when the first result arrives, not when the last does; the reviews still run one after another for about 12 minutes.",
+          "tempting": "Getting some results after 3 minutes feels like progress on the budget."
+        },
+        "c": {
+          "reasoning": "Chaining reviewers keeps the work sequential and takes routing and error handling away from the coordinator. A chain fits steps that need the previous step's output, which these do not.",
+          "tempting": "It removes the coordinator's waiting between reviews."
+        },
+        "d": {
+          "reasoning": "Several `Task` calls in one coordinator response start the subagents in parallel. With no dependencies between the reviews, the total time drops from about 12 minutes to about 5."
+        }
+      },
+      "concept": [
+        "The exam guide's way to run subagents in parallel is to have the coordinator emit several `Task` calls in a single response. One call per response makes the coordinator wait for each result before it asks for the next.",
+        "Anthropic's research system starts 3 to 5 subagents in parallel and reports large time savings on complex queries. Parallel spawning works when the subtasks don't depend on each other's output.",
+        "Current Claude Code and Agent SDK docs call the `Task` tool `Agent`; `Task` still works as an alias, and the exam guide uses `Task`."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "one `Task` call per response",
+          "meaning": "The coordinator is serialising the reviews itself."
+        },
+        {
+          "phrase": "None of the reviewers uses another's output",
+          "meaning": "Nothing stops them running at the same time."
+        },
+        {
+          "phrase": "a 6-minute budget",
+          "meaning": "12 minutes in sequence fails; the slowest single review, 5 minutes, fits."
+        },
+        {
+          "phrase": "all three reviews kept before the merge",
+          "meaning": "Dropping or deferring a review is not allowed."
+        }
+      ],
+      "lookFor": [
+        "Several `Task` calls in one response.",
+        "Independent subtasks, so running them in parallel is safe.",
+        "The arithmetic: the total becomes the slowest review."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "A batch has no latency guarantee, so a blocking check cannot wait on it."
+        },
+        {
+          "option": "b",
+          "reason": "Reordering a sequence leaves its total time unchanged."
+        },
+        {
+          "option": "c",
+          "reason": "A chain stays sequential and bypasses the coordinator."
+        }
+      ],
+      "rule": "When subagents don't depend on each other, have the coordinator emit all their `Task` calls in one response so they run in parallel.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: How we built our multi-agent research system",
+          "url": "https://www.anthropic.com/engineering/multi-agent-research-system"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: subagents",
+          "url": "https://code.claude.com/docs/en/sub-agents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S5-004",
+      "explanation": "Whether a finding blocks depends only on its path, which the pipeline can read from the `file` field. Asking the reviewer to set `blocking` leaves a PCI rule to a prompt, and prompts have a non-zero failure rate: here 3% of findings, and two PRs merged with a PCI issue. Setting the field in pipeline code makes the rule deterministic and adds no review cost.",
+      "options": {
+        "a": {
+          "reasoning": "Examples teach judgment and format, but this rule needs no judgment; the path decides it. Examples make misses rarer without removing them.",
+          "tempting": "Few-shot examples are often the strongest prompt fix."
+        },
+        "b": {
+          "reasoning": "Code reads `file` and sets `blocking` the same way for each finding under `services/card/`, so the 3% miss rate disappears. The reviewer still writes the findings."
+        },
+        "c": {
+          "reasoning": "Emphasis and position may lower the miss rate, but the reviewer still decides the value, so some findings will still slip through.",
+          "tempting": "Making the rule prominent seems to target why it was missed."
+        },
+        "d": {
+          "reasoning": "A second model pass costs a review per PR and is still probabilistic. Code can apply a fixed path rule exactly.",
+          "tempting": "An independent instance catches what the first one missed."
+        }
+      },
+      "concept": [
+        "The exam guide separates programmatic enforcement from prompt guidance. When compliance must be deterministic, prompts alone have a non-zero failure rate, so the rule belongs in code.",
+        "An instruction in CLAUDE.md or a prompt is a request that Claude usually follows, not a guarantee. Deterministic code at a fixed point can guarantee the behaviour.",
+        "Workflows run LLMs and tools through predefined code paths. Here the predefined path is the pipeline step that reads each finding and decides whether it blocks."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "the code under `services/card/`",
+          "meaning": "The rule is defined by a path that code can check."
+        },
+        {
+          "phrase": "found 3% marked `\"blocking\": false`",
+          "meaning": "The prompt already fails a measurable share of the time."
+        },
+        {
+          "phrase": "two of those PRs merged with a PCI issue",
+          "meaning": "Each miss has a real compliance cost."
+        },
+        {
+          "phrase": "the team doesn't want extra review cost",
+          "meaning": "A second model pass is ruled out."
+        }
+      ],
+      "lookFor": [
+        "A rule decided by data the pipeline already has.",
+        "Enforcement in code, not in the prompt.",
+        "No extra model calls."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Examples reduce misses but cannot remove them."
+        },
+        {
+          "option": "c",
+          "reason": "Emphasis is still a request the reviewer may not follow."
+        },
+        {
+          "option": "d",
+          "reason": "A second model pass adds cost and is still probabilistic."
+        }
+      ],
+      "rule": "If a compliance rule can be computed from the output's own fields, compute it in the pipeline instead of asking the model to apply it.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Building effective agents",
+          "url": "https://www.anthropic.com/engineering/building-effective-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Hooks",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/hooks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S5-005",
+      "explanation": "Claude Code names MCP tools `mcp__<server>__<tool>`, so the tool the agent called was `mcp__github__merge_pull_request`. A hook whose matcher names only `merge_pull_request` was never attached to that call, which is why the log has no entry and why the script works by hand. Matching the full name keeps the `PreToolUse` hook, whose exit code 2 blocks the merge before it happens.",
+      "options": {
+        "a": {
+          "reasoning": "Hooks do match MCP tools through their full name. A CLAUDE.md line is guidance the agent usually follows, not a block.",
+          "tempting": "If hooks couldn't see MCP tools, stating the rule in CLAUDE.md would look like the only option."
+        },
+        "b": {
+          "reasoning": "`PostToolUse` fires after the tool has run, so the PR would already be merged. It fits after-the-fact work such as formatting, not stopping a call.",
+          "tempting": "It uses the correct full tool name."
+        },
+        "c": {
+          "reasoning": "The matcher must use the name Claude Code gives the tool. With `mcp__github__merge_pull_request`, the `PreToolUse` hook runs before the call and exit code 2 blocks it."
+        },
+        "d": {
+          "reasoning": "Without `--bare`, a non-interactive run loads the same context as an interactive one, so the project configuration was in play. Moving the hook keeps the wrong matcher and takes the rule out of the repository.",
+          "tempting": "A CI runner can look like a different environment from a laptop."
+        }
+      },
+      "concept": [
+        "`PreToolUse` fires before a tool call and can stop it: a command hook that exits with code 2 blocks the call, with stderr as the reason, while exit code 1 does not block. `PostToolUse` fires after the tool has run, so it is too late to stop the call or its side effects.",
+        "A hook `matcher` is compared with the tool name. A matcher made only of letters, digits, `_`, `-`, spaces, `,` and `|` is an exact name (or a list of names); any other character makes it a regular expression. MCP tools are named `mcp__<server>__<tool>`, so a hook meant for an MCP tool has to match the full name, exactly or with a pattern such as `mcp__github__.*`.",
+        "A CLAUDE.md or prompt instruction is a request that Claude usually follows; a hook is deterministic code, so it is the way to guarantee a rule such as no merges without approval.",
+        "Without `--bare`, a `-p` run loads the same context as an interactive session; `--bare` skips CLAUDE.md, hooks, skills, plugins and MCP discovery."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "configured under the name `github`",
+          "meaning": "The server name becomes part of the tool's full name."
+        },
+        {
+          "phrase": "`\"matcher\": \"merge_pull_request\"`",
+          "meaning": "The matcher uses the bare tool name."
+        },
+        {
+          "phrase": "The hook log has no entry for that run",
+          "meaning": "The hook never fired, so its script and exit code are not the problem."
+        },
+        {
+          "phrase": "the script blocks correctly when the team runs it by hand",
+          "meaning": "The logic works; the attachment to the tool does not."
+        }
+      ],
+      "lookFor": [
+        "The full `mcp__<server>__<tool>` name in the matcher.",
+        "A `PreToolUse` hook, which runs before the call.",
+        "Evidence that rules out the script itself."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "CLAUDE.md is guidance, not a block, and hooks do match MCP tools."
+        },
+        {
+          "option": "b",
+          "reason": "`PostToolUse` runs after the merge has happened."
+        },
+        {
+          "option": "d",
+          "reason": "The project configuration is loaded in non-interactive runs; the matcher is still wrong."
+        }
+      ],
+      "rule": "Match MCP tools in hooks by their full `mcp__<server>__<tool>` name, and use `PreToolUse` to stop a call before it runs.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: hooks reference",
+          "url": "https://code.claude.com/docs/en/hooks"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: connect to MCP servers",
+          "url": "https://code.claude.com/docs/en/mcp"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: run Claude Code programmatically (non-interactive mode)",
+          "url": "https://code.claude.com/docs/en/headless"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Hooks",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/hooks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S5-006",
+      "explanation": "Before night 3, merged PRs changed 180 of the 260 files the session had read, so most of its tool results describe old code; that is why it judged `mask_pan()` as first read. The exam guide's rule is to resume when earlier context is mostly valid and to start fresh with an injected summary when tool results are stale. Separately, the 6 repeated findings show that carried findings need re-checking wherever their files changed.",
+      "options": {
+        "a": {
+          "reasoning": "A fresh session reads current code, and the summary keeps the audited services and the 19 findings, so the three-night audit moves on without stale reads."
+        },
+        "b": {
+          "reasoning": "A finding describes code at the commit it was read at; re-reading the files the diff lists, and keeping only findings that still hold, stops fixed issues being reported."
+        },
+        "c": {
+          "reasoning": "Resuming and naming changed files fits a few changes. With 180 of 260 changed, most of the session's results are stale and stay in its context.",
+          "tempting": "It is the guide's pattern for telling a resumed session what changed."
+        },
+        "d": {
+          "reasoning": "A fork gets a new session ID but starts with a copy of the same history, stale reads included.",
+          "tempting": "A new session ID sounds like a clean start."
+        },
+        "e": {
+          "reasoning": "With no summary, each night starts the 14 services over and loses the 19 findings, so a three-night audit never finishes.",
+          "tempting": "It avoids every stale result."
+        }
+      },
+      "concept": [
+        "The exam guide's rule for sessions: resume when the earlier context is mostly valid, and start fresh with an injected summary when the earlier tool results are stale. A fresh start with a structured summary is more reliable than resuming with stale tool results.",
+        "Sessions persist the conversation, not the filesystem, so tool results in a resumed session reflect the files as they were when they were read. When resuming is still the right choice, the guide says to tell the session which of the files it analysed earlier have changed.",
+        "`--resume` continues a session by ID or name. `--fork-session` gives a new session ID instead of reusing the original, but a fork starts with a copy of the history, so it carries the same tool results."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Situation",
+          "Choose"
+        ],
+        "rows": [
+          [
+            "Earlier context mostly valid, a few files changed",
+            "Resume and say which files changed"
+          ],
+          [
+            "Most earlier tool results stale",
+            "A fresh session with a structured summary"
+          ],
+          [
+            "Two approaches from one valid baseline",
+            "Fork the session"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "changed 180 of those files",
+          "meaning": "Most of the session's file reads are stale."
+        },
+        {
+          "phrase": "takes three nights",
+          "meaning": "Earlier progress must be carried forward."
+        },
+        {
+          "phrase": "repeated 6 findings in code that had since been fixed",
+          "meaning": "Carried findings need re-checking."
+        },
+        {
+          "phrase": "judged the vault service's masking from `mask_pan()` as first read",
+          "meaning": "The session reasons from old tool results."
+        }
+      ],
+      "lookFor": [
+        "A fresh session seeded with a structured summary.",
+        "Earlier findings re-checked where their files changed.",
+        "Progress kept so the audit can finish."
+      ],
+      "eliminate": [
+        {
+          "option": "c",
+          "reason": "180 of 260 reads are stale, so resuming carries mostly outdated results."
+        },
+        {
+          "option": "d",
+          "reason": "A fork copies the same stale history."
+        },
+        {
+          "option": "e",
+          "reason": "With no summary, the three-night audit restarts every night."
+        }
+      ],
+      "rule": "When most earlier tool results are stale, start fresh with a structured summary, and re-check carried findings in files that changed.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: sessions",
+          "url": "https://code.claude.com/docs/en/agent-sdk/sessions"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: CLI reference",
+          "url": "https://code.claude.com/docs/en/cli-reference"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S6-001",
+      "explanation": "The coordinator runs fraud history, policy coverage and cross-document consistency on every claim, but 60% of claims are a single claim form, where the consistency check has nothing to compare. The guide's skill is a coordinator that selects subagents for each request rather than always running the full pipeline. Here that means fraud history and policy coverage on every claim, and the consistency subagent only on claims with two or more documents.",
+      "options": {
+        "a": {
+          "reasoning": "This is dynamic selection. The coordinator looks at what the claim holds and calls the checks that have work: fraud history and policy coverage always apply, and the consistency check runs when there are two or more documents to compare. No check that has work to do is dropped."
+        },
+        "b": {
+          "reasoning": "It chooses per claim, which is the right idea, but it drops fraud history and policy coverage on the 60% of claims that are a single form. The stem says those two checks apply to every claim, so this weakens checks that have work to do.",
+          "tempting": "It saves the most cost and uses the same per-claim choice as the right answer."
+        },
+        "c": {
+          "reasoning": "A classifier and a second pipeline with copied subagents add components to build and keep in step. The coordinator already decides which subagents to call, so it can leave out the one check without a new routing layer.",
+          "tempting": "Routing single-form claims away looks like a clean way to treat them differently."
+        },
+        "d": {
+          "reasoning": "One subagent holding all three checks' tools mixes three roles and still runs the consistency work on claims with nothing to compare. A subagent should get only the tools its role needs.",
+          "tempting": "One run per claim sounds cheaper than three."
+        }
+      },
+      "concept": [
+        "In the coordinator-subagent pattern, the coordinator decomposes the work, delegates it, aggregates the results and picks which subagents to invoke based on the request. The exam guide's skill is a coordinator that selects subagents dynamically instead of always running the full pipeline.",
+        "Anthropic's research system scales effort with the query: simple fact-finding uses one agent with a few tool calls, comparisons use a few subagents and complex research uses many. Early versions spawned too many subagents for simple queries. Multi-agent systems use far more tokens than a single agent, about 15 times a chat, so each subagent run should earn its cost.",
+        "Start with the simplest solution and add complexity only when it clearly improves results. Leaving out a subagent that has no work is simpler than adding a classifier, a second pipeline or a merged subagent."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "runs three check subagents on every claim",
+          "meaning": "The full pipeline runs whatever the claim holds."
+        },
+        {
+          "phrase": "About 60% of claims arrive as a single claim form",
+          "meaning": "Most claims give the consistency check nothing to compare."
+        },
+        {
+          "phrase": "Fraud history and policy coverage apply to every claim",
+          "meaning": "Those two checks must stay on every claim."
+        },
+        {
+          "phrase": "without weakening any check that has work to do",
+          "meaning": "Cut only the run that has no work."
+        }
+      ],
+      "lookFor": [
+        "A per-claim choice of subagents based on the documents present.",
+        "Fraud history and policy coverage kept on every claim.",
+        "No new classifier, pipeline or merged subagent."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It drops fraud history and policy coverage on single-form claims."
+        },
+        {
+          "option": "c",
+          "reason": "It adds a classifier and a duplicate pipeline where the coordinator can already choose."
+        },
+        {
+          "option": "d",
+          "reason": "It merges three roles into one subagent and still runs the consistency work."
+        }
+      ],
+      "rule": "Have the coordinator choose the subagents each request needs; run a check only when the request gives it something to check.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: How we built our multi-agent research system",
+          "url": "https://www.anthropic.com/engineering/multi-agent-research-system"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Building effective agents",
+          "url": "https://www.anthropic.com/engineering/building-effective-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: Designing effective subagents",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/designing-effective-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S6-002",
+      "explanation": "Each extraction subagent sees only its `Task` prompt, which holds only the document, so it cannot know the claim's VIN or loss date and lets a mismatched invoice through. The fix has two parts. Write the facts it must check against, the loss date, the VIN and the policyholder's name, into each `Task` prompt. And have each subagent return its fields as records with the value, the document ID and the page as separate fields, so the coordinator can attach a page to each value.",
+      "options": {
+        "a": {
+          "reasoning": "A subagent starts fresh, and the only thing passed from the parent is the prompt string. Putting the loss date, VIN and policyholder's name beside the document gives it what it needs to flag an invoice for another vehicle or dated before the loss. Three short facts keep the cost per document low."
+        },
+        "b": {
+          "reasoning": "The guide's skill is to use structured formats that separate content from metadata such as page numbers. A record with the value, document ID and page as separate fields lets the coordinator copy the page for each value into the review record without parsing prose."
+        },
+        "c": {
+          "reasoning": "The page number is there, but inside prose that the coordinator must parse to pair each value with its page. Content and metadata are still mixed together, which a structured format is meant to avoid.",
+          "tempting": "It adds the missing page numbers with little change to the subagents."
+        },
+        "d": {
+          "reasoning": "Spawning later changes nothing, because a subagent does not see the parent's conversation or tool results. It would still receive only the document in its prompt.",
+          "tempting": "It sounds as if the subagents will start with the claim form already understood."
+        },
+        "e": {
+          "reasoning": "In the hub-and-spoke pattern the coordinator manages all communication between subagents. A shared store lets subagents read each other's output around it, so it loses sight of what each one used and cannot handle errors in one place.",
+          "tempting": "Each subagent could check the VIN for itself without the coordinator doing extra work."
+        }
+      },
+      "concept": [
+        "A subagent starts fresh: it does not see the parent's conversation, tool results or skills. The only thing passed from the parent is the prompt string, so the facts it must use have to be written into it. Only the subagent's final message comes back to the parent.",
+        "The exam guide's skills for this task are to pass complete findings from earlier steps in the subagent prompt, and to use structured formats that separate content from metadata, such as URLs and page numbers, so attribution survives. A defined output format is the most important improvement to a subagent.",
+        "The exam guide calls the tool that spawns subagents `Task`. Current Claude Code names it `Agent` and keeps `Task` as an alias."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "each `Task` prompt holds only the document",
+          "meaning": "The subagent has nothing to check the invoice against."
+        },
+        {
+          "phrase": "though the claim form states the VIN and the loss date",
+          "meaning": "The facts exist, but only the coordinator has them."
+        },
+        {
+          "phrase": "the subagents return prose summaries",
+          "meaning": "Values and their pages are mixed together in text."
+        },
+        {
+          "phrase": "Cost per document must stay low",
+          "meaning": "Pass the few facts needed, not everything."
+        }
+      ],
+      "lookFor": [
+        "Claim facts written into each `Task` prompt.",
+        "Values returned with document ID and page as separate fields.",
+        "No reliance on inherited context or a shared store."
+      ],
+      "eliminate": [
+        {
+          "option": "c",
+          "reason": "Page numbers inside prose still have to be parsed out of the text."
+        },
+        {
+          "option": "d",
+          "reason": "A subagent does not inherit the coordinator's context, whenever it is spawned."
+        },
+        {
+          "option": "e",
+          "reason": "A shared store routes data around the coordinator."
+        }
+      ],
+      "rule": "Write into each subagent's prompt the facts it must check against, and have it return values with their source metadata as separate fields.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: subagents",
+          "url": "https://code.claude.com/docs/en/agent-sdk/subagents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: subagents",
+          "url": "https://code.claude.com/docs/en/sub-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: Designing effective subagents",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/designing-effective-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M1-S6-003",
+      "explanation": "A prompt rule already tells the agent to send records with a null `loss_date`, `policy_number` or `claimed_amount` to `route_to_review`, and 2% still reach `submit_to_adjudication`. Each miss costs a day of rework, so the rule needs enforcing in code. A `PreToolUse` hook on `submit_to_adjudication` denies such a record before the call runs, and its reason tells the agent to call `route_to_review` instead.",
+      "options": {
+        "a": {
+          "reasoning": "A `PreToolUse` hook fires before the tool call and can stop it, so no null record reaches adjudication. Its `permissionDecisionReason` is shown to Claude, so a reason that names `route_to_review` sends the agent to the path these records need. This is the guide's block-and-redirect skill."
+        },
+        "b": {
+          "reasoning": "The hook and the block are right, but the redirect sends the agent to re-extract fields that the stem says the documents do not hold. With nothing new to find, the agent is pushed toward a guessed value, which the pipeline must not produce.",
+          "tempting": "It uses the same hook and might recover a misread value."
+        },
+        "c": {
+          "reasoning": "`updatedInput` replaces the call's input before it runs, so the record reaches adjudication with `UNKNOWN` in place of a value nobody extracted. The call goes through and the gap is hidden.",
+          "tempting": "Adjudication accepts the record, so the rejections stop."
+        },
+        "d": {
+          "reasoning": "An instruction in a prompt is a request, not a guarantee, and this one already fails on 2% of records. Moving it and adding examples may lower the rate but cannot make it zero.",
+          "tempting": "Placement and examples often improve how well a model follows a rule."
+        }
+      },
+      "concept": [
+        "An instruction in a prompt or CLAUDE.md is a request that Claude usually follows. A hook is deterministic code that runs at a fixed point in the loop, so it can guarantee the behaviour. The exam guide's skills include choosing hooks over prompts when a business rule needs guaranteed compliance, and blocking a policy-violating action while redirecting it to another workflow.",
+        "`PreToolUse` fires before a tool call and can stop it. It returns `permissionDecision` `allow`, `deny` or `ask`, with a `permissionDecisionReason` that Claude sees, so a deny can say what to do next. In the Agent SDK, hooks are callbacks in the `hooks` option, attached with matchers.",
+        "`updatedInput` rewrites a call by replacing the whole input object. It changes what the tool receives; it cannot supply a value the documents never held."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "The system prompt tells the coordinator to send such records to `route_to_review`",
+          "meaning": "A prompt rule is already in place."
+        },
+        {
+          "phrase": "2% of nightly records still reach `submit_to_adjudication`",
+          "meaning": "The rule is not enforced."
+        },
+        {
+          "phrase": "each rejection costs a day of rework",
+          "meaning": "Each miss has a cost, so the rule needs code."
+        },
+        {
+          "phrase": "those fields are null when the documents don't hold the value",
+          "meaning": "Re-extracting will not find the value."
+        },
+        {
+          "phrase": "The pipeline must not invent values",
+          "meaning": "Placeholder values are ruled out."
+        }
+      ],
+      "lookFor": [
+        "A hook that runs before `submit_to_adjudication`.",
+        "A deny whose reason names `route_to_review`.",
+        "No placeholder values and no retry for data that is absent."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It redirects to re-extraction, which cannot find a value the documents do not hold."
+        },
+        {
+          "option": "c",
+          "reason": "It fills nulls with placeholders, which invents values and hides the gap."
+        },
+        {
+          "option": "d",
+          "reason": "A stronger prompt rule still cannot guarantee the routing."
+        }
+      ],
+      "rule": "When a rule about tool calls must always hold, deny the call in a `PreToolUse` hook and use the reason to send the agent to the approved workflow.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: hooks reference",
+          "url": "https://code.claude.com/docs/en/hooks"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: hooks",
+          "url": "https://code.claude.com/docs/en/agent-sdk/hooks"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Hooks",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/hooks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S3-001",
+      "explanation": "The coordinator decides how many subagents a request gets, but it decides by word count, and length is not complexity. The 7-word heat-pump question needs datasets and literature, while a long request that restates one figure needs one subagent. The exam guide gives the coordinator the job of choosing subagents by query complexity, so the fix is better criteria for that judgment: effort levels with worked examples in its prompt. Nothing here is a money or safety rule, so guidance is enough, and lookups stay at about 3 tool calls.",
+      "options": {
+        "a": {
+          "reasoning": "Criteria with examples tell the coordinator what a lookup, a progress check and an open policy question look like, and how many subagents each gets. That sends the heat-pump question to datasets and literature, closing the 18% gap, while one-figure lookups keep a single subagent whatever their length."
+        },
+        "b": {
+          "reasoning": "It closes the gap by giving up on selection: every 3-call lookup now pays for four subagents, and multi-agent runs use far more tokens than a single agent. The stem says lookups must stay cheap, so this fails one of its two requirements.",
+          "tempting": "It guarantees no short question is under-served, and it removes the rule that caused the problem."
+        },
+        "c": {
+          "reasoning": "It replaces one surface feature with another. The heat-pump question names no data series, so it would still get one subagent. What a question needs depends on what it asks, not on how many series it happens to name.",
+          "tempting": "Counting named series sounds closer to what a request needs than counting words."
+        },
+        "d": {
+          "reasoning": "Keeping the 40-word rule leaves long one-figure requests running all four subagents, and the nested fix only adds agents to short ones. A nested subagent also reports to the one that spawned it, so the coordinator sees only that subagent's final message and can no longer tell what was covered or what failed.",
+          "tempting": "It keeps lookups cheap and adds help only when the first answer looks thin."
+        }
+      },
+      "concept": [
+        "In a hub-and-spoke design the coordinator decomposes the request, delegates, aggregates the results and decides which subagents to invoke based on query complexity. The exam guide's skill is a coordinator that selects subagents dynamically instead of always running the full pipeline.",
+        "Anthropic's multi-agent research system scales effort with query complexity: simple fact-finding uses one agent with a few tool calls, comparisons use a few subagents, and complex research uses many with divided responsibilities. Its early versions over-spawned subagents for simple queries. Multi-agent systems use far more tokens than a single agent, about 15 times a chat, so they pay off only where the value justifies the cost.",
+        "Start with the simplest solution and add complexity only when it clearly improves results. Choosing effort is a judgment, so criteria and examples in the coordinator's prompt come before a new layer or a fixed rule."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Request",
+          "Effort"
+        ],
+        "rows": [
+          [
+            "A one-figure lookup, however it is worded",
+            "One subagent, a few tool calls"
+          ],
+          [
+            "A progress check such as the heat-pump target",
+            "Datasets and literature"
+          ],
+          [
+            "An open policy question",
+            "All four subagents"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "If the request is under 40 words",
+          "meaning": "The coordinator selects by length, a proxy that does not track what a question needs."
+        },
+        {
+          "phrase": "must stay that cheap",
+          "meaning": "Rules out running every subagent on every request."
+        },
+        {
+          "phrase": "\"Is the 2030 heat-pump target on track?\"",
+          "meaning": "A short question that needs two kinds of source: length and complexity have come apart."
+        },
+        {
+          "phrase": "long requests that only restate one figure still run all four",
+          "meaning": "The proxy fails in both directions, so tuning its threshold can't fix it."
+        }
+      ],
+      "lookFor": [
+        "Selection based on what the question asks, with examples of each level.",
+        "A fix that keeps one-figure lookups at one subagent.",
+        "The decision staying with the coordinator."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Every lookup would pay for four subagents, breaking the cost requirement."
+        },
+        {
+          "option": "c",
+          "reason": "Another surface count: the heat-pump question names no series."
+        },
+        {
+          "option": "d",
+          "reason": "Long one-figure requests still run all four, and nesting hides the extra work from the coordinator."
+        }
+      ],
+      "rule": "Let the coordinator choose subagents by explicit complexity criteria with worked examples, not by a surface proxy such as request length.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: How we built our multi-agent research system",
+          "url": "https://www.anthropic.com/engineering/multi-agent-research-system"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Building effective agents",
+          "url": "https://www.anthropic.com/engineering/building-effective-agents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: subagents",
+          "url": "https://code.claude.com/docs/en/agent-sdk/subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S3-002",
+      "explanation": "The coordinator's refinement loop is the right design, but its re-delegations are vague. \"Fill the gaps in section 3\" names no objective, and the new subagent starts fresh, knowing nothing of what round 1 read, so it re-reads about 60% of the same documents. With a 36-hour first pass and 5-hour rounds, the window holds two rounds, so each must count. Naming the exact missing sub-question and passing the sources already analysed make each round add new evidence.",
+      "options": {
+        "a": {
+          "reasoning": "A gap stated as a precise sub-question with the criterion its answer must meet gives the subagent an objective and a boundary. It looks for that answer instead of re-covering the whole section."
+        },
+        "b": {
+          "reasoning": "A subagent sees only the prompt it is given. Listing the sources round 1 analysed, with their findings, partitions round 2's scope from round 1's and stops the 60% re-reading."
+        },
+        "c": {
+          "reasoning": "Rebuilding everything throws away round 1's valid work, and a full pass takes about 36 hours, far more than the 5 hours a round has. A full rerun fits only when the first pass's results are unusable.",
+          "tempting": "One consistent set of documents sounds tidy."
+        },
+        "d": {
+          "reasoning": "Subagents reading each other's work go around the coordinator, which can no longer see what each one used or handle failures consistently. Stored outputs work when the coordinator passes references to them in the prompts it writes.",
+          "tempting": "It would cut the re-reading directly."
+        },
+        "e": {
+          "reasoning": "A 36-hour pass plus two 5-hour rounds ends at 46 hours, so a second round fits. A fixed count stops the loop here instead of whether the gaps are closed.",
+          "tempting": "Listing the remaining gaps is honest, and a safety margin sounds prudent."
+        }
+      },
+      "concept": [
+        "The exam guide's iterative refinement loop has the coordinator evaluate the synthesis, re-delegate for gaps and repeat until coverage is sufficient. Anthropic's research system works the same way: the lead agent can spawn more subagents when research is insufficient.",
+        "Each delegation needs an objective, an output format, guidance on tools and sources, and clear task boundaries. In Anthropic's system, vague one-line delegation caused duplicated work and gaps. The guide's skill is to partition research scope across subagents to minimise duplication, and that applies between rounds as well as within one.",
+        "A subagent starts fresh: the only thing passed from the parent is the prompt string, so findings and decisions must be written into it. Subagent outputs can also be written to external storage, with lightweight references passed back to the coordinator, which keeps the coordinator in charge of what each subagent sees."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`Fill the gaps in section 3.`",
+          "meaning": "A delegation with no objective or boundary."
+        },
+        {
+          "phrase": "re-read about 60% of the documents round 1 already analysed",
+          "meaning": "The new subagent does not know what round 1 covered."
+        },
+        {
+          "phrase": "36 hours and each refinement round about 5",
+          "meaning": "Arithmetic: two rounds fit in 48 hours, so stopping after one wastes a round."
+        },
+        {
+          "phrase": "some gaps survive",
+          "meaning": "Rounds are spent on old ground instead of the gap."
+        }
+      ],
+      "lookFor": [
+        "A re-delegation that names the exact missing question.",
+        "The prompt carrying what earlier rounds already covered.",
+        "Rounds that stay within the window and go through the coordinator."
+      ],
+      "eliminate": [
+        {
+          "option": "c",
+          "reason": "A 36-hour rebuild cannot fit in a 5-hour round and throws away valid work."
+        },
+        {
+          "option": "d",
+          "reason": "Subagents reading each other's outputs bypass the coordinator."
+        },
+        {
+          "option": "e",
+          "reason": "Two rounds fit in the window, so a one-round count leaves gaps open."
+        }
+      ],
+      "rule": "When re-delegating gaps, name the exact missing question and pass what earlier rounds already covered, so each round adds evidence instead of repeating it.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: How we built our multi-agent research system",
+          "url": "https://www.anthropic.com/engineering/multi-agent-research-system"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: subagents",
+          "url": "https://code.claude.com/docs/en/agent-sdk/subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S3-003",
+      "explanation": "The coordinator learned of the narrowed scope, but it wrote a delegation that did not mention it, as if the literature subagent could see the coordinator's own conversation. A subagent starts fresh: it does not see the parent's conversation, and the only thing the parent passes it for this request is the prompt string. So the new scope, UK schemes evaluated after 2015, had to go into the `Task` prompt for the remaining literature work, with the UK studies already found so they are not searched again. With 42 hours left, that would have produced a full UK evidence base.",
+      "options": {
+        "a": {
+          "reasoning": "The `Task` prompt is the only channel from the coordinator to the subagent for this request. Putting the new scope there, plus the UK studies already found, sends the remaining hours to UK post-2015 evidence without repeating work."
+        },
+        "b": {
+          "reasoning": "The subagent never sees the coordinator's system prompt or history, so it would still search all countries. A coordinator-level instruction only shapes what the coordinator itself writes.",
+          "tempting": "It records the change somewhere durable for the rest of the run."
+        },
+        "c": {
+          "reasoning": "Each subagent gets its own `AgentDefinition.prompt` as its system prompt, but this definition also serves two other briefings this week. Scope written there would put UK-only, post-2015 limits into every literature delegation of that type, theirs included. One request's scope belongs in that delegation's `Task` prompt, the only content the coordinator passes for one request.",
+          "tempting": "The subagent does receive the definition's `prompt` as its system prompt, so the scope would reach it."
+        },
+        "d": {
+          "reasoning": "Filtering gives the right final scope, but the search still spends its hours across all countries, so UK evidence stays thin, which is the actual problem. Filtering at synthesis works only when the search already gathered enough in-scope evidence.",
+          "tempting": "It needs no change to the delegation and still ends with the right scope."
+        }
+      },
+      "concept": [
+        "Subagent context must be given explicitly in the prompt: there is no automatic inheritance and no shared memory. A subagent starts fresh and does not see the parent's conversation or tool results; the only thing passed from the parent is the prompt string, so decisions and changes must be written into it.",
+        "A subagent receives its own system prompt, the parent's task prompt, project CLAUDE.md when settings allow, and its tool definitions. SDK subagents are defined as `AgentDefinition`s in the query's `agents` option. An `AgentDefinition` holds the description, system prompt and tool restrictions for a subagent type; its required fields are `description` and `prompt`. `AgentDefinition.prompt` is the subagent's system prompt, defining its role and behavior, so it reaches every delegation of that type. The only content the parent passes for one delegation is the `Task` prompt string, so facts about one request go there.",
+        "The guide's related skill is to pass complete findings from earlier agents in the subagent's prompt, which here means the UK studies already found."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Where it is written",
+          "Who sees it"
+        ],
+        "rows": [
+          [
+            "The coordinator's conversation or system prompt",
+            "Only the coordinator"
+          ],
+          [
+            "The subagent's `AgentDefinition` prompt",
+            "Every delegation of that subagent type, as its system prompt"
+          ],
+          [
+            "The `Task` prompt for this delegation",
+            "This subagent, for this request"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "The literature subagent's definition also serves two other briefings the institute is running this week",
+          "meaning": "Anything written into the definition reaches other briefings' literature work too."
+        },
+        {
+          "phrase": "acknowledges the change in its own conversation",
+          "meaning": "The change exists only in the coordinator's context."
+        },
+        {
+          "phrase": "`Continue the literature review for the heat-pump briefing.`",
+          "meaning": "The delegation that reached the subagent carries no scope."
+        },
+        {
+          "phrase": "searches all countries and years",
+          "meaning": "The subagent worked from the only scope it ever saw."
+        },
+        {
+          "phrase": "42 hours of the 48-hour window remained",
+          "meaning": "There was time to redo the search properly, so filtering later is not the best use of it."
+        }
+      ],
+      "lookFor": [
+        "The changed scope written into the delegation itself.",
+        "Earlier in-scope findings passed along so they aren't searched again.",
+        "Per-request facts kept out of a definition other work shares."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The subagent never sees the coordinator's system prompt."
+        },
+        {
+          "option": "c",
+          "reason": "The definition also serves two other briefings, so the scope would reach their literature work too; one request's scope goes in that delegation's `Task` prompt."
+        },
+        {
+          "option": "d",
+          "reason": "Filtering at the end leaves UK coverage as thin as the search made it."
+        }
+      ],
+      "rule": "The only per-request context the parent passes a subagent is the Task prompt; when a request changes mid-run, write the new scope into each later Task prompt.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: subagents",
+          "url": "https://code.claude.com/docs/en/agent-sdk/subagents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: subagents",
+          "url": "https://code.claude.com/docs/en/sub-agents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S3-004",
+      "explanation": "Every claim must cite a source, and a bold rule in the synthesis prompt still lets 3% through, one of which reached Parliament. A prompt is a request, not a guarantee. Because claims already arrive as a list with `source_id` fields, code can check each one against the run's sources before `send_briefing` runs and send failures back to synthesis. That is a programmatic gate at the right moment: before the action, not after.",
+      "options": {
+        "a": {
+          "reasoning": "The check runs in code on structured data, so it is deterministic, and it runs before `send_briefing`, so an uncited claim can't reach ministers. Returning failures to synthesis lets them be cited or dropped."
+        },
+        "b": {
+          "reasoning": "The rule is already in bold. Placement and examples may lower the rate, but a prompt can't guarantee the rule, so some claims would still go out uncited.",
+          "tempting": "Top placement and examples are real prompt techniques that often help."
+        },
+        "c": {
+          "reasoning": "The self-check is the same model following the same kind of prompt instruction, so it can miss in the same way. It also checks only that the field is filled, not that the ID is a real source from the run.",
+          "tempting": "A verification step sounds thorough, and it costs no new code."
+        },
+        "d": {
+          "reasoning": "The check is right but comes after `send_briefing`, so ministers already have the uncited claim when the audit finds it. After-the-fact audits suit tracking trends, not stopping a claim from going out.",
+          "tempting": "It checks exactly the right field in code."
+        }
+      },
+      "concept": [
+        "An instruction in a prompt is a request, not a guarantee: Claude usually follows it. A hook or other code at a fixed point in the workflow is deterministic, so it can guarantee the behaviour. The exam guide says that when compliance must be deterministic, prompts alone have a non-zero failure rate.",
+        "The guide's pattern is a programmatic prerequisite that blocks a downstream step until an earlier condition is met, as in blocking `process_refund` until `get_customer` returns a verified ID. In a prompt chain, programmatic checks can run between steps.",
+        "Timing matters. A check that runs after an action, like a `PostToolUse` hook, is too late to stop the action or its effects. A gate must sit before the step it protects, here before `send_briefing`."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "must cite its source",
+          "meaning": "A rule for every claim, not a preference."
+        },
+        {
+          "phrase": "returns its claims as a structured list, each with a `source_id` field",
+          "meaning": "The data needed for a code check already exists."
+        },
+        {
+          "phrase": "states the citation rule in bold, yet 3%",
+          "meaning": "The prompt route has been tried and still fails."
+        },
+        {
+          "phrase": "one uncited figure was quoted in Parliament",
+          "meaning": "The harm happens once the briefing is sent, so the check must come first."
+        }
+      ],
+      "lookFor": [
+        "A check in code, not in the prompt.",
+        "The check placed before `send_briefing`.",
+        "Failures sent back to be fixed, not just reported."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The prompt already states the rule in bold, and a prompt can't guarantee it."
+        },
+        {
+          "option": "c",
+          "reason": "A self-check is still prompt-driven and doesn't verify the ID is real."
+        },
+        {
+          "option": "d",
+          "reason": "Auditing after `send_briefing` is too late to stop the claim."
+        }
+      ],
+      "rule": "When a rule must hold for every output, enforce it with a code gate placed before the action, not with prompt wording or an audit afterwards.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Building effective agents",
+          "url": "https://www.anthropic.com/engineering/building-effective-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Hooks",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/hooks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S3-005",
+      "explanation": "The licence limit is 500 downloads a month across all runs, with money at stake, and the prompt has already failed twice. That calls for a hook on the outgoing call. The existing `PreToolUse` hook counts per run (`downloads_this_run=61`) and always allows, so it can't see the monthly total. It must count at the scope of the limit: a shared monthly counter that every run updates, with a deny and a reason that points the subagent to open-access copies once 500 is reached.",
+      "options": {
+        "a": {
+          "reasoning": "The counter spans every run in the month, matching the licence, and the deny happens before the download. The reason gives the subagent another route, so the run continues without a billed download."
+        },
+        "b": {
+          "reasoning": "The mechanism is right but the scope is wrong. Thirty runs at 17 already allow 510, a busier month allows more, and a run that needs 80 downloads is cut off while a run that needs 5 leaves its share unused.",
+          "tempting": "It uses the hook and the numbers in the stem, and it looks fair to every run."
+        },
+        "c": {
+          "reasoning": "Stopping is still left to the model, and the prompt has already failed twice with money at stake. Runs working at the same time could also read the same balance.",
+          "tempting": "A live balance is more useful to the subagent than a fixed limit."
+        },
+        "d": {
+          "reasoning": "There is no such field. The documented `AgentDefinition` fields include `description` and `prompt`, which are required, and `tools`, `disallowedTools` and `model`; a monthly call limit is not among them. Counting calls across runs needs your own code, such as a hook.",
+          "tempting": "It reads like a neat declarative setting in the place where subagents are configured."
+        }
+      },
+      "concept": [
+        "The exam guide uses hooks that intercept outgoing tool calls to enforce compliance, and prefers hooks to prompts when a business rule needs guaranteed compliance, because hooks are deterministic and prompts are probabilistic. Such a hook can block a policy-violating action and redirect the agent to another workflow.",
+        "`PreToolUse` fires before a tool call and can stop it. It returns a `permissionDecision` of `allow`, `deny` or `ask`, with a `permissionDecisionReason` that Claude sees. In the Agent SDK, hooks are callbacks registered in the `hooks` option with matchers, so the check is your own code and can read whatever store it needs.",
+        "A hook enforces exactly what its code counts. If the limit is per month across runs, the count must be too; a per-run count only approximates it."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Counter scope",
+          "Fits a limit of"
+        ],
+        "rows": [
+          [
+            "Per session or run",
+            "N calls in one run"
+          ],
+          [
+            "Shared across runs for the month",
+            "N calls a month across all runs"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "500 downloads a month across all runs",
+          "meaning": "The limit spans runs, so a per-run count can't enforce it."
+        },
+        {
+          "phrase": "The literature subagent's prompt states the limit, but",
+          "meaning": "The prompt route has failed with money at stake."
+        },
+        {
+          "phrase": "some needing 80 downloads and others 5",
+          "meaning": "An even per-run split starves big runs and wastes small ones."
+        },
+        {
+          "phrase": "`downloads_this_run=61 decision=allow`",
+          "meaning": "The existing hook counts per run and never denies."
+        }
+      ],
+      "lookFor": [
+        "A hook that runs before the call and can deny it.",
+        "A count kept at the same scope as the limit.",
+        "A deny reason that tells the agent what to do instead."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A per-run cap doesn't enforce a monthly limit and starves large runs."
+        },
+        {
+          "option": "c",
+          "reason": "A prompt can't guarantee a billed limit."
+        },
+        {
+          "option": "d",
+          "reason": "`AgentDefinition` has no call-limit field."
+        }
+      ],
+      "rule": "Enforce a usage limit with a PreToolUse hook that counts at the same scope as the limit and denies with a reason that offers another route.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: hooks reference",
+          "url": "https://code.claude.com/docs/en/hooks"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: hooks",
+          "url": "https://code.claude.com/docs/en/agent-sdk/hooks"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: subagents",
+          "url": "https://code.claude.com/docs/en/agent-sdk/subagents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Hooks",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/hooks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S3-006",
+      "explanation": "Two things are wrong with the current design. Each check follows three known steps, so open-ended planning adds variation without adding value: a fixed sequence of steps fits. And the 12 checks run one after another: 12 times 40 minutes is 8 hours against a 3-hour limit. The checks are independent, so emitting twelve `Task` calls in one coordinator response runs them in parallel and the set finishes in about the time of one.",
+      "options": {
+        "a": {
+          "reasoning": "The steps are known before any check starts, so each figure's subagent can follow a fixed find, compare, verdict sequence, and the coordinator checks that each structured verdict has a cited source before using it. Fixed workflows are more predictable and easier to test than open-ended agents."
+        },
+        "b": {
+          "reasoning": "The figures don't depend on each other. Several `Task` calls in one response run the checks in parallel, so 8 hours of sequential work fits in about 40 minutes, inside the 3-hour limit."
+        },
+        "c": {
+          "reasoning": "Adaptive planning suits questions whose steps can't be foreseen. These checks have three known steps, so a step that plans further subtasks only makes timing and results less predictable.",
+          "tempting": "Unusual figures getting a deeper look sounds thorough."
+        },
+        "d": {
+          "reasoning": "The fixed sequence is right, but handing all 12 to one subagent changes who runs them, not the order: in turn they still take about 8 hours, far past the 3-hour limit.",
+          "tempting": "One context sounds like it would keep the verdicts consistent."
+        },
+        "e": {
+          "reasoning": "Mapping first and adapting is the method for an open-ended investigation. Here every figure must be checked and the steps are known, so the mapping only adds time.",
+          "tempting": "Prioritising the highest-impact figures sounds wise under a deadline."
+        }
+      },
+      "concept": [
+        "Prompt chaining runs a task as a fixed sequence of LLM calls, each processing the previous output, with optional programmatic checks between steps. It is ideal when a task splits cleanly into fixed subtasks, and Claude does better on one focused step than on many requirements at once. Orchestrator-workers, where a central model breaks the task down as it goes, fits tasks whose subtasks can't be predicted.",
+        "Use a workflow when you can picture the steps ahead of time: workflows are more accurate per step, more predictable and easier to test. Agents are more flexible but have a lower completion rate and are harder to test.",
+        "The exam guide's skill for parallel work is emitting several `Task` calls in a single coordinator response. Anthropic's research system starts 3 to 5 subagents in parallel and reports large time savings on complex queries."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Task shape",
+          "Decomposition"
+        ],
+        "rows": [
+          [
+            "Steps known in advance, such as find, compare, verdict",
+            "Fixed sequence of steps"
+          ],
+          [
+            "Steps depend on what is found",
+            "Dynamic, adaptive plan"
+          ],
+          [
+            "Independent items under a deadline",
+            "Parallel `Task` calls in one response"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "Each check involves three steps",
+          "meaning": "The steps are known, so a fixed sequence fits."
+        },
+        {
+          "phrase": "about 40 minutes per figure",
+          "meaning": "Arithmetic: 12 in sequence is 8 hours."
+        },
+        {
+          "phrase": "must be checked within 3 hours",
+          "meaning": "Rules out any design that runs the figures one after another."
+        },
+        {
+          "phrase": "handles the figures one after another",
+          "meaning": "The sequential run is the second problem to fix."
+        }
+      ],
+      "lookFor": [
+        "A fixed sequence where the steps are already known.",
+        "Several `Task` calls in one response for independent items.",
+        "A total time that fits the stated limit."
+      ],
+      "eliminate": [
+        {
+          "option": "c",
+          "reason": "Planning further subtasks suits unknown steps; these are known."
+        },
+        {
+          "option": "d",
+          "reason": "One subagent in turn still takes about 8 hours."
+        },
+        {
+          "option": "e",
+          "reason": "Mapping and prioritising add time when every figure must be checked anyway."
+        }
+      ],
+      "rule": "Use a fixed sequence of steps when the steps are known in advance, and parallel Task calls in one response when the items are independent and time is short.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Building effective agents",
+          "url": "https://www.anthropic.com/engineering/building-effective-agents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: How we built our multi-agent research system",
+          "url": "https://www.anthropic.com/engineering/multi-agent-research-system"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Workflows vs agents",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/workflows-vs-agents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Building with the Claude API: Chaining workflows",
+          "url": "https://academy.claude.com/courses/building-with-the-claude-api/chaining-workflows"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S4-001",
+      "explanation": "Three subagents passed findings to one another through wiki drafts, so a billing draft that was corrected later shaped dispatch's work, and the coordinator had no record of it. The fix is hub-and-spoke: each subagent returns its findings to the coordinator, which decides what each subagent receives in its prompt, and the coordinator writes the wiki page from findings it has checked. The wiki record stays, and every claim can be traced through the coordinator.",
+      "options": {
+        "a": {
+          "reasoning": "In hub-and-spoke, the coordinator manages all communication between subagents. A subagent starts fresh and receives only its prompt, and only its final message comes back, so the coordinator's prompts and transcript become the record of which billing finding dispatch used."
+        },
+        "b": {
+          "reasoning": "The team still gets a wiki page for each investigation, but the coordinator writes it from findings it has checked, after every subagent has reported. No subagent can read a half-finished draft, because none is written."
+        },
+        "c": {
+          "reasoning": "A lock would have stopped the early read, but findings still travel from subagent to subagent through the wiki, so the coordinator still can't say which finding shaped a claim in the report.",
+          "tempting": "It directly prevents reading a draft before it is corrected."
+        },
+        "d": {
+          "reasoning": "It reacts only after the old draft has been used, and it creates rework between subagents that the coordinator never sees. The path the finding took, and the missing record, stay the same.",
+          "tempting": "It looks like it keeps every subagent up to date."
+        },
+        "e": {
+          "reasoning": "A prompt line makes the mistake less likely but can't guarantee it, and it leaves the communication path, and the missing record, unchanged.",
+          "tempting": "It targets the exact mistake in last week's run."
+        }
+      },
+      "concept": [
+        "The exam guide's hub-and-spoke pattern has the coordinator manage all communication between subagents, as well as error handling and routing. Routing every handoff through the coordinator gives observability: it knows what each subagent was given and what each returned.",
+        "Subagents have isolated context. A subagent starts fresh, the only thing passed from the parent is the prompt string, and only its final message comes back. A finding one subagent needs from another therefore travels back to the coordinator and out again in the next prompt.",
+        "Shared storage is not banned. Anthropic's research system can write subagent outputs to external storage and pass lightweight references back to the coordinator, so the coordinator still decides what flows where. What breaks traceability here is subagents reading each other's working drafts directly."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "reads the others' drafts as it works",
+          "meaning": "Subagents talk to each other around the coordinator."
+        },
+        {
+          "phrase": "billing corrected an hour later",
+          "meaning": "Drafts change after they have been read."
+        },
+        {
+          "phrase": "the coordinator's transcript showed no trace",
+          "meaning": "The hub has lost observability."
+        },
+        {
+          "phrase": "trace every claim in a report back to the finding behind it",
+          "meaning": "The record has to sit with the coordinator."
+        }
+      ],
+      "lookFor": [
+        "Findings returned to the coordinator and passed on in prompts.",
+        "A wiki page written by the coordinator from checked findings."
+      ],
+      "eliminate": [
+        {
+          "option": "c",
+          "reason": "Findings still pass between subagents without the coordinator."
+        },
+        {
+          "option": "d",
+          "reason": "It reacts after the old draft is used and adds rework the coordinator never sees."
+        },
+        {
+          "option": "e",
+          "reason": "A prompt line can't guarantee it and leaves the path unchanged."
+        }
+      ],
+      "rule": "Route every finding between subagents through the coordinator; when a shared record is needed, let the coordinator write it from findings it has checked.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: subagents",
+          "url": "https://code.claude.com/docs/en/agent-sdk/subagents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: How we built our multi-agent research system",
+          "url": "https://www.anthropic.com/engineering/multi-agent-research-system"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S4-002",
+      "explanation": "The team needs two proposals that both use the detail found in a 3-hour session, within 2 hours. A summary has already lost that detail, and drafting the two in turn would take 3 hours. Forking the session twice gives two branches that each start with a copy of the full history and can run at the same time.",
+      "options": {
+        "a": {
+          "reasoning": "`--fork-session`, used when resuming, gives a new session ID with a copy of the history, and the original stays unchanged. Each fork holds the reads that found the 6 cross-border call sites, and the two drafts run in parallel: 90 minutes against a 2-hour deadline. Forking branches the conversation, not the files, and no files are edited here."
+        },
+        "b": {
+          "reasoning": "The resumed session holds everything, but one session drafts one proposal at a time: two 90-minute drafts take 3 hours against a 2-hour deadline.",
+          "tempting": "It keeps every detail of the mapping."
+        },
+        "c": {
+          "reasoning": "A subagent receives only its prompt string, and the two-page summary already missed the surcharges. Re-reading 180 files to recover them repeats most of the 3-hour mapping.",
+          "tempting": "Passing findings in the `Task` prompt is the usual way to brief a subagent."
+        },
+        "d": {
+          "reasoning": "A fresh session from a summary is the answer when tool results are stale. No code has changed here, so it only loses the detail the session holds.",
+          "tempting": "A structured summary is the guide-approved way to carry work into a new session."
+        }
+      },
+      "concept": [
+        "The exam guide lists `fork_session` for exploring divergent approaches from a shared analysis baseline, and forking to compare approaches in parallel branches.",
+        "On the CLI, `--fork-session` with `--resume` or `--continue` gives a new session ID instead of reusing the original. In the Agent SDK, `fork_session` with `resume` creates a new session with a copy of the history and leaves the original unchanged. Forking branches the conversation, not the filesystem, so forks that only write proposals can run side by side; forks that edit code need separate checkouts.",
+        "A subagent spawned with the `Task` tool starts fresh: the only thing it receives from the parent is the prompt string. That works when a compact brief holds everything it needs, and fails when the needed detail is spread across hours of reads that a summary compresses away."
+      ],
+      "conceptTable": {
+        "headers": [
+          "Situation",
+          "Choose"
+        ],
+        "rows": [
+          [
+            "Two approaches from one valid, detailed baseline",
+            "Fork the session"
+          ],
+          [
+            "One task, and a compact brief holds all it needs",
+            "A subagent with the brief in its prompt"
+          ],
+          [
+            "Earlier tool results are stale",
+            "A fresh session seeded with a structured summary"
+          ]
+        ]
+      },
+      "stemSignals": [
+        {
+          "phrase": "3 hours in a session named `stops-map`",
+          "meaning": "A detailed baseline worth keeping."
+        },
+        {
+          "phrase": "no code changes until a design is chosen",
+          "meaning": "Forks won't collide on files."
+        },
+        {
+          "phrase": "due in 2 hours, but drafting one takes about 90 minutes",
+          "meaning": "The two drafts must run in parallel."
+        },
+        {
+          "phrase": "two-page summary of the mapping missed that 6 of the 37 call sites",
+          "meaning": "A summary loses the detail."
+        }
+      ],
+      "lookFor": [
+        "Two parallel branches that each carry the full history.",
+        "Nothing that rebuilds the context from a summary."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Two 90-minute drafts in turn need 3 hours."
+        },
+        {
+          "option": "c",
+          "reason": "The summary is what lost the detail, and re-reading repeats the mapping."
+        },
+        {
+          "option": "d",
+          "reason": "Nothing is stale, so a summary only loses detail."
+        }
+      ],
+      "rule": "When two approaches must be explored from the same detailed session, fork it: each fork copies the conversation and the original stays unchanged.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: CLI reference",
+          "url": "https://code.claude.com/docs/en/cli-reference"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: sessions",
+          "url": "https://code.claude.com/docs/en/agent-sdk/sessions"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: subagents",
+          "url": "https://code.claude.com/docs/en/agent-sdk/subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S4-003",
+      "explanation": "The `CLAUDE.md` line was a request, and once Claude didn't follow it, at the cost of two days of QA data. A destructive command that must not run needs deterministic enforcement before the call: a `PreToolUse` hook on `Bash` that blocks commands containing `flywayClean` and tells Claude why. Every other command keeps running without approvals.",
+      "options": {
+        "a": {
+          "reasoning": "`PreToolUse` fires before the tool call and can stop it. Exiting with code 2 blocks the call and passes stderr to Claude as the reason; returning `permissionDecision` `deny` with a reason works too. Only commands containing `flywayClean` are affected."
+        },
+        "b": {
+          "reasoning": "`PostToolUse` fires after the tool has run, so blocking there is too late to stop the call or its side effects: the tables are gone before the hook acts.",
+          "tempting": "It watches the right tool and tries to repair the damage."
+        },
+        "c": {
+          "reasoning": "Moving the text changes when it loads, not what it is: an instruction, which Claude usually follows but isn't guaranteed to.",
+          "tempting": "Path-scoped rules are a real, more targeted way to deliver guidance."
+        },
+        "d": {
+          "reasoning": "Approving each command would stop `flywayClean`, but it puts a person in front of every routine Gradle task, which the engineers ruled out.",
+          "tempting": "It does put a human in front of the dangerous command."
+        }
+      },
+      "concept": [
+        "An instruction in `CLAUDE.md` or a prompt is a request, not a guarantee: Claude usually follows it. A hook is deterministic code that runs at a fixed point in the loop, so it can guarantee the behaviour. The exam guide prefers programmatic enforcement over prompt guidance when a rule must hold.",
+        "`PreToolUse` fires before a tool call and is the enforcement point. It can return `permissionDecision` `allow`, `deny` or `ask`, with a reason shown to Claude, or exit with code 2, which blocks the call and passes stderr as the reason. Exit code 1 does not block. `PostToolUse` fires after the tool has run, too late to prevent the call.",
+        "Attach the hook with a `matcher` on the tool name, `Bash`, and check the command in the hook's code, so other commands pass through untouched."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "\"Do not run `./gradlew flywayClean`\"",
+          "meaning": "The rule exists only as guidance."
+        },
+        {
+          "phrase": "ran it against the shared staging database",
+          "meaning": "Guidance has already failed once, with real damage."
+        },
+        {
+          "phrase": "without having to approve each command",
+          "meaning": "The fix must target the one command."
+        }
+      ],
+      "lookFor": [
+        "A `PreToolUse` hook on `Bash`.",
+        "A block (exit code 2 or deny) with a reason."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "It fires after the tables are dropped."
+        },
+        {
+          "option": "c",
+          "reason": "Still guidance, only loaded differently."
+        },
+        {
+          "option": "d",
+          "reason": "It adds approvals the engineers don't want."
+        }
+      ],
+      "rule": "If a command must not run, block it in a `PreToolUse` hook; `CLAUDE.md` can only ask.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Hooks",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/hooks"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: hooks reference",
+          "url": "https://code.claude.com/docs/en/hooks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S4-004",
+      "explanation": "Yesterday's session holds readings of live state (queue depths, pods, logs) that no longer describe the cluster, even though no code changed. Resuming would put those stale tool results back in front of the model. Starting fresh with a structured summary keeps the conclusions, and re-running the live checks gives current figures to test them against.",
+      "options": {
+        "a": {
+          "reasoning": "The guide's rule: a fresh start with a structured summary is more reliable than resuming with stale tool results. The summary carries the 4 hours of conclusions (the suspected carrier API, the evidence, what was ruled out) without the stale readings."
+        },
+        "b": {
+          "reasoning": "Sessions persist the conversation, not the systems it looked at, so tool results reflect the state when they were read. Re-running the queue-depth and pod checks makes today's reasoning rest on today's numbers, whichever session she uses."
+        },
+        "c": {
+          "reasoning": "Resuming suits a session whose context is mostly valid. The code is unchanged, but the evidence here is live state, and a resumed session would treat yesterday's readings as current.",
+          "tempting": "No code was merged, so nothing seems to have changed."
+        },
+        "d": {
+          "reasoning": "It discards valid conclusions, such as what was ruled out, to avoid stale readings that a summary already leaves behind.",
+          "tempting": "Nothing can be stale if everything is redone."
+        },
+        "e": {
+          "reasoning": "A fork is a new session with a copy of the history, stale readings included. It protects the original session, which isn't the problem.",
+          "tempting": "It sounds like a safe way to build on yesterday without touching it."
+        }
+      },
+      "concept": [
+        "The exam guide's Task 1.7: resume when prior context is mostly valid; start fresh with an injected structured summary when tool results are stale, because a fresh start with a summary is more reliable than resuming with stale tool results.",
+        "Sessions persist the conversation, not the filesystem or the systems it queried, so tool results in a resumed session reflect the state when they were read. For code, the guide says to tell the resumed session which files changed. For live systems such as queues and pods, the earlier readings themselves are out of date and must be taken again.",
+        "Forking (`--fork-session` on the CLI, `fork_session` in the SDK) copies the history into a new session and leaves the original unchanged. It is for exploring different approaches from one baseline, not for refreshing that baseline."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "queue-depth readings, pod status from `kubectl get pods` and about 6,000 lines of service logs",
+          "meaning": "The evidence is live state."
+        },
+        {
+          "phrase": "No code was merged overnight",
+          "meaning": "The detail that makes resuming look safe."
+        },
+        {
+          "phrase": "the cluster has scaled since and the delays are back",
+          "meaning": "Those readings are now stale."
+        },
+        {
+          "phrase": "without repeating the 4 hours",
+          "meaning": "Keep the conclusions."
+        }
+      ],
+      "lookFor": [
+        "A fresh session seeded with a structured summary of the conclusions.",
+        "New live readings before any figure is relied on."
+      ],
+      "eliminate": [
+        {
+          "option": "c",
+          "reason": "It resumes with stale live readings."
+        },
+        {
+          "option": "d",
+          "reason": "It throws away valid conclusions."
+        },
+        {
+          "option": "e",
+          "reason": "A fork carries the same stale readings."
+        }
+      ],
+      "rule": "When a session's tool results describe live state that has moved on, start fresh from a structured summary and take the readings again.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: sessions",
+          "url": "https://code.claude.com/docs/en/agent-sdk/sessions"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: CLI reference",
+          "url": "https://code.claude.com/docs/en/cli-reference"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S5-001",
+      "explanation": "The reviewers already have separate categories, so the duplicates are single defects that really belong to two categories, and the conflicts are two reviewers disagreeing about one line. Neither can be settled while each subagent posts on its own. In hub-and-spoke the coordinator collects every subagent's result, so it can merge the overlapping findings, decide each conflict and post one review per PR.",
+      "options": {
+        "a": {
+          "reasoning": "Reading the PR thread turns it into a channel between subagents that bypasses the coordinator. Reviewers running in parallel can post before they see each other, and nobody decides a conflict.",
+          "tempting": "It looks like a cheap way to stop repeats without touching the coordinator."
+        },
+        "b": {
+          "reasoning": "A cleanup agent works after the noise is already on the PR and adds a step to a time-limited check, while the coordinator that could merge findings before posting already exists.",
+          "tempting": "It removes duplicates and conflicts without changing the reviewers."
+        },
+        "c": {
+          "reasoning": "Returning findings to the coordinator lets it see all three reviews at once, merge the 30% that overlap, settle conflicting lines and post one consistent review."
+        },
+        "d": {
+          "reasoning": "The prompts already separate the categories; a defect that is both a bug and a security risk is a genuine overlap. Narrowing further leaves blind spots and leaves conflicts unresolved.",
+          "tempting": "Partitioning scope is the usual cure for duplicated subagent work."
+        }
+      },
+      "concept": [
+        "In a hub-and-spoke system the coordinator manages all communication between subagents, along with error handling and routing. Routing everything through it gives observability and consistent handling, because one component sees every result before anything leaves the system.",
+        "Only a subagent's final message comes back to the coordinator, so the coordinator is the natural place to aggregate: it receives each reviewer's findings and decides what is published.",
+        "Clear task boundaries prevent duplicated work when subagents were given the same vague brief. When boundaries already exist and findings still overlap, the overlap is real, and merging it is the coordinator's job."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "each reviewer posts its own findings as PR comments",
+          "meaning": "Subagents publish directly, so no one sees the whole review before it is posted."
+        },
+        {
+          "phrase": "Each reviewer's prompt already limits it to its own category",
+          "meaning": "Partitioning scope has been done; the overlap is genuine."
+        },
+        {
+          "phrase": "one reviewer asks for a change that another calls safe",
+          "meaning": "Conflicts need one component that decides."
+        },
+        {
+          "phrase": "must finish inside the 10-minute pre-merge check",
+          "meaning": "Extra agents and after-the-fact cleanup cost time."
+        }
+      ],
+      "lookFor": [
+        "Subagents returning results to the coordinator instead of publishing.",
+        "One component that merges duplicates and settles conflicts before posting.",
+        "No new agent when the coordinator can do the job."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "The PR thread becomes a side channel between subagents, and conflicts stay undecided."
+        },
+        {
+          "option": "b",
+          "reason": "Cleans up after posting and adds an agent the coordinator makes unnecessary."
+        },
+        {
+          "option": "d",
+          "reason": "The categories are already separate; the overlap is real."
+        }
+      ],
+      "rule": "Subagents return their results to the coordinator, which merges, resolves conflicts and publishes one output.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: subagents",
+          "url": "https://code.claude.com/docs/en/agent-sdk/subagents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: How we built our multi-agent research system",
+          "url": "https://www.anthropic.com/engineering/multi-agent-research-system"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: What are subagents?",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/what-are-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S5-002",
+      "explanation": "The security reviewer is spawned with the diff and the criteria only. A subagent does not see what the coordinator read, so the PR's stated intent to remove the 3DS v1 fallback never reaches it, and in 40% of such PRs it flags the removal. The coordinator has to write the description and the ticket summary into each `Task` prompt; the standing criteria stay in the `AgentDefinition`.",
+      "options": {
+        "a": {
+          "reasoning": "The order in which the coordinator reads things does not matter: a subagent starts fresh and receives only the prompt string the coordinator writes.",
+          "tempting": "It feels as if a subagent spawned after the coordinator read something would know it."
+        },
+        "b": {
+          "reasoning": "The PR description and the ticket summary are per-task facts, so they go into that PR's `Task` prompt, next to the diff, where the reviewer can weigh the removal against its stated purpose."
+        },
+        "c": {
+          "reasoning": "The `AgentDefinition` prompt is the subagent's standing configuration, right for the review criteria, but each PR has its own description and ticket.",
+          "tempting": "It puts the context in the subagent's own prompt, beside the criteria."
+        },
+        "d": {
+          "reasoning": "Dropping findings on intended removals would also hide a real flaw in how the removal was made. The reviewer needs the intent to judge the change.",
+          "tempting": "It removes the repeated false alarm without touching the reviewer."
+        }
+      },
+      "concept": [
+        "Subagents have isolated context: they do not inherit the coordinator's conversation, tool results or anything it read. The only thing passed from the parent at spawn time is the prompt string, so any fact the subagent needs must be written into it.",
+        "An `AgentDefinition` holds what is the same for every run of a subagent type: its description, its system prompt and its tool restrictions. Facts that differ per task, such as one PR's description, belong in the `Task` prompt for that run.",
+        "Each subagent runs in its own context window, which is why it can work without the coordinator's history and also why it never sees that history."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "The coordinator reads each PR's description and linked ticket",
+          "meaning": "The coordinator has the intent; the question is whether it passes it on."
+        },
+        {
+          "phrase": "a prompt that holds the diff and the review criteria",
+          "meaning": "The intent is not in the subagent's prompt."
+        },
+        {
+          "phrase": "states that it intentionally removes the legacy 3DS v1 fallback",
+          "meaning": "The missing fact is the author's declared intent."
+        },
+        {
+          "phrase": "The criteria in the reviewer's `AgentDefinition` are correct",
+          "meaning": "The standing configuration is fine; the per-PR input is the gap."
+        }
+      ],
+      "lookFor": [
+        "Per-task facts written into the `Task` prompt.",
+        "Standing criteria kept in the `AgentDefinition`.",
+        "No assumption that a subagent sees what the coordinator read."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Subagents don't inherit the coordinator's context, whatever the order."
+        },
+        {
+          "option": "c",
+          "reason": "The `AgentDefinition` is the same for every PR; each description is not."
+        },
+        {
+          "option": "d",
+          "reason": "Filtering hides real problems instead of giving the reviewer the intent."
+        }
+      ],
+      "rule": "A subagent sees only its definition and the prompt it is given; write each task's facts into that task's `Task` prompt.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: subagents",
+          "url": "https://code.claude.com/docs/en/agent-sdk/subagents"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Introduction to subagents: What are subagents?",
+          "url": "https://academy.claude.com/courses/introduction-to-subagents/what-are-subagents"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S5-003",
+      "explanation": "The gate exists and fires, but it checks the wrong condition: that a pass happened at some point in the session. The 9% of broken commits come from edits made after the pass, so the passing result no longer describes the committed files. The gate has to require that the latest `run_tests` came after the last `Edit` or `Write` and passed; then the bad path is blocked in code, before the commit.",
+      "options": {
+        "a": {
+          "reasoning": "Two passes recorded before an edit are as stale as one. The failures come from edits after the pass, not from flaky runs.",
+          "tempting": "Requiring more evidence sounds stricter."
+        },
+        "b": {
+          "reasoning": "A `PostToolUse` hook runs after the commit has been made, so the broken commit still reaches CI; reporting afterwards cannot undo it.",
+          "tempting": "It adds a real test run on the exact commit."
+        },
+        "c": {
+          "reasoning": "A prompt instruction is a request the agent usually follows, not a guarantee, and each miss here costs a broken CI run. The hook can enforce the condition directly.",
+          "tempting": "Re-running after edits is exactly the habit the team wants."
+        },
+        "d": {
+          "reasoning": "The gate now tests the real condition: the latest run follows the last change and passed. A `PreToolUse` hook that denies `commit_tests` otherwise closes the gap before the commit is made."
+        }
+      },
+      "concept": [
+        "When a step must happen before another, enforce it in code: a prerequisite that blocks the downstream tool until the earlier step has completed. Prompts alone leave a non-zero failure rate.",
+        "`PreToolUse` fires before a tool call and can stop it, for example by returning `permissionDecision: \"deny\"` with a reason that Claude sees. `PostToolUse` fires after the tool has already run, so it is too late to stop the call or its side effects. In the Agent SDK, hooks are callbacks registered in the `hooks` option with matchers.",
+        "A gate is only as good as the condition it checks. If later actions can invalidate an earlier result, the gate must check that the result is still current, not only that it once existed."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "edits a test file to tidy its assertions, and commits",
+          "meaning": "The pass predates the committed code."
+        },
+        {
+          "phrase": "allows the call only if the session holds a `run_tests` result",
+          "meaning": "The gate checks existence, not freshness."
+        },
+        {
+          "phrase": "Each broken commit costs about 20 minutes of runner time",
+          "meaning": "Each miss has a real cost, so the check must be enforced before the commit."
+        }
+      ],
+      "lookFor": [
+        "A gate condition that matches what must be true at commit time.",
+        "A check that runs before the call, not after it.",
+        "Code, not a prompt, for a rule every commit must meet."
+      ],
+      "eliminate": [
+        {
+          "option": "a",
+          "reason": "Counting passes still accepts a pass that predates the last edit."
+        },
+        {
+          "option": "b",
+          "reason": "Runs after the commit, too late to stop it."
+        },
+        {
+          "option": "c",
+          "reason": "A prompt rule is not a guarantee."
+        }
+      ],
+      "rule": "Make a prerequisite gate check that its condition still holds at the moment of the call, such as a pass after the latest change.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: hooks reference",
+          "url": "https://code.claude.com/docs/en/hooks"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: hooks",
+          "url": "https://code.claude.com/docs/en/agent-sdk/hooks"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Hooks",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/hooks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S5-004",
+      "explanation": "The hook's script works, as the tests show, but the hook log is empty for the `sed` call. A matcher is compared with the tool name, and `Edit|Write` is an exact list of two names, so a `Bash` call never runs the script. Adding `Bash` to the matcher and checking the command text for a path under `services/card-vault/keys/` keeps the block in `PreToolUse`, before the file changes.",
+      "options": {
+        "a": {
+          "reasoning": "It names the real cause, the matcher selecting by tool name, and extends the same `PreToolUse` hook to `Bash`, with the script checking the command for the protected path and exiting with code 2."
+        },
+        "b": {
+          "reasoning": "Hook entries have no such setting. Which calls a hook sees is decided by its matcher, compared with the tool name.",
+          "tempting": "It promises to catch every kind of write with one switch."
+        },
+        "c": {
+          "reasoning": "The path is in the command before it runs, so `PreToolUse` can read it. `PostToolUse` fires after `sed` has already changed the file.",
+          "tempting": "It matches the right three tools."
+        },
+        "d": {
+          "reasoning": "The diagnosis is close, but a CLAUDE.md line is a request the agent usually follows, not a block, so a later run can use `Bash` again.",
+          "tempting": "It would route edits back through the tools the hook already covers."
+        }
+      },
+      "concept": [
+        "A hook `matcher` is compared with the tool name. A matcher made only of letters, digits, `_`, `-`, spaces, `,` and `|` is an exact name or a list of exact names; any other character makes it a regular expression. So `Edit|Write` selects exactly those two tools and never `Bash`.",
+        "Attach an enforcement hook with the tool matcher and do the actual check in the hook's code; for a shell command, that means reading the command and looking for the protected path.",
+        "`PreToolUse` fires before a call and can block it: a command hook that exits with code 2 blocks the call, with stderr as the reason. `PostToolUse` fires after the tool has run. An instruction in CLAUDE.md is a request, not a guarantee."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`\"matcher\": \"Edit|Write\"`",
+          "meaning": "The hook is attached to two named tools only."
+        },
+        {
+          "phrase": "the team's tests confirm it blocks such edits",
+          "meaning": "The script's logic is not the problem."
+        },
+        {
+          "phrase": "a `Bash` call, `sed -i",
+          "meaning": "The change came through a tool the matcher doesn't name."
+        },
+        {
+          "phrase": "the hook log has no entry for that call",
+          "meaning": "The hook never ran for it."
+        }
+      ],
+      "lookFor": [
+        "The tool that made the change, compared with the matcher.",
+        "A fix that keeps the check before the call.",
+        "Enforcement in a hook rather than in CLAUDE.md."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "Invented setting; matchers decide which calls a hook sees."
+        },
+        {
+          "option": "c",
+          "reason": "`PostToolUse` runs after the file has changed."
+        },
+        {
+          "option": "d",
+          "reason": "CLAUDE.md guides; it does not block."
+        }
+      ],
+      "rule": "A hook's matcher selects calls by tool name, so a rule about files must also cover `Bash` and check the command it runs.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: hooks reference",
+          "url": "https://code.claude.com/docs/en/hooks"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Hooks",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/hooks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S6-001",
+      "explanation": "The loop already runs on `stop_reason` and keeps a cap of 12 as a backstop, which is the right design. The fault is what the code does when the cap fires: it hands the partial record to `submit_to_adjudication` as if the agent had finished. The log shows the 140 capped runs repeating one `lookup_policy` call, and most of their records still pass the schema because unfilled fields are nullable. A cap stop is an unfinished run, so the claim goes to review with what was gathered.",
+      "options": {
+        "a": {
+          "reasoning": "A run stopped by the cap did not reach a natural finish, so its record is partial whatever shape it has. Sending the claim to `route_to_review` with the fields gathered and a note on why it stopped keeps those records out of adjudication and keeps the work the agent did."
+        },
+        "b": {
+          "reasoning": "The capped runs are not long claims: each repeats one `lookup_policy` call, so 30 iterations would only repeat it for longer. The record would still go to adjudication as finished when the new cap fires. A higher cap suits normal work that routinely needs more steps than the cap allows.",
+          "tempting": "The cap is what cut these runs short, and normal claims use only half of it."
+        },
+        "c": {
+          "reasoning": "Most capped records pass the schema because their unfilled fields are nullable, so this would still send most partial records to adjudication. A schema check tells you the record has the right shape, not that the agent finished its work.",
+          "tempting": "It adds a check and sends the records that fail it to review."
+        },
+        "d": {
+          "reasoning": "A fresh loop throws away the work already done, and with the same repeating pattern in 140 runs it is likely to loop again and hit the cap. A restart suits a run that failed from a passing cause.",
+          "tempting": "A clean start sometimes gets an agent out of a rut."
+        }
+      },
+      "concept": [
+        "The exam guide's agentic loop continues while `stop_reason` is `\"tool_use\"` and stops on `\"end_turn\"`. It lists an arbitrary iteration cap used as the primary stopping mechanism as an anti-pattern. Anthropic's Building effective agents notes that agents commonly have stopping conditions such as a maximum number of iterations to keep control, so a cap belongs in the loop as a safety net behind `stop_reason`.",
+        "`end_turn` is the normal finish, and the docs list other stop reasons as well, such as `max_tokens`, so code should not treat every stop as a clean finish. A stop forced by your own cap is the same kind of case: the model did not decide it was done, so whatever exists at that point is an incomplete result.",
+        "In this stem, passing the schema proves nothing about completeness, because the unfilled fields are nullable. The honest handling is to mark the run incomplete and route it on with what was gathered."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "loops while `stop_reason` is `\"tool_use\"`, with a cap of 12 iterations as a backstop",
+          "meaning": "The loop design is already right; the question is about the backstop."
+        },
+        {
+          "phrase": "passes the record built so far to `submit_to_adjudication` as finished",
+          "meaning": "A cap stop is being reported as a completed result."
+        },
+        {
+          "phrase": "most such records pass the schema validator, since unfilled fields are nullable",
+          "meaning": "A schema check cannot catch these partial records."
+        },
+        {
+          "phrase": "after 7 earlier identical calls",
+          "meaning": "The capped runs are looping, so more iterations would not help."
+        }
+      ],
+      "lookFor": [
+        "A cap stop handled as an incomplete run.",
+        "The claim routed to review with what was gathered.",
+        "No higher cap and no schema check standing in for completeness."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "The runs loop, so a higher cap repeats the call and still submits partial records."
+        },
+        {
+          "option": "c",
+          "reason": "Most partial records pass the schema, so they would still reach adjudication."
+        },
+        {
+          "option": "d",
+          "reason": "A restart discards the work and is likely to loop the same way."
+        }
+      ],
+      "rule": "Stop the loop on `stop_reason` and keep a cap only as a safety net; when the cap fires, treat the run as unfinished and route its partial result for handling.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Anthropic engineering: Building effective agents",
+          "url": "https://www.anthropic.com/engineering/building-effective-agents"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Handling stop reasons",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
+    },
+    {
+      "questionId": "M2-S6-002",
+      "explanation": "The two vendor tools write dates in opposite orders, and a value such as \"03/04/2025\" reaches the model with nothing to say which order it is in. Only the code knows which tool produced each result. A `PostToolUse` hook on both tools can rewrite each date to ISO 8601 using that tool's known format before the model compares them, which removes the ambiguity behind the 2% of wrong checks.",
+      "options": {
+        "a": {
+          "reasoning": "A `PostToolUse` hook runs after the tool and can replace what the model sees. Because the hook knows the source tool, it reads police dates as day first and invoice dates as month first, so the model only ever compares unambiguous ISO dates."
+        },
+        "b": {
+          "reasoning": "Right hook, right moment, wrong rule. Guessing from the digits misreads every police date whose day is 12 or under, such as 03/04 for 3 April, which would become 4 March. A digit-based guess is a fallback for an unknown source; here each tool's format is known.",
+          "tempting": "It uses the same hook and converts to the same ISO format."
+        },
+        "c": {
+          "reasoning": "The model would usually follow the rule, but a prompt instruction is a request, not a guarantee, and each miss here decides a claim on a wrong date. Prompt guidance suits preferences; a conversion that payment depends on belongs in code.",
+          "tempting": "It names each tool's format, which is the knowledge the model is missing."
+        },
+        "d": {
+          "reasoning": "The model makes the date-order comparison while it works, before any record exists. Rewriting the extracted records afterwards tidies the output for adjudication but cannot fix a comparison already made on misread dates.",
+          "tempting": "Normalising in code after extraction is deterministic and easy to test."
+        }
+      },
+      "concept": [
+        "The exam guide says `PostToolUse` hooks transform tool results before the model processes them, and lists normalising heterogeneous formats from different MCP tools (Unix timestamps, ISO 8601, numeric status codes) in a `PostToolUse` hook as a skill. Hooks are deterministic; prompt instructions are probabilistic.",
+        "In the Agent SDK, hooks are callbacks in the `hooks` option, attached with matchers. A `PostToolUse` hook can replace what the model sees with `updatedToolOutput`, which works for built-in and MCP tools.",
+        "An instruction in a prompt is a request that Claude usually follows; a hook is code that runs at a fixed point in the loop, so it can guarantee the behaviour. Here the guarantee matters because each wrong date-order check pays or denies a claim.",
+        "The hook must use what only code knows: which tool produced the date. A rule that looks at the digits alone cannot tell 3 April from 4 March."
+      ],
+      "stemSignals": [
+        {
+          "phrase": "`get_police_record` returns dates as dd/mm/yyyy, but `get_garage_invoice` ... returns mm/dd/yyyy",
+          "meaning": "Each tool has a fixed, known format, and they differ."
+        },
+        {
+          "phrase": "vendor MCP servers whose output the team can't change",
+          "meaning": "The fix has to sit between the tool and the model."
+        },
+        {
+          "phrase": "reach the model with no format marker",
+          "meaning": "The model cannot tell the order from the value itself."
+        },
+        {
+          "phrase": "each one a claim paid or denied on a misread date",
+          "meaning": "Money depends on it, so the conversion should be deterministic."
+        }
+      ],
+      "lookFor": [
+        "A `PostToolUse` hook that runs before the model reasons over the dates.",
+        "Conversion driven by the source tool, not by the digits.",
+        "No prompt rule and no clean-up after the comparison has been made."
+      ],
+      "eliminate": [
+        {
+          "option": "b",
+          "reason": "A digit-based guess misreads police dates whose day is 12 or under."
+        },
+        {
+          "option": "c",
+          "reason": "A prompt rule cannot guarantee the conversion that payment depends on."
+        },
+        {
+          "option": "d",
+          "reason": "Post-extraction normalising comes after the model has compared the dates."
+        }
+      ],
+      "rule": "When tools return the same kind of value in different formats, normalise each in a `PostToolUse` hook using that tool's known format, before the model reasons over it.",
+      "sources": [
+        {
+          "kind": "exam-guide",
+          "title": "CCA-F exam guide, Domain 1 task statements (Anthropic Academy)",
+          "url": "https://anthropic.skilljar.com/claude-certified-architect-foundations-access-request"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Claude Code: hooks reference",
+          "url": "https://code.claude.com/docs/en/hooks"
+        },
+        {
+          "kind": "anthropic-docs",
+          "title": "Agent SDK: hooks",
+          "url": "https://code.claude.com/docs/en/agent-sdk/hooks"
+        },
+        {
+          "kind": "skilljar",
+          "title": "Claude Code in action: Hooks",
+          "url": "https://academy.claude.com/courses/claude-code-in-action/hooks"
+        }
+      ],
+      "verifiedAt": "2026-11-19"
     }
   ]
 }

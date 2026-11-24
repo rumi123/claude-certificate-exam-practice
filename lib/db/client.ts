@@ -31,7 +31,7 @@ function readTestClockOffset(db: Db): number {
 export function getDb(): Db {
   if (instance) return instance;
   dbPath = process.env.DATABASE_PATH ?? 'data/aicert.db';
-  fs.mkdirSync(path.dirname(path.resolve(dbPath)), { recursive: true });
+  fs.mkdirSync(path.dirname(path.resolve(/*turbopackIgnore: true*/ dbPath)), { recursive: true });
   sqlite = new Database(dbPath);
   sqlite.pragma('journal_mode = WAL');
   sqlite.pragma('foreign_keys = ON');

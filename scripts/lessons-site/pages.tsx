@@ -1,38 +1,23 @@
-// Static pages for the read-only lessons site (scripts/build-lessons-site.tsx).
+// Static pages for the public study site (scripts/build-lessons-site.tsx): Learn and the
+// decision sheet only. No questions or answers are published.
 // No next/* imports: these are rendered with react-dom/server outside Next.
 // Links are relative so the site works under any path (GitHub Pages serves it from /<repo>/).
 import type { ReactNode } from 'react';
-import { ArrowLeft, ArrowRight, Check, Circle, Lightbulb, TriangleAlert } from 'lucide-react';
-import TeachingSection from '@/components/feedback/TeachingSection';
-import { Card, Chip, InlineText } from '@/components/ui';
-import type { FeedbackData } from '@/lib/feedback';
+import { Chip } from '@/components/ui';
+import type { Cheatsheet } from '@/lib/content/schemas';
 
-export type QuestionLink = { id: string; href: string; stem: string };
-
-export type IndexGroup = {
-  title: string;
-  subtitle?: string;
-  sections: { title: string; questions: QuestionLink[] }[];
-};
-
-export type QuestionPageData = {
-  id: string;
-  source: string;
-  scenario: { name: string; setup: string } | null;
-  stem: string;
-  selectCount: number;
-  feedback: FeedbackData;
-  prev: QuestionLink | null;
-  next: QuestionLink | null;
-};
+export const PAGES = [
+  { file: 'index.html', label: 'Learn' },
+  { file: 'decision-sheet.html', label: 'Decision sheet' },
+] as const;
 
 export function Document({
   title,
-  css,
+  current,
   children,
 }: {
   title: string;
-  css: string;
+  current: (typeof PAGES)[number]['file'];
   children: ReactNode;
 }) {
   return (
@@ -42,204 +27,152 @@ export function Document({
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="robots" content="noindex" />
         <title>{title}</title>
-        <link rel="stylesheet" href={css} />
+        {/* eslint-disable-next-line @next/next/no-css-tags */}
+        <link rel="stylesheet" href="style.css" />
       </head>
       <body className="min-h-screen bg-bg text-fg">
-        <main className="mx-auto max-w-3xl px-4 py-6">{children}</main>
+        <nav className="border-b border-border bg-surface">
+          <div className="mx-auto flex max-w-[96rem] gap-1 px-4 py-2 lg:px-6">
+            {PAGES.map((p) => (
+              <a
+                key={p.file}
+                href={p.file}
+                aria-current={p.file === current ? 'page' : undefined}
+                className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
+                  p.file === current ? 'bg-surface-2 text-fg' : 'text-muted hover:bg-surface-2'
+                }`}
+              >
+                {p.label}
+              </a>
+            ))}
+          </div>
+        </nav>
+        <main className="mx-auto max-w-[96rem] px-4 py-6 lg:px-6">{children}</main>
       </body>
     </html>
   );
 }
 
-function shortStem(stem: string): string {
-  const flat = stem.replace(/\s+/g, ' ').trim();
-  return flat.length > 110 ? `${flat.slice(0, 107)}…` : flat;
-}
+const TH = 'px-2 py-1 text-left font-semibold';
+const TD = 'px-2 py-1 align-top';
 
-export function toLink(id: string, href: string, stem: string): QuestionLink {
-  return { id, href, stem: shortStem(stem) };
-}
-
-export function IndexPage({ groups, total }: { groups: IndexGroup[]; total: number }) {
+function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
-    <>
-      <h1 className="text-2xl font-bold">CCAR-F lessons</h1>
-      <p className="mt-1 text-muted">
-        {total} questions with their answers and lessons. Read-only; open a domain to start.
-      </p>
-      {groups.map((g) => (
-        <section key={g.title} className="mt-8">
-          <h2 className="text-xl font-semibold">{g.title}</h2>
-          {g.subtitle && <p className="mt-1 text-sm text-muted">{g.subtitle}</p>}
-          <div className="mt-3 space-y-3">
-            {g.sections.map((s) => (
-              <details
-                key={s.title}
-                data-testid="index-section"
-                className="rounded-xl border border-border bg-surface p-4"
-              >
-                <summary className="cursor-pointer font-semibold">
-                  {s.title}{' '}
-                  <span className="text-sm font-normal text-muted">({s.questions.length})</span>
-                </summary>
-                <ul className="mt-3 space-y-2">
-                  {s.questions.map((q) => (
-                    <li key={q.id}>
-                      <a href={q.href} className="block rounded-lg p-2 hover:bg-surface-2">
-                        <span className="font-mono text-sm font-semibold text-accent">{q.id}</span>
-                        <span className="mt-0.5 block text-sm text-muted">
-                          <InlineText text={q.stem} />
-                        </span>
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            ))}
-          </div>
-        </section>
-      ))}
-    </>
+    <details open className="mt-6 rounded-xl border border-border bg-surface p-4">
+      <summary className="cursor-pointer">
+        <h2 id={id} className="inline text-xl font-semibold">
+          {title}
+        </h2>
+      </summary>
+      {children}
+    </details>
   );
 }
 
-function PrevNext({ prev, next }: { prev: QuestionLink | null; next: QuestionLink | null }) {
-  const cls =
-    'inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-semibold hover:bg-surface-2';
+// Static copy of app/cheatsheet/page.tsx without the app-only Drill and research links.
+export function DecisionSheet({
+  sheet,
+  traps,
+}: {
+  sheet: Cheatsheet;
+  traps: { id: string; name: string; description: string; principle: string }[];
+}) {
+  const trapName = new Map(traps.map((t) => [t.id, t.name]));
   return (
-    <nav aria-label="Question navigation" className="flex items-center justify-between gap-2">
-      {prev ? (
-        <a href={prev.href} className={cls}>
-          <ArrowLeft size={14} aria-hidden="true" /> {prev.id}
-        </a>
-      ) : (
-        <span />
-      )}
-      {next ? (
-        <a href={next.href} className={cls}>
-          {next.id} <ArrowRight size={14} aria-hidden="true" />
-        </a>
-      ) : (
-        <span />
-      )}
-    </nav>
-  );
-}
+    <div className="cheatsheet">
+      <h1 className="text-2xl font-bold">Decision sheet</h1>
 
-export function QuestionPage({ data, indexHref }: { data: QuestionPageData; indexHref: string }) {
-  const { feedback } = data;
-  return (
-    <>
-      <p className="text-sm">
-        <a href={indexHref} className="inline-flex items-center gap-1 text-accent hover:underline">
-          <ArrowLeft size={14} aria-hidden="true" />
-          All lessons
-        </a>
-      </p>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <h1 className="whitespace-nowrap text-2xl font-bold">{data.id}</h1>
-        <Chip tone="neutral">{data.source}</Chip>
-        <Chip tone="accent">{feedback.tags.primaryTask.id}</Chip>
-      </div>
-
-      {data.scenario && (
-        <details className="mt-4 rounded-xl border border-border bg-surface p-4">
-          <summary className="cursor-pointer font-semibold">
-            Scenario: {data.scenario.name}
-          </summary>
-          <p className="mt-2 whitespace-pre-line text-sm">
-            <InlineText text={data.scenario.setup} />
-          </p>
-        </details>
-      )}
-
-      <p data-testid="stem" className="mt-4 whitespace-pre-line text-lg">
-        <InlineText text={data.stem} />
-      </p>
-      {data.selectCount > 1 && (
-        <p className="mt-1 text-sm text-muted">Select {data.selectCount}</p>
-      )}
-
-      <ul className="mt-4 space-y-2">
-        {feedback.options.map((o) => (
-          <li
-            key={o.key}
-            data-testid="option"
-            className="flex gap-3 rounded-xl border border-border bg-surface p-3"
-          >
-            {o.isCorrect ? (
-              <Check
-                size={18}
-                role="img"
-                aria-label="Correct option"
-                className="mt-0.5 shrink-0 text-good"
-              />
-            ) : (
-              <Circle size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-muted" />
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
-                <span>
-                  {o.letter}. <InlineText text={o.text} />
-                </span>
-                {!o.isCorrect && o.trap && (
-                  <Chip tone="close" title={o.trap.description}>
-                    <TriangleAlert size={12} aria-hidden="true" />
-                    {o.trap.name}
-                  </Chip>
-                )}
-              </p>
-              <div className="mt-1">
-                <Chip tone={o.isCorrect ? 'good' : 'weak'}>
-                  {o.isCorrect ? 'Correct' : 'Wrong'}
-                </Chip>
-              </div>
-              <p className="mt-1 text-base text-muted">
-                <InlineText text={o.reasoning ?? o.explanation} />
-              </p>
-              {o.tempting && (
-                <p className="mt-1 text-base text-muted">
-                  <span className="font-semibold">Why it was tempting.</span>{' '}
-                  <InlineText text={o.tempting} />
-                </p>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      <Card className="mt-4 flex gap-3 bg-accent-soft">
-        <Lightbulb size={20} aria-hidden="true" className="mt-0.5 shrink-0 text-accent" />
-        <p>
-          <span className="font-semibold">Key concept:</span>{' '}
-          <InlineText text={feedback.keyConcept} />
-        </p>
-      </Card>
-
-      {feedback.lesson && (
-        <div className="mt-4">
-          <TeachingSection lesson={feedback.lesson} />
+      <Section id="decisions" title="Decisions">
+        <div className="mt-2 overflow-x-auto">
+          <table className="w-full min-w-[640px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className={TH}>Situation</th>
+                <th className={TH}>Choose</th>
+                <th className={TH}>Why</th>
+                <th className={TH}>Task</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sheet.decisions.map((d, i) => (
+                <tr key={i} className="border-b border-border">
+                  <td className={TD}>{d.situation}</td>
+                  <td className={`${TD} font-medium`}>{d.choose}</td>
+                  <td className={TD}>{d.why}</td>
+                  <td className={TD}>{d.task}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      )}
+      </Section>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Chip tone="neutral">{feedback.tags.scenario}</Chip>
-        <Chip tone="neutral">{feedback.tags.domain}</Chip>
-        <Chip tone="accent">
-          {feedback.tags.primaryTask.id} {feedback.tags.primaryTask.title}
-        </Chip>
-        {feedback.tags.secondaryTasks.map((k) => (
-          <Chip key={k.id} tone="neutral">
-            {k.id} {k.title}
-          </Chip>
-        ))}
-        <Chip tone="neutral">Difficulty {feedback.tags.difficulty}</Chip>
-      </div>
+      <Section id="always-wrong" title="Always wrong">
+        <div className="mt-2 overflow-x-auto">
+          <table className="w-full min-w-[640px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className={TH}>Answer</th>
+                <th className={TH}>Why</th>
+                <th className={TH}>Trap</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sheet.alwaysWrong.map((w, i) => (
+                <tr key={i} className="border-b border-border">
+                  <td className={TD}>{w.text}</td>
+                  <td className={TD}>{w.why}</td>
+                  <td className={TD}>
+                    <a href={`#trap-${w.trap}`} title={trapName.get(w.trap) ?? w.trap}>
+                      <Chip tone="weak">{trapName.get(w.trap) ?? w.trap}</Chip>
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Section>
 
-      <div className="mt-8 border-t border-border pt-4">
-        <PrevNext prev={data.prev} next={data.next} />
-      </div>
-    </>
+      <Section id="catalog-traps" title="Trap catalog">
+        <div className="mt-2 overflow-x-auto">
+          <table className="w-full min-w-[640px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className={TH}>Trap</th>
+                <th className={TH}>Description</th>
+                <th className={TH}>Principle</th>
+              </tr>
+            </thead>
+            <tbody>
+              {traps.map((t) => (
+                <tr key={t.id} id={`trap-${t.id}`} className="scroll-mt-4 border-b border-border">
+                  <td className={`${TD} font-medium`}>{t.name}</td>
+                  <td className={TD}>{t.description}</td>
+                  <td className={TD}>{t.principle}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Section>
+
+      <Section id="key-facts" title="Key facts">
+        <div className="grid grid-cols-1 gap-x-6 md:grid-cols-2 xl:grid-cols-3">
+          {sheet.keyFacts.map((g) => (
+            <div key={g.group} className="mt-4 break-inside-avoid">
+              <h3 className="font-semibold">{g.group}</h3>
+              <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm">
+                {g.items.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </Section>
+    </div>
   );
 }

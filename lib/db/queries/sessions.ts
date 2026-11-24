@@ -462,6 +462,8 @@ export type SummaryRow = {
 export type SummaryItem = {
   position: number;
   questionId: string;
+  /** `practice` questions have a page at /questions/[id]; mock questions don't. */
+  pool: string;
   stem: string;
   answered: boolean;
   isCorrect: boolean;
@@ -515,6 +517,7 @@ export function getSummary(sessionId: string): Summary | null {
     .select({
       item: t.sessionItem,
       stem: t.question.stem,
+      pool: t.question.pool,
       domainId: t.domain.id,
       domainName: t.domain.name,
       taskId: t.taskStatement.id,
@@ -577,6 +580,7 @@ export function getSummary(sessionId: string): Summary | null {
     items.push({
       position: r.item.position,
       questionId: r.item.questionId,
+      pool: r.pool,
       stem: r.stem,
       answered,
       isCorrect,

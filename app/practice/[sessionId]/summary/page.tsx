@@ -1,4 +1,4 @@
-import { Check, X } from 'lucide-react';
+import { ArrowUpRight, Check, X } from 'lucide-react';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { startMistakesReview } from '@/app/practice/actions';
@@ -218,7 +218,20 @@ export default async function SummaryPage({
                   )}{' '}
                   · <InlineText text={i.stem.slice(0, 90) + (i.stem.length > 90 ? '…' : '')} />
                 </summary>
-                <MarkToggle sessionId={sessionId} position={i.position} marked={i.marked} />
+                <div className="flex flex-wrap items-start gap-2">
+                  <MarkToggle sessionId={sessionId} position={i.position} marked={i.marked} />
+                  {i.pool === 'practice' && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      href={`/questions/${i.questionId}`}
+                      icon={<ArrowUpRight size={14} aria-hidden="true" />}
+                      className="mb-3"
+                    >
+                      Open question
+                    </Button>
+                  )}
+                </div>
                 <FeedbackPanel feedback={getFeedback(i.questionId, i.selected, i.optionOrder)} />
               </details>
             </li>

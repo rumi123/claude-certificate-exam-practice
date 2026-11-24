@@ -22,7 +22,8 @@
     "content:import:aicert": "CONTENT_DIR=content-aicert DATABASE_PATH=data/aicert.db tsx scripts/import-content.ts",
     "dev:aicert": "npm run content:import:aicert && CONTENT_DIR=content-aicert DATABASE_PATH=data/aicert.db next dev -p 3001",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx scripts/migrate.ts"
+    "db:migrate": "tsx scripts/migrate.ts",
+    "build:lessons": "tsx scripts/build-lessons-site.tsx"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
@@ -39,6 +40,8 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "^1.65.0",
+    "@tailwindcss/node": "4.3.3",
+    "@tailwindcss/oxide": "4.3.3",
     "@tailwindcss/turbopack": "4.3.3",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",

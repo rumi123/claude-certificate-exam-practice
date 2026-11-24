@@ -7,6 +7,8 @@ test.describe.configure({ mode: 'serial' });
 const PATHS = [
   '/',
   '/practice',
+  '/exams',
+  '/learn',
   '/review',
   '/report',
   '/flashcards',

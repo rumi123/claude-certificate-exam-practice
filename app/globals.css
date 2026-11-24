@@ -101,6 +101,8 @@ html.dark {
   background: var(--surface-2);
   padding: 0.1em 0.3em;
   border-radius: 0.25rem;
+  /* Long identifiers (tool names, file paths) wrap instead of widening the page on phones. */
+  overflow-wrap: anywhere;
 }
 
 body {

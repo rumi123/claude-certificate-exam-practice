@@ -28,7 +28,6 @@ export const TASK_PLAN: Record<string, Record<string, number>> = {
 export const MAX_TRAP_SHARE = 0.25;
 export const MIN_DISTINCT_TRAPS = 10;
 export const MAX_LONGEST_CORRECT_SHARE = 0.4;
-export const ALWAYS_WRONG_COUNT = 10;
 export const CONCEPT_CARDS_PER_TASK = 3;
 
 // Mock papers (authoring guide section 10.4).

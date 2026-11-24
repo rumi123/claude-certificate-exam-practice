@@ -21,7 +21,6 @@ import {
   type Traps,
 } from './schemas';
 import {
-  ALWAYS_WRONG_COUNT,
   CONCEPT_CARDS_PER_TASK,
   DIFFICULTY_TARGET,
   DIFFICULTY_TOLERANCE,
@@ -461,8 +460,9 @@ function checkCheatsheet(file: string, cs: Cheatsheet, refs: RefsFull, out: Coll
     if (!refs.tasks.has(d.task)) out.error(file, `decision "${d.situation}" has unknown task ${d.task}`);
   }
   for (const a of cs.alwaysWrong) checkTrap(file, a.trap, refs, out, 'alwaysWrong item', undefined);
-  if (cs.alwaysWrong.length !== ALWAYS_WRONG_COUNT) {
-    out.warn(file, `alwaysWrong has ${cs.alwaysWrong.length} items (expected ${ALWAYS_WRONG_COUNT})`);
+  const covered = new Set(cs.alwaysWrong.map((a) => a.trap));
+  for (const trap of refs.traps) {
+    if (!covered.has(trap)) out.warn(file, `trap ${trap} has no alwaysWrong item`);
   }
 }
 

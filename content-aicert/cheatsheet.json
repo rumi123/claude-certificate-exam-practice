@@ -198,6 +198,96 @@
       "choose": "Keep claim-source mappings; report both values with attribution",
       "why": "Picking one silently loses provenance",
       "task": "5.6"
+    },
+    {
+      "situation": "Decide when the agentic loop ends",
+      "choose": "Check stop_reason: continue on \"tool_use\", stop on \"end_turn\"",
+      "why": "Text that sounds finished isn't a signal; an iteration cap is only a backstop",
+      "task": "1.1"
+    },
+    {
+      "situation": "A tool call fails mid-loop",
+      "choose": "Return its tool_result with the error text and is_error: true",
+      "why": "The model can adapt instead of the run ending",
+      "task": "1.1"
+    },
+    {
+      "situation": "The next tool depends on what earlier results show",
+      "choose": "Give Claude the tools and let it choose each call",
+      "why": "A fixed keyword decision tree can't react to findings",
+      "task": "1.1"
+    },
+    {
+      "situation": "The steps are known in advance (multi-aspect review, fixed pipeline)",
+      "choose": "A fixed prompt chain with code checks between steps",
+      "why": "Dynamic decomposition adds flexibility the task doesn't need",
+      "task": "1.6"
+    },
+    {
+      "situation": "Open-ended investigation where you don't know where the answer is",
+      "choose": "Map the structure, rank high-impact areas, adapt the plan as findings arrive",
+      "why": "A fixed plan can't follow what each step finds",
+      "task": "1.6"
+    },
+    {
+      "situation": "Investigation steps depend on each other's findings",
+      "choose": "Keep them in one context",
+      "why": "Pipeline subagents lose details at each handoff; use them for independent lookups",
+      "task": "1.6"
+    },
+    {
+      "situation": "Prose requests keep fixing one input and breaking another",
+      "choose": "Give exact failing inputs and expected outputs as test cases",
+      "why": "Concrete cases pin down what the prose leaves open",
+      "task": "3.5"
+    },
+    {
+      "situation": "Several problems to report",
+      "choose": "Interacting ones together in one message; independent ones in separate, sequential messages",
+      "why": "Interacting fixes need each other's context; independent ones stay focused",
+      "task": "3.5"
+    },
+    {
+      "situation": "CI needs machine-parseable review output",
+      "choose": "--json-schema with a findings schema",
+      "why": "Prompt wording and output cleanup aren't guaranteed",
+      "task": "3.6"
+    },
+    {
+      "situation": "CI review gives false positives and repeats findings on re-runs",
+      "choose": "Explicit review criteria in CLAUDE.md; pass prior findings on re-runs",
+      "why": "Claude reports what the criteria cover and skips what's already known",
+      "task": "3.6"
+    },
+    {
+      "situation": "Written rules don't separate acceptable from genuine cases",
+      "choose": "2–4 varied examples with reasoning, including a case to skip",
+      "why": "Examples show where the line is; a single example fixes only one case",
+      "task": "4.2"
+    },
+    {
+      "situation": "Extraction returns null fields because document layouts vary",
+      "choose": "A few examples across the real formats, including one where null is correct",
+      "why": "Examples teach the layouts; the null case stops fabrication",
+      "task": "4.2"
+    },
+    {
+      "situation": "A long exploration is losing earlier findings",
+      "choose": "Write key findings to a scratchpad file and check it before answering",
+      "why": "Context degrades over a long session; the file doesn't",
+      "task": "5.4"
+    },
+    {
+      "situation": "A session is full of verbose output but the work must continue",
+      "choose": "/compact with an instruction naming the findings to keep",
+      "why": "Clearing or handing off loses the reasoning so far",
+      "task": "5.4"
+    },
+    {
+      "situation": "The next exploration phase runs in new subagents",
+      "choose": "Summarise the phase's key findings into their prompts",
+      "why": "Subagents inherit nothing from the parent",
+      "task": "5.4"
     }
   ],
   "alwaysWrong": [
@@ -250,6 +340,81 @@
       "text": "Trusting aggregate metrics",
       "why": "Averages hide per-type and per-field failures; segment them",
       "trap": "AGGREGATE_METRIC_MASKING"
+    },
+    {
+      "text": "Adding a classifier, router or extra agent to fix tool confusion or enforce one check",
+      "why": "Fix the root cause with the smallest change: clearer descriptions, a prerequisite gate",
+      "trap": "OVER_ENGINEERING"
+    },
+    {
+      "text": "Team standards in ~/.claude/CLAUDE.md, or a personal MCP server in the committed .mcp.json",
+      "why": "Only committed project files reach teammates; personal config goes in ~/.claude or .local files",
+      "trap": "WRONG_CONFIG_LAYER"
+    },
+    {
+      "text": "Clearing the conversation or restarting when context runs low",
+      "why": "Values the user already gave are lost; compact into a case-facts block or resume",
+      "trap": "DISCARD_STATE"
+    },
+    {
+      "text": "Raising max_tokens to fit a longer document",
+      "why": "max_tokens caps output length, not the context window",
+      "trap": "MISREAD_PARAMETER"
+    },
+    {
+      "text": "Subagents passing results straight to each other or through a shared store",
+      "why": "Route everything through the coordinator so it stays observable and handles errors",
+      "trap": "BYPASS_COORDINATOR"
+    },
+    {
+      "text": "Aborting the whole workflow because one source or document failed",
+      "why": "Recover locally, continue with partial results, and report the gap",
+      "trap": "TOTAL_FAILURE"
+    },
+    {
+      "text": "Running a pre-merge check or live chat through the Message Batches API",
+      "why": "Batches have no latency SLA (up to 24 hours); blocking work is synchronous",
+      "trap": "WRONG_LATENCY_MODE"
+    },
+    {
+      "text": "Telling a subagent to \"use the findings above\"",
+      "why": "Subagents inherit nothing; put the findings in its prompt",
+      "trap": "ASSUMED_CONTEXT_INHERITANCE"
+    },
+    {
+      "text": "An invented flag or config key (--non-interactive, subagent_inherit_context)",
+      "why": "Made-up features are always wrong; use the documented mechanism, such as -p for CI",
+      "trap": "NONEXISTENT_FEATURE"
+    },
+    {
+      "text": "Escalating after one transient tool error or a routine in-policy request",
+      "why": "Retry or resolve what the agent can; escalate on explicit criteria",
+      "trap": "PREMATURE_ESCALATION"
+    },
+    {
+      "text": "Continuing to troubleshoot after the customer asks for a person",
+      "why": "An explicit request for a human is an immediate trigger",
+      "trap": "FAILURE_TO_ESCALATE"
+    },
+    {
+      "text": "Blaming a subagent that did everything it was assigned",
+      "why": "Rule out what the evidence clears; look at what owns the gap (decomposition, prompt, handoff)",
+      "trap": "WRONG_COMPONENT"
+    },
+    {
+      "text": "Resuming a session and trusting its old tool readings",
+      "why": "They may no longer match the current state; start fresh with a summary and re-run live checks",
+      "trap": "STALE_CONTEXT"
+    },
+    {
+      "text": "Running independent tasks one after another when the deadline needs them together",
+      "why": "Spawn them in parallel: several Task calls in one coordinator response",
+      "trap": "SERIAL_EXECUTION"
+    },
+    {
+      "text": "Averaging two conflicting credible values, or picking one",
+      "why": "Keep both with their sources and methods, and mark the finding as contested",
+      "trap": "SUPPRESSED_CONFLICT"
     }
   ],
   "keyFacts": [
@@ -303,6 +468,47 @@
         "custom_id matches results to requests and lets you resubmit only failures",
         "Refine the prompt on a sample before submitting the full batch",
         "Set submission frequency from the SLA (e.g. a 30-hour SLA → submit in 4-hour windows)"
+      ]
+    },
+    {
+      "group": "Agentic loop",
+      "items": [
+        "stop_reason \"tool_use\": run the requested tools and send the results back",
+        "stop_reason \"end_turn\": the model has finished; this ends the loop, not text like \"done\"",
+        "stop_reason \"max_tokens\": the output was cut off and isn't a finished answer",
+        "Every tool_use block gets its own tool_result, matched by tool_use_id",
+        "A failed tool still returns a tool_result, with the error text and is_error: true",
+        "Each request carries the full history, tool results included",
+        "An iteration cap is a safety net set well above normal work, not the stopping rule"
+      ]
+    },
+    {
+      "group": "Subagents and context",
+      "items": [
+        "Subagents have isolated context: pass what they need in the prompt; only their final message comes back",
+        "Spawn independent subagents in parallel with several Task calls in one coordinator response",
+        "All subagent communication goes through the coordinator (hub-and-spoke)",
+        "/compact with an instruction naming what to keep shrinks a long session without losing key findings",
+        "A scratchpad file holds key findings across a long exploration",
+        "context: fork in SKILL.md runs the skill in an isolated sub-agent and returns only the result"
+      ]
+    },
+    {
+      "group": "Structured output and extraction",
+      "items": [
+        "Tool use with a JSON schema gives schema-valid output, not correct values",
+        "Make often-absent fields optional and nullable so the model can return null instead of inventing",
+        "Retry with the specific validation errors; retries can't find data the source doesn't contain",
+        "Few-shot: 2–4 varied examples covering each kind of input, including a case to skip or a correct null"
+      ]
+    },
+    {
+      "group": "Escalation",
+      "items": [
+        "Escalate at once on an explicit request for a human, a policy exception or gap, or no progress",
+        "Not triggers on their own: negative sentiment or the model's self-reported confidence",
+        "Several matching customers: ask for another identifier instead of guessing",
+        "A frustrated customer with a simple issue: acknowledge, offer to resolve, escalate if they ask again"
       ]
     }
   ]

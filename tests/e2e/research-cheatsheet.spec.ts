@@ -25,6 +25,18 @@ test('decision sheet has all sections', async ({ page }) => {
   await expect(page.getByTestId('keyfact-group')).toHaveCount(5);
 });
 
+test('decision sheet sections start open and collapse on their heading', async ({ page }) => {
+  await page.goto('/cheatsheet');
+  const sections = page.getByTestId('cheatsheet-section');
+  await expect(sections).toHaveCount(4);
+  for (const s of await sections.all()) await expect(s).toHaveAttribute('open', '');
+  await page.getByRole('heading', { name: 'Decisions', exact: true }).click();
+  await expect(page.getByTestId('decision-row').first()).toBeHidden();
+  await expect(page.getByTestId('always-wrong-row').first()).toBeVisible();
+  await page.getByRole('heading', { name: 'Decisions', exact: true }).click();
+  await expect(page.getByTestId('decision-row').first()).toBeVisible();
+});
+
 test('feedback "Read" link lands on the primary task in the research page', async ({ page }) => {
   await answerFirstQuestionInStudyMode(page);
   await page.getByRole('link', { name: 'Read', exact: true }).click();

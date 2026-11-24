@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import PrintButton from '@/components/PrintButton';
-import { Card, Chip } from '@/components/ui';
+import type { ReactNode } from 'react';
+import { Chip } from '@/components/ui';
 import DrillButton from '@/components/DrillButton';
 import { loadContent } from '@/lib/content/load';
 import { CheatsheetSchema } from '@/lib/content/schemas';
@@ -12,6 +13,24 @@ export const dynamic = 'force-dynamic';
 const LINK = 'text-accent hover:underline';
 const TH = 'px-2 py-1 text-left font-semibold';
 const TD = 'px-2 py-1 align-top';
+
+/** A collapsible card; open by default, and opened for printing by PrintButton. */
+function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+  return (
+    <details
+      open
+      data-testid="cheatsheet-section"
+      className="mt-6 rounded-xl border border-border bg-surface p-4"
+    >
+      <summary className="cursor-pointer">
+        <h2 id={id} className="inline text-xl font-semibold">
+          {title}
+        </h2>
+      </summary>
+      {children}
+    </details>
+  );
+}
 
 function DrillLink({ task }: { task: string }) {
   return <DrillButton taskId={task} className={`${LINK} drill-link`} label="Drill" />;
@@ -30,10 +49,7 @@ export default function CheatsheetPage() {
         <PrintButton />
       </div>
 
-      <Card aria-labelledby="decisions" className="mt-6">
-        <h2 id="decisions" className="text-xl font-semibold">
-          Decisions
-        </h2>
+      <Section id="decisions" title="Decisions">
         <div className="mt-2 overflow-x-auto">
           <table className="w-full min-w-[640px] border-collapse text-sm">
             <thead>
@@ -64,12 +80,9 @@ export default function CheatsheetPage() {
             </tbody>
           </table>
         </div>
-      </Card>
+      </Section>
 
-      <Card aria-labelledby="always-wrong" className="mt-6">
-        <h2 id="always-wrong" className="text-xl font-semibold">
-          Always wrong
-        </h2>
+      <Section id="always-wrong" title="Always wrong">
         <div className="mt-2 overflow-x-auto">
           <table className="w-full min-w-[640px] border-collapse text-sm">
             <thead>
@@ -94,12 +107,9 @@ export default function CheatsheetPage() {
             </tbody>
           </table>
         </div>
-      </Card>
+      </Section>
 
-      <Card aria-labelledby="catalog-traps" className="mt-6">
-        <h2 id="catalog-traps" className="text-xl font-semibold">
-          Trap catalog
-        </h2>
+      <Section id="catalog-traps" title="Trap catalog">
         <div className="mt-2 overflow-x-auto">
           <table className="w-full min-w-[640px] border-collapse text-sm">
             <thead>
@@ -124,12 +134,9 @@ export default function CheatsheetPage() {
             </tbody>
           </table>
         </div>
-      </Card>
+      </Section>
 
-      <Card aria-labelledby="key-facts" className="mt-6">
-        <h2 id="key-facts" className="text-xl font-semibold">
-          Key facts
-        </h2>
+      <Section id="key-facts" title="Key facts">
         <div className="grid grid-cols-1 gap-x-6 md:grid-cols-2 xl:grid-cols-3">
           {sheet.keyFacts.map((g) => (
             <div key={g.group} data-testid="keyfact-group" className="mt-4 break-inside-avoid">
@@ -142,7 +149,7 @@ export default function CheatsheetPage() {
             </div>
           ))}
         </div>
-      </Card>
+      </Section>
     </div>
   );
 }
